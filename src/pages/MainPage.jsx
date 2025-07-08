@@ -1,14 +1,12 @@
 import React from 'react';
 import MainSection from '../components/MainSection';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import Search from '../components/Search';
 
 const MainPage = () => {
   return (
     <>
-      <Header />
+      <Search />
       <MainSection />
-      <Footer />
     </>
   );
 };
