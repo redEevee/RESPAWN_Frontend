@@ -3,10 +3,12 @@ import styled from 'styled-components';
 
 const SignupPage = () => {
   const [userType, setUserType] = useState('buyer'); // 'buyer' or 'seller'
-  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
   const [nickname, setNickname] = useState('');
   const [pw, setPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [email, setEmail] = useState('');
 
   const handleSignup = (e) => {
     e.preventDefault();
@@ -16,9 +18,11 @@ const SignupPage = () => {
     }
 
     console.log(`[${userType}] 회원가입 정보:`, {
-      email,
+      name,
       nickname,
       pw,
+      phoneNumber,
+      email,
     });
   };
 
@@ -42,15 +46,15 @@ const SignupPage = () => {
 
         <form onSubmit={handleSignup}>
           <Input
-            type="email"
-            placeholder="이메일"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            type="text"
+            placeholder="이름"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             required
           />
           <Input
             type="text"
-            placeholder="닉네임"
+            placeholder="아이디"
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
             required
@@ -67,6 +71,20 @@ const SignupPage = () => {
             placeholder="비밀번호 확인"
             value={confirmPw}
             onChange={(e) => setConfirmPw(e.target.value)}
+            required
+          />
+          <Input
+            type="text"
+            placeholder="전화번호"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            required
+          />
+          <Input
+            type="email"
+            placeholder="이메일"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
           <Button type="submit">회원가입</Button>

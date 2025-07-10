@@ -4,17 +4,17 @@ import logo from '../assets/respawn_logo.png';
 
 const Logo = () => {
   return (
-    <LogoWrapper>
+    <LogoContainer>
       <a href="/">
         <img src={logo} alt="respawn logo" />
       </a>
-    </LogoWrapper>
+    </LogoContainer>
   );
 };
 
 export default Logo;
 
-const LogoWrapper = styled.a`
+const LogoContainer = styled.div`
   display: flex;
   align-items: center;
   height: 100%;
