@@ -1,14 +1,45 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom';
+import axios from '../api/axios';
 
-const LoginPage = () => {
+const LoginPage = (e) => {
   const [userType, setUserType] = useState('buyer'); // 'buyer' or 'seller'
-  const [id, setId] = useState('');
-  const [pw, setPw] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [msg, setMsg] = useState('');
+  const navigate = useNavigate();
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    console.log(`[${userType}] 로그인 시도:`, { id, pw });
+  const handleLogin = async () => {
+    if (!username) {
+      setMsg('아이디를 입력해주세요.');
+    } else if (!password) {
+      setMsg('비밀번호를 입력해주세요.');
+    }
+
+    const formData = {
+      username: username,
+      password: password,
+      userType: userType,
+    };
+
+    try {
+      const response = await axios.post(
+        `http://localhost:8080/login`,
+        formData
+      );
+      console.log('로그인 성공', response.data);
+      navigate('/');
+    } catch (error) {
+      if (error.response) {
+        alert(
+          '로그인 실패: ' + (error.response.data.message || '알 수 없는 오류')
+        );
+      } else {
+        alert('서버와 통신 중 오류가 발생했습니다.');
+      }
+      console.error('Axios error:', error);
+    }
   };
 
   return (
@@ -33,19 +64,25 @@ const LoginPage = () => {
           <Input
             type="text"
             placeholder="아이디"
-            value={id}
-            onChange={(e) => setId(e.target.value)}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             required
           />
           <Input
             type="password"
             placeholder="비밀번호"
-            value={pw}
-            onChange={(e) => setPw(e.target.value)}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             required
           />
+          {msg && <Message>{msg}</Message>}
           <Button type="submit">로그인</Button>
         </form>
+        <LWrap>
+          <LLink href="/signup">회원가입</LLink>
+          <LLink href="/findid">아이디 찾기</LLink>
+          <LLink href="/findpw">비밀번호 찾기</LLink>
+        </LWrap>
       </LoginBox>
     </Container>
   );
@@ -59,6 +96,7 @@ const Container = styled.div`
   justify-content: center;
   align-items: center;
   background: #fafafa;
+  padding: 40px 20px;
 `;
 
 const LoginBox = styled.div`
@@ -94,7 +132,7 @@ const Input = styled.input`
   margin-bottom: 16px;
   border: none;
   border-bottom: 1px solid #ccc;
-  font-size: 15px;
+  font-size: 16px;
   background: transparent;
 
   &:focus {
@@ -114,6 +152,31 @@ const Button = styled.button`
   cursor: pointer;
 
   &:hover {
-    background: rgb(105, 111, 148);
+    background: rgb(85, 90, 130);
   }
+`;
+
+const LWrap = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
+const LLink = styled.a`
+  margin: 15px;
+  cursor: pointer;
+  color: #666;
+  text-decoration: none;
+
+  &:hover {
+    color: rgb(105, 111, 148);
+    text-decoration: underline;
+  }
+`;
+
+const Message = styled.p`
+  color: red;
+  font-size: 14px;
+  margin-top: 8px;
+  text-align: center;
 `;

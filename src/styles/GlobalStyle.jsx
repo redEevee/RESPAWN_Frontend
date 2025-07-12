@@ -21,6 +21,12 @@ const GlobalStyle = createGlobalStyle`
     align-items: center;
     margin: 0;
   }
+
+  html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
 `;
 
 export default GlobalStyle;
