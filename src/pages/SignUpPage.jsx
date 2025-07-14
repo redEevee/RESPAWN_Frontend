@@ -308,57 +308,6 @@ const SignupPage = () => {
   const handleSignup = async (e) => {
     e.preventDefault(); // 새로고침 방지
 
-    // 조건 체크
-    if (!username.isRequiredUsername) {
-      alert('아이디는 5~15자의 영문자와 숫자만 사용 가능합니다.');
-      return;
-    }
-
-    if (!username.isDuplicateUsername) {
-      alert('아이디 중복 확인을 해주세요.');
-      return;
-    }
-
-    if (!password.isRequiredPassword) {
-      alert('비밀번호는 8~25자, 영문자/숫자/특수문자를 포함해야 합니다.');
-      return;
-    }
-
-    if (!confirmPassword.isCheckPassword) {
-      alert('비밀번호가 일치하지 않습니다.');
-      return;
-    }
-
-    if (!phoneNumber.isRequiredPhoneNumber) {
-      alert('전화번호 형식을 확인해주세요 (숫자 11자리).');
-      return;
-    }
-
-    if (!phoneNumber.isDuplicatePhoneNumber) {
-      alert('이미 사용 중인 전화번호입니다.');
-      return;
-    }
-
-    if (!phoneNumber.isValidPhoneNumber || !confirmPhone.isValidConfirmPhone) {
-      alert('전화번호 인증을 완료해주세요.');
-      return;
-    }
-
-    if (!email.isRequiredEmail) {
-      alert('이메일 형식이 올바르지 않습니다.');
-      return;
-    }
-
-    if (!email.isDuplicateEmail) {
-      alert('이미 사용 중인 이메일입니다.');
-      return;
-    }
-
-    if (!email.isValidEmail || !confirmEmail.isValidConfirmEmail) {
-      alert('이메일 인증을 완료해주세요.');
-      return;
-    }
-
     const signupData = {
       name,
       username: username.username,
@@ -369,7 +318,7 @@ const SignupPage = () => {
 
     try {
       const response = await axios.post(
-        `http://localhost:8080/buyers/createNewBuyer`,
+        `http://localhost:8080/buyers/join`,
         signupData
       );
       console.log('회원가입 성공', response.data);

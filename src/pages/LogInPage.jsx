@@ -32,10 +32,8 @@ const LoginPage = (e) => {
         'http://localhost:8080/login',
         formData,
         {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          withCredentials: true, // 세션 인증 시 필요
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          withCredentials: true,
         }
       );
       console.log('로그인 성공', response.data);
@@ -70,7 +68,12 @@ const LoginPage = (e) => {
           </Tab>
         </TabHeader> */}
 
-        <form onSubmit={handleLogin}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault(); // 폼 기본 제출 막기
+            handleLogin(); // 로그인 로직 실행
+          }}
+        >
           <Input
             type="text"
             placeholder="아이디"
