@@ -17,16 +17,26 @@ const LoginPage = (e) => {
       setMsg('비밀번호를 입력해주세요.');
     }
 
-    const formData = {
-      username: username,
-      password: password,
-      userType: userType,
-    };
+    // const formData = {
+    //   username: username,
+    //   password: password,
+    //   // userType: userType,
+    // };
+
+    const formData = new URLSearchParams();
+    formData.append('username', username);
+    formData.append('password', password);
 
     try {
       const response = await axios.post(
-        `http://localhost:8080/login`,
-        formData
+        'http://localhost:8080/login',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          withCredentials: true, // 세션 인증 시 필요
+        }
       );
       console.log('로그인 성공', response.data);
       navigate('/');
@@ -45,7 +55,7 @@ const LoginPage = (e) => {
   return (
     <Container>
       <LoginBox>
-        <TabHeader>
+        {/* <TabHeader>
           <Tab
             active={userType === 'buyer'}
             onClick={() => setUserType('buyer')}
@@ -58,7 +68,7 @@ const LoginPage = (e) => {
           >
             판매회원 로그인
           </Tab>
-        </TabHeader>
+        </TabHeader> */}
 
         <form onSubmit={handleLogin}>
           <Input
@@ -109,22 +119,22 @@ const LoginBox = styled.div`
   border: 1px solid #ddd;
 `;
 
-const TabHeader = styled.div`
-  display: flex;
-  margin-bottom: 24px;
-`;
+// const TabHeader = styled.div`
+//   display: flex;
+//   margin-bottom: 24px;
+// `;
 
-const Tab = styled.button`
-  flex: 1;
-  padding: 12px 0;
-  background: ${({ active }) => (active ? '#fff' : '#f1f1f1')};
-  border: none;
-  border-bottom: ${({ active }) =>
-    active ? '2px solid rgb(105, 111, 148);' : '1px solid #ddd'};
-  font-weight: ${({ active }) => (active ? 'bold' : 'normal')};
-  cursor: pointer;
-  border-radius: 8px 8px 0 0;
-`;
+// const Tab = styled.button`
+//   flex: 1;
+//   padding: 12px 0;
+//   background: ${({ active }) => (active ? '#fff' : '#f1f1f1')};
+//   border: none;
+//   border-bottom: ${({ active }) =>
+//     active ? '2px solid rgb(105, 111, 148);' : '1px solid #ddd'};
+//   font-weight: ${({ active }) => (active ? 'bold' : 'normal')};
+//   cursor: pointer;
+//   border-radius: 8px 8px 0 0;
+// `;
 
 const Input = styled.input`
   width: 100%;
