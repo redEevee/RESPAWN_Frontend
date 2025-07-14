@@ -17,8 +17,6 @@ export default Logo;
 const LogoContainer = styled.div`
   display: flex;
   align-items: center;
-  height: 100%;
-  padding: 0 20px;
 
   img {
     height: 60px;
