@@ -7,41 +7,47 @@ import naver_icon from '../assets/login_naver.png';
 import google_icon from '../assets/login_google.png';
 import kakao_icon from '../assets/login_kakao.png';
 
-const LogInPage = (e) => {
+const LoginPage = (e) => {
   // const [userType, setUserType] = useState('buyer'); // 'buyer' or 'seller'
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [user, setUser] = useState({
+    username: '',
+    password: '',
+  });
   const [msg, setMsg] = useState('');
   const navigate = useNavigate();
 
-  const handleLogIn = async () => {
-    if (!username) {
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setUser({ ...user, [name]: value });
+  };
+
+  const handleLogIn = async (e) => {
+    e.preventDefault();
+    if (!user.username) {
       setMsg('아이디를 입력해주세요.');
-    } else if (!password) {
+      return;
+    }
+    if (!user.password) {
       setMsg('비밀번호를 입력해주세요.');
+      return;
     }
 
-    // const formData = {
-    //   username: username,
-    //   password: password,
-    //   // userType: userType,
-    // };
-
-    const formData = new URLSearchParams();
-    formData.append('username', username);
-    formData.append('password', password);
-
     try {
-      const response = await axios.post(
-        'http://localhost:8080/login',
-        formData,
-        {
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          withCredentials: true,
-        }
-      );
+      const formData = new FormData();
+      formData.append('username', user.username);
+      formData.append('password', user.password);
+
+      const response = await axios({
+        url: 'http://localhost:8080/loginProc',
+        method: 'POST',
+        data: formData,
+        withCredentials: true,
+      });
       console.log('로그인 성공', response.data);
-      navigate('/');
+
+      localStorage.setItem('userData', JSON.stringify(response.data));
+
+      navigate('/home');
     } catch (error) {
       if (error.response) {
         alert(
@@ -75,24 +81,21 @@ const LogInPage = (e) => {
           </Tab>
         </TabHeader> */}
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault(); // 폼 기본 제출 막기
-            handleLogIn(); // 로그인 로직 실행
-          }}
-        >
+        <form onSubmit={handleLogIn}>
           <Input
             type="text"
+            name="username"
             placeholder="아이디"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            value={user.username}
+            onChange={handleChange}
             required
           />
           <Input
             type="password"
+            name="password"
             placeholder="비밀번호"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            value={user.password}
+            onChange={handleChange}
             required
           />
           {msg && <Message>{msg}</Message>}
@@ -124,7 +127,7 @@ const LogInPage = (e) => {
   );
 };
 
-export default LogInPage;
+export default LoginPage;
 
 const Container = styled.div`
   min-height: 100vh;

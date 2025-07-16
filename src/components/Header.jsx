@@ -4,15 +4,43 @@ import Logo from '../components/Logo';
 import userIcon from '../assets/user_icon.png';
 import categoryIcon from '../assets/category_icon.png';
 import Search from '../components/Search';
+import axios from '../api/axios';
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
+
+  const userData = JSON.parse(localStorage.getItem('userData'));
+  const username = userData?.username;
+
+  const handleLogout = async () => {
+    try {
+      await axios.post('/logout');
+      localStorage.removeItem('userData');
+      window.location.href = '/home';
+    } catch (error) {
+      console.error('로그아웃 에러:', error);
+    }
+  };
 
   return (
     <HeaderContainer>
       <TopBar>
         <TopMenu>
-          <UserIcon src={userIcon} alt="User Icon" />
+          {username ? (
+            <>
+              <span>{username}님</span>
+              <span onClick={handleLogout} style={{ cursor: 'pointer' }}>
+                로그아웃
+              </span>
+            </>
+          ) : (
+            <a href="/login" style={{ textDecoration: 'none', color: '#666' }}>
+              <span>로그인</span>
+            </a>
+          )}
+          <a href="/mypage">
+            <UserIcon src={userIcon} alt="User Icon" />
+          </a>
           <span>장바구니</span>
           <span>고객센터</span>
         </TopMenu>
