@@ -60,6 +60,22 @@ const LoginPage = (e) => {
     }
   };
 
+  const handleSocialLogin = (provider) => {
+    window.location.href = `http://localhost:8080/oauth2/authorization/${provider}`;
+  };
+
+  //   const handleSocialLogin = (provider) => {
+  //   // 크기 지정(필요시)
+  //   const popup = window.open(
+  //     `http://localhost:8080/oauth2/authorization/${provider}`,
+  //     '_blank',
+  //     'width=600,height=700,resizable=yes,scrollbars=yes'
+  //   );
+  //   if (!popup) {
+  //     alert('팝업이 차단되어 새 창을 열 수 없습니다. 팝업 차단을 해제해주세요.');
+  //   }
+  // };
+
   return (
     <Container>
       <LogoWrapper>
@@ -107,20 +123,16 @@ const LoginPage = (e) => {
           <LLink href="/findpw">비밀번호 찾기</LLink>
         </LWrap>
 
-        <SocialButton>
-          <a href="http://localhost:8080/oauth2/authorization/google">
-            <img src={google_icon} alt="google" />
-          </a>
+        <SocialButton onClick={() => handleSocialLogin('google')}>
+          <img src={google_icon} alt="google" />
         </SocialButton>
-        <SocialButton>
-          <a href="http://localhost:8080/oauth2/authorization/kakao">
-            <img src={kakao_icon} alt="kakao" />
-          </a>
+
+        <SocialButton onClick={() => handleSocialLogin('kakao')}>
+          <img src={kakao_icon} alt="kakao" />
         </SocialButton>
-        <SocialButton>
-          <a href="http://localhost:8080/oauth2/authorization/naver">
-            <img src={naver_icon} alt="naver" />
-          </a>
+
+        <SocialButton onClick={() => handleSocialLogin('naver')}>
+          <img src={naver_icon} alt="naver" />
         </SocialButton>
       </LogInBox>
     </Container>

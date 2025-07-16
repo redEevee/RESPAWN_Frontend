@@ -5,7 +5,7 @@ import logo from '../assets/respawn_logo.png';
 const Logo = () => {
   return (
     <LogoContainer>
-      <a href="/">
+      <a href="/home">
         <img src={logo} alt="respawn logo" />
       </a>
     </LogoContainer>
