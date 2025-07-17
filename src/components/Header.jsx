@@ -10,12 +10,14 @@ const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   const userData = JSON.parse(localStorage.getItem('userData'));
-  const username = userData?.username;
+  const name = userData?.name;
+  console.log(userData)
 
   const handleLogout = async () => {
     try {
       await axios.post('/logout');
       localStorage.removeItem('userData');
+      alert('로그아웃 완료');
       window.location.href = '/home';
     } catch (error) {
       console.error('로그아웃 에러:', error);
@@ -26,9 +28,9 @@ const Header = () => {
     <HeaderContainer>
       <TopBar>
         <TopMenu>
-          {username ? (
+          {name ? (
             <>
-              <span>{username}님</span>
+              <span>{name}님</span>
               <span onClick={handleLogout} style={{ cursor: 'pointer' }}>
                 로그아웃
               </span>
