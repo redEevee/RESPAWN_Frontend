@@ -10,9 +10,19 @@ function LoginOkPage() {
       .then((response) => {
         // 유저 정보 상태 저장 또는 페이지 이동 처리
         console.log(response.data);
-        // 예: setUser(res.data);
         localStorage.setItem('userData', JSON.stringify(response.data));
-        navigate('/home'); // 홈 등 원하는 경로로 이동
+        
+        if (window.opener && !window.opener.closed) {
+        window.opener.postMessage({ type: 'LOGIN_SUCCESS' }, '*');
+        }
+
+        window.close();
+         // 창이 닫히지 않으면 0.5초 후 홈으로 강제 이동
+        setTimeout(() => {
+          if (!window.closed) {
+            navigate('/home');
+          }
+        }, 500);
       })
       .catch((err) => {
         console.error('유저 정보 불러오기 실패:', err);

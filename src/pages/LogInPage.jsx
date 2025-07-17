@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axios';
@@ -13,6 +13,7 @@ const LoginPage = (e) => {
     username: '',
     password: '',
   });
+  const [popup, setPopup] = useState(null);
   const [msg, setMsg] = useState('');
   const navigate = useNavigate();
 
@@ -51,7 +52,8 @@ const LoginPage = (e) => {
     } catch (error) {
       if (error.response) {
         alert(
-          '로그인 실패: ' + (error.response.data.message || '알 수 없는 오류')
+          '아이디 또는 비밀번호가 올바르지 않습니다.'
+          // '로그인 실패: ' + (error.response.data.message || '알 수 없는 오류')
         );
       } else {
         alert('서버와 통신 중 오류가 발생했습니다.');
@@ -60,21 +62,55 @@ const LoginPage = (e) => {
     }
   };
 
-  const handleSocialLogin = (provider) => {
-    window.location.href = `http://localhost:8080/oauth2/authorization/${provider}`;
-  };
+  useEffect(() => {
+    // 팝업창에서 보내준 메시지 처리
+    function handleMessage(event) {
+      if (event.data?.type === 'LOGIN_SUCCESS') {
+        // 로그인 성공 시 홈으로 이동
+        console.log('로그인 성공');
+        navigate('/home');
+        // 팝업 변수 초기화
+        setPopup(null);
+      }
+    }
+    window.addEventListener('message', handleMessage);
 
-  //   const handleSocialLogin = (provider) => {
-  //   // 크기 지정(필요시)
-  //   const popup = window.open(
-  //     `http://localhost:8080/oauth2/authorization/${provider}`,
-  //     '_blank',
-  //     'width=600,height=700,resizable=yes,scrollbars=yes'
-  //   );
-  //   if (!popup) {
-  //     alert('팝업이 차단되어 새 창을 열 수 없습니다. 팝업 차단을 해제해주세요.');
-  //   }
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [navigate]);
+
+  // const handleSocialLogin = (provider) => {
+  //   window.location.href = `http://localhost:8080/oauth2/authorization/${provider}`;
   // };
+
+  // 팝업창 닫힘 감지용 effect
+  useEffect(() => {
+    if (!popup) return;
+
+    const timer = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(timer);
+        setPopup(null);
+        // 팝업이 닫혔을 때 로그인이 안 됐으면 (서버에서 상태 확인이 안 된 상태) 현재 로그인 화면 유지하거나 알림 띄우는 등 처리 가능
+        // 여기선 아무 처리 안 함 (선택적)
+      }
+    }, 500);
+
+    return () => clearInterval(timer);
+  }, [popup]);
+
+  const handleSocialLogin = (provider) => {
+    // 크기 지정(필요시)
+    const popup = window.open(
+      `http://localhost:8080/oauth2/authorization/${provider}`,
+      '_blank',
+      'width=600,height=700,resizable=yes,scrollbars=yes'
+    );
+    if (!popup) {
+      alert('팝업이 차단되어 새 창을 열 수 없습니다. 팝업 차단을 해제해주세요.');
+    }
+  };
 
   return (
     <Container>
