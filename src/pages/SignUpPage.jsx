@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axios';
@@ -8,77 +8,85 @@ const SignupPage = () => {
 
   const initialUsernameState = {
     username: '',
-    isRequiredUsername: false, // 정규식
-    isUsernameAvailable: false, // 사용 가능 여부(중복)
+    isRequiredUsername: false,
+    isUsernameAvailable: false,
     success: '',
     error: '',
   };
 
   const initialPasswordState = {
     password: '',
-    isRequiredPassword: false, // 정규식
+    isRequiredPassword: false,
     error: '',
   };
 
   const initialConfirmPasswordState = {
     confirmPassword: '',
-    isCheckPassword: false, // 일치 확인
+    isCheckPassword: false,
     error: '',
   };
 
   const initialPhoneNumberState = {
     phoneNumber: '',
-    isRequiredPhoneNumber: false, // 정규식
-    isPhoneNumberAvailable: false, // 사용 가능 여부(중복)
-    isValidPhoneNumber: false, // 인증성공 확인
-    isCheckedPhoneNumber: false, // 중복확인 버튼
+    isRequiredPhoneNumber: false,
+    isPhoneNumberAvailable: false,
+    isValidPhoneNumber: false,
+    isCheckedPhoneNumber: false,
     error: '',
   };
 
   const initialConfirmPhoneState = {
     confirmPhone: '',
-    isValidConfirmPhone: false, // 인증번호 일치 확인
+    isValidConfirmPhone: false,
   };
 
   const initialEmailState = {
     email: '',
-    isRequiredEmail: false, // 정규식
-    isEmailAvailable: false, // 사용 가능 여부(중복)
-    isValidEmail: false, // 인증성공 확인
-    isCheckedEmail: false, // 중복확인 버튼
+    isRequiredEmail: false,
+    isEmailAvailable: false,
+    isValidEmail: false,
+    isCheckedEmail: false,
     error: '',
   };
 
   const initialConfirmEmailState = {
     confirmEmail: '',
-    isValidConfirmEmail: false, // 인증번호 일치 확인
+    isValidConfirmEmail: false,
   };
 
-  // 선택 약관
-  // const checkHandler = () => {
-  //   setIsChecked();
-  // }
-
-  const [userType, setUserType] = useState('buyer'); // 'buyer' or 'seller'
-
+  const [userType, setUserType] = useState('buyer');
   const [name, setName] = useState('');
   const [username, setUsername] = useState(initialUsernameState);
   const [password, setPassword] = useState(initialPasswordState);
-  const [confirmPassword, setConfirmPassword] = useState(
-    initialConfirmPasswordState
-  );
+  const [confirmPassword, setConfirmPassword] = useState(initialConfirmPasswordState);
   const [phoneNumber, setPhoneNumber] = useState(initialPhoneNumberState);
   const [confirmPhone, setConfirmPhone] = useState(initialConfirmPhoneState);
   const [email, setEmail] = useState(initialEmailState);
   const [confirmEmail, setConfirmEmail] = useState(initialConfirmEmailState);
 
-  // const [isChecked, setIsChecked] = useState(false);
-
   const [showPhoneConfirm, setShowPhoneConfirm] = useState(false);
   const [showEmailConfirm, setShowEmailConfirm] = useState(false);
 
-  const expectedPhoneCode = '123456';
   const expectedEmailCode = '123456';
+
+  // 전화번호 인증 타이머 상태
+  const [countdown, setCountdown] = useState(0);
+  const [timerActive, setTimerActive] = useState(false);
+
+  // 전화번호 인증 타이머 useEffect
+  useEffect(() => {
+    let timer = null;
+    if (timerActive && countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    } else if (countdown === 0 && timerActive) {
+      setTimerActive(false);
+      setShowPhoneConfirm(false);
+      alert('인증 시간이 만료되었습니다. 다시 요청해주세요.');
+    }
+    return () => clearInterval(timer);
+  }, [timerActive, countdown]);
 
   // 아이디 중복 검사
   const checkId = async () => {
@@ -87,7 +95,6 @@ const SignupPage = () => {
         `http://localhost:8080/buyers/signup/username/${username.username}`
       );
       if (response.data === false) {
-        // 중복이 아닐 경우
         setUsername({
           ...username,
           isUsernameAvailable: true,
@@ -95,7 +102,6 @@ const SignupPage = () => {
           error: '',
         });
       } else {
-        // 중복일 경우
         setUsername({
           ...username,
           isUsernameAvailable: false,
@@ -111,56 +117,51 @@ const SignupPage = () => {
   // 전화번호 인증하기
   const verifyPhoneNumber = async () => {
     try {
-      // 전화번호 중복 검사
-      const response = await axios.get(
-        `http://localhost:8080/buyers/signup/phoneNumber/${phoneNumber.phoneNumber}`
-      );
-
-      if (response.data === true) {
-        // 중복일 경우
-        setPhoneNumber({
-          ...phoneNumber,
-          isPhoneNumberAvailable: false,
-          error: '이미 가입된 전화번호입니다.',
-        });
-        return;
-      } else {
-        // 중복이 아닐 경우
-        setPhoneNumber({
-          ...phoneNumber,
-          isPhoneNumberAvailable: true,
-          error: '',
-        });
-
-        alert(`전화번호로 인증 코드 [${expectedPhoneCode}]가 전송되었습니다.`);
-        setShowPhoneConfirm(true);
-      }
+      await axios.post('/verify-phone-number', {
+        phoneNumber: phoneNumber.phoneNumber,
+      });
+      setPhoneNumber({
+        ...phoneNumber,
+        isPhoneNumberAvailable: true,
+        error: '',
+      });
+      alert('인증번호가 입력하신 전화번호로 전송되었습니다.');
+      setCountdown(300);
+      setTimerActive(true);
+      setShowPhoneConfirm(true);
     } catch (err) {
       console.error(err);
       setPhoneNumber({
         ...phoneNumber,
-        error: '전화번호 중복 확인 중 오류가 발생했습니다.',
+        isPhoneNumberAvailable: false,
+        error: '전화번호 인증 요청 중 오류가 발생했습니다.',
       });
     }
   };
 
-  const confirmPhoneVerificationCode = () => {
-    const valid = confirmPhone.confirmPhone === expectedPhoneCode;
-    setConfirmPhone({ ...confirmPhone, isValidConfirmPhone: valid });
-    if (valid) {
-      alert('전화번호 인증이 완료되었습니다.');
+  const confirmPhoneVerificationCode = async () => {
+    try {
+      await axios.post('/phone-number/verification-code', {
+        code: confirmPhone.confirmPhone,
+      });
+      setConfirmPhone({ ...confirmPhone, isValidConfirmPhone: true });
       setPhoneNumber({
         ...phoneNumber,
         isValidPhoneNumber: true,
         isCheckedPhoneNumber: true,
         error: '',
       });
-    } else {
-      alert('인증번호가 올바르지 않습니다.');
+      setShowPhoneConfirm(false);
+      setTimerActive(false);
+      alert('전화번호 인증이 완료되었습니다.');
+    } catch (error) {
+      console.error(error);
+      alert('인증번호가 올바르지 않거나, 인증에 실패했습니다.');
+      setConfirmPhone({ ...confirmPhone, isValidConfirmPhone: false });
     }
   };
 
-  // 이메일 인증하기
+  // 이메일 인증하기 (변경 없음)
   const verifyEmail = async () => {
     const requiredEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.email);
     if (!requiredEmail) {
@@ -169,13 +170,11 @@ const SignupPage = () => {
     }
 
     try {
-      // 2. 중복 검사
       const response = await axios.get(
         `http://localhost:8080/buyers/signup/email/${email.email}`
       );
 
       if (response.data === true) {
-        // 3. 중복일 경우
         setEmail({
           ...email,
           isEmailAvailable: false,
@@ -183,17 +182,13 @@ const SignupPage = () => {
         });
         return;
       } else {
-        // 4. 중복이 아니면 인증번호 발송
         setEmail({
           ...email,
           isEmailAvailable: true,
           error: '',
         });
-
         alert(`이메일로 인증 코드 [${expectedEmailCode}]가 전송되었습니다.`);
-
-        setEmail({ ...email, isValidEmail: true });
-        setShowEmailConfirm(true); // 인증코드 입력창 보이기
+        setShowEmailConfirm(true);
       }
     } catch (err) {
       console.error(err);
@@ -204,7 +199,7 @@ const SignupPage = () => {
     }
   };
 
-  const confirmEmailVerificationCode = (code) => {
+  const confirmEmailVerificationCode = () => {
     const valid = confirmEmail.confirmEmail === expectedEmailCode;
     setConfirmEmail({ ...confirmEmail, isValidConfirmEmail: valid });
     if (valid) {
@@ -215,6 +210,7 @@ const SignupPage = () => {
         isCheckedEmail: true,
         error: '',
       });
+      setShowEmailConfirm(false);
     } else {
       alert('인증번호가 올바르지 않습니다.');
     }
@@ -223,7 +219,6 @@ const SignupPage = () => {
   // 유효성 검사
   const onChangeHandler = (name) => (e) => {
     const value = e.target.value;
-
     switch (name) {
       case 'name':
         setName(value);
@@ -258,8 +253,7 @@ const SignupPage = () => {
           ...confirmPassword,
           confirmPassword: value,
           isCheckPassword: value === password.password,
-          error:
-            value === password.password ? '' : '비밀번호가 일치하지 않습니다.',
+          error: value === password.password ? '' : '비밀번호가 일치하지 않습니다.',
         });
         break;
       case 'phoneNumber':
@@ -269,16 +263,17 @@ const SignupPage = () => {
           phoneNumber: value,
           isRequiredPhoneNumber: requiredPhoneNumber,
           isPhoneNumberAvailable: false,
-          isCheckedPhoneNumber: false, // 다시 입력하면 중복확인 초기화
-          isValidPhoneNumber: false, // 인증 초기화
+          isCheckedPhoneNumber: false,
+          isValidPhoneNumber: false,
           error: requiredPhoneNumber ? '' : '유효한 전화번호를 입력해주세요.',
         });
+        setShowPhoneConfirm(false);
         break;
       case 'confirmPhone':
         setConfirmPhone({
           ...confirmPhone,
           confirmPhone: value,
-          isValidConfirmPhone: false, // 매번 입력 변경 시 인증 초기화
+          isValidConfirmPhone: false,
         });
         break;
       case 'email':
@@ -288,8 +283,8 @@ const SignupPage = () => {
           email: value,
           isRequiredEmail: requiredEmail,
           isEmailAvailable: false,
-          isCheckedEmail: false, // 다시 입력하면 중복확인 초기화
-          isValidEmail: false, // 인증 초기화
+          isCheckedEmail: false,
+          isValidEmail: false,
           error: requiredEmail ? '' : '유효한 이메일을 입력해주세요.',
         });
         break;
@@ -297,7 +292,7 @@ const SignupPage = () => {
         setConfirmEmail({
           ...confirmEmail,
           confirmEmail: value,
-          isValidConfirmEmail: false, // 매번 입력 변경 시 인증 초기화
+          isValidConfirmEmail: false,
         });
         break;
       default:
@@ -306,8 +301,7 @@ const SignupPage = () => {
   };
 
   const handleSignup = async (e) => {
-    e.preventDefault(); // 새로고침 방지
-
+    e.preventDefault();
     const signupData = {
       name,
       username: username.username,
@@ -315,7 +309,6 @@ const SignupPage = () => {
       phoneNumber: phoneNumber.phoneNumber,
       email: email.email,
     };
-
     try {
       const response = await axios.post(
         `http://localhost:8080/join`,
@@ -333,15 +326,6 @@ const SignupPage = () => {
       }
       console.error('Axios error:', error);
     }
-
-    console.log(`[${userType}] 회원가입 정보:`, {
-      userType,
-      name,
-      username,
-      password,
-      phoneNumber,
-      email,
-    });
   };
 
   return (
@@ -418,36 +402,44 @@ const SignupPage = () => {
             <CheckInput
               name="phoneNumber"
               type="text"
-              placeholder="전화번호"
+              placeholder="전화번호 (예: 01012345678 )"
               value={phoneNumber.phoneNumber}
               onChange={onChangeHandler('phoneNumber')}
               required
+              disabled={phoneNumber.isValidPhoneNumber}
             />
-            <CheckButton
-              type="button"
-              onClick={verifyPhoneNumber}
-              disabled={!phoneNumber.isRequiredPhoneNumber}
-            >
-              인증하기
-            </CheckButton>
+            {!phoneNumber.isValidPhoneNumber && (
+              <CheckButton
+                type="button"
+                onClick={verifyPhoneNumber}
+                disabled={!phoneNumber.isRequiredPhoneNumber}
+              >
+                인증하기
+              </CheckButton>
+            )}
           </CheckWrapper>
           {phoneNumber.error && <ErrorText>{phoneNumber.error}</ErrorText>}
 
-          {/* 전화번호 인증코드 입력칸: 인증하기 누른 후 보임 */}
-          {showPhoneConfirm && (
-            <CheckWrapper>
-              <CheckInput
-                name="confirmPhone"
-                type="text"
-                placeholder="전화번호 인증코드 입력"
-                value={confirmPhone.confirmPhone}
-                onChange={onChangeHandler('confirmPhone')}
-                required
-              />
-              <CheckButton type="button" onClick={confirmPhoneVerificationCode}>
-                인증확인
-              </CheckButton>
-            </CheckWrapper>
+          {/* 인증번호 입력칸 및 타이머 */}
+          {showPhoneConfirm && !phoneNumber.isValidPhoneNumber && (
+            <>
+              <TimerText>
+                인증 유효 시간: {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}
+              </TimerText>
+              <CheckWrapper>
+                <CheckInput
+                  name="confirmPhone"
+                  type="text"
+                  placeholder="전화번호 인증코드 입력"
+                  value={confirmPhone.confirmPhone}
+                  onChange={onChangeHandler('confirmPhone')}
+                  required
+                />
+                <CheckButton type="button" onClick={confirmPhoneVerificationCode}>
+                  인증확인
+                </CheckButton>
+              </CheckWrapper>
+            </>
           )}
 
           <CheckWrapper>
@@ -469,7 +461,6 @@ const SignupPage = () => {
           </CheckWrapper>
           {email.error && <ErrorText>{email.error}</ErrorText>}
 
-          {/* 이메일 인증코드 입력칸: 인증하기 누른 후 보임 */}
           {showEmailConfirm && (
             <CheckWrapper>
               <CheckInput
@@ -526,8 +517,8 @@ const Tab = styled.button`
   border-bottom: ${({ active }) =>
     active ? '2px solid rgb(105, 111, 148)' : '1px solid #ddd'};
   font-weight: ${({ active }) => (active ? 'bold' : 'normal')};
-  cursor: pointer;
   border-radius: 8px 8px 0 0;
+  cursor: pointer;
 `;
 
 const Input = styled.input`
@@ -545,18 +536,15 @@ const Input = styled.input`
   }
 `;
 
-const CheckInput = styled.input`
-  flex: 1;
-  padding: 12px;
-  border: none;
-  border-bottom: 1px solid #ccc;
-  font-size: 16px;
-  background: transparent;
+const CheckWrapper = styled.div`
+  width: 100%;
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+`;
 
-  &:focus {
-    border-bottom: 2px solid rgb(105, 111, 148);
-    outline: none;
-  }
+const CheckInput = styled(Input)`
+  margin-bottom: 0;
 `;
 
 const CheckButton = styled.button`
@@ -576,6 +564,7 @@ const CheckButton = styled.button`
 `;
 
 const JoinButton = styled.button`
+  margin-top: 16px;
   width: 100%;
   background: rgb(105, 111, 148);
   color: white;
@@ -586,15 +575,8 @@ const JoinButton = styled.button`
   cursor: pointer;
 
   &:hover {
-    background: rgb(105, 111, 148);
+    background: rgb(85, 90, 130);
   }
-`;
-
-const CheckWrapper = styled.div`
-  width: 100%;
-  display: flex;
-  align-items: center;
-  margin-bottom: 16px;
 `;
 
 const ErrorText = styled.p`
@@ -609,4 +591,11 @@ const SuccessText = styled.p`
   font-size: 12px;
   margin-top: -12px;
   margin-bottom: 12px;
+`;
+
+const TimerText = styled.p`
+  font-size: 12px;
+  text-align: right;
+  color: #888;
+  margin-bottom: 8px;
 `;
