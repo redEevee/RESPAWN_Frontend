@@ -72,6 +72,9 @@ const SignupPage = () => {
   // 전화번호 인증 타이머 상태
   const [countdown, setCountdown] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
+  // 이메일 인증 타이머 상태
+  const [emailCountdown, setEmailCountdown] = useState(0);
+  const [emailTimerActive, setEmailTimerActive] = useState(false);
 
   // 전화번호 인증 타이머 useEffect
   useEffect(() => {
@@ -87,6 +90,21 @@ const SignupPage = () => {
     }
     return () => clearInterval(timer);
   }, [timerActive, countdown]);
+
+  // 이메일 인증 타이머 useEffect
+  useEffect(() => {
+    let emailTimer = null;
+    if (emailTimerActive && emailCountdown > 0) {
+      emailTimer = setInterval(() => {
+        setEmailCountdown((prev) => prev - 1);
+      }, 1000);
+    } else if (emailCountdown === 0 && emailTimerActive) {
+      setEmailTimerActive(false);
+      setShowEmailConfirm(false);
+      alert("이메일 인증 시간이 만료되었습니다. 다시 시도해주세요.");
+    }
+    return () => clearInterval(emailTimer);
+  }, [emailTimerActive, emailCountdown]);
 
   // 아이디 중복 검사
   const checkId = async () => {
@@ -182,7 +200,10 @@ const SignupPage = () => {
           isEmailAvailable: true,
           error: "",
         });
+
         alert("이메일로 인증코드가 발송되었습니다.");
+        setEmailCountdown(600); // 5분
+        setEmailTimerActive(true); // 타이머 시작
         setShowEmailConfirm(true);
       } else {
         setEmail({
@@ -220,6 +241,7 @@ const SignupPage = () => {
           error: "",
         });
         setShowEmailConfirm(false);
+        setEmailTimerActive(false); // 타이머 종료
       } else {
         alert(response.data.message || "인증번호가 올바르지 않습니다.");
         setConfirmEmail({ ...confirmEmail, isValidConfirmEmail: false });
@@ -488,19 +510,28 @@ const SignupPage = () => {
           {email.error && <ErrorText>{email.error}</ErrorText>}
 
           {showEmailConfirm && (
-            <CheckWrapper>
-              <CheckInput
-                name="confirmEmail"
-                type="text"
-                placeholder="이메일 인증코드 입력"
-                value={confirmEmail.confirmEmail}
-                onChange={onChangeHandler("confirmEmail")}
-                required
-              />
-              <CheckButton type="button" onClick={confirmEmailVerificationCode}>
-                인증확인
-              </CheckButton>
-            </CheckWrapper>
+            <>
+              <TimerText>
+                인증 유효 시간: {Math.floor(emailCountdown / 60)}:
+                {String(emailCountdown % 60).padStart(2, "0")}
+              </TimerText>
+              <CheckWrapper>
+                <CheckInput
+                  name="confirmEmail"
+                  type="text"
+                  placeholder="이메일 인증코드 입력"
+                  value={confirmEmail.confirmEmail}
+                  onChange={onChangeHandler("confirmEmail")}
+                  required
+                />
+                <CheckButton
+                  type="button"
+                  onClick={confirmEmailVerificationCode}
+                >
+                  인증확인
+                </CheckButton>
+              </CheckWrapper>
+            </>
           )}
 
           <JoinButton type="submit">회원가입</JoinButton>
