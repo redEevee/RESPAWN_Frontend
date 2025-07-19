@@ -132,28 +132,49 @@ const SignupPage = () => {
     }
   };
 
-  // 전화번호 인증하기
   const verifyPhoneNumber = async () => {
+    if (!/^\d{11}$/.test(phoneNumber.phoneNumber)) {
+      setPhoneNumber((prev) => ({
+        ...prev,
+        error: "유효한 전화번호를 입력해주세요.",
+      }));
+      return;
+    }
+
     try {
+      const duplicateCheck = await axios.get(
+        `http://localhost:8080/buyers/signup/phoneNumber/${phoneNumber.phoneNumber}`
+      );
+
+      if (duplicateCheck.data === true) {
+        setPhoneNumber((prev) => ({
+          ...prev,
+          error: "이미 등록된 전화번호입니다. 다른 번호를 입력해주세요.",
+        }));
+        return;
+      }
+
+      // 중복이 아니면 인증 요청 시작
       await axios.post("/verify-phone-number", {
         phoneNumber: phoneNumber.phoneNumber,
       });
-      setPhoneNumber({
-        ...phoneNumber,
+
+      setPhoneNumber((prev) => ({
+        ...prev,
         isPhoneNumberAvailable: true,
         error: "",
-      });
+      }));
       alert("인증번호가 입력하신 전화번호로 전송되었습니다.");
-      setCountdown(300);
+      setCountdown(300); // 5분
       setTimerActive(true);
       setShowPhoneConfirm(true);
     } catch (err) {
       console.error(err);
-      setPhoneNumber({
-        ...phoneNumber,
+      setPhoneNumber((prev) => ({
+        ...prev,
         isPhoneNumberAvailable: false,
         error: "전화번호 인증 요청 중 오류가 발생했습니다.",
-      });
+      }));
     }
   };
 
@@ -188,6 +209,19 @@ const SignupPage = () => {
     }
 
     try {
+      const duplicateCheck = await axios.get(
+        `http://localhost:8080/buyers/signup/email/${email.email}`
+      );
+
+      if (duplicateCheck.data === true) {
+        setEmail((prev) => ({
+          ...prev,
+          error: "이미 등록된 이메일입니다. 다른 이메일을 입력해주세요.",
+        }));
+        return;
+      }
+
+      // 중복이 아니면 인증 요청 시작
       const response = await axios.get("/api/email/auth", {
         params: {
           address: email.email,
@@ -195,29 +229,27 @@ const SignupPage = () => {
       });
 
       if (response.data.success) {
-        setEmail({
-          ...email,
+        setEmail((prev) => ({
+          ...prev,
           isEmailAvailable: true,
           error: "",
-        });
-
-        alert("이메일로 인증코드가 발송되었습니다.");
-        setEmailCountdown(600); // 5분
-        setEmailTimerActive(true); // 타이머 시작
+        }));
+        alert("이메일로 인증코드가 전송되었습니다.");
         setShowEmailConfirm(true);
+        setEmailCountdown(600);
+        setEmailTimerActive(true);
       } else {
-        setEmail({
-          ...email,
-          error:
-            response.data.message || "이메일 인증코드 발송에 실패했습니다.",
-        });
+        setEmail((prev) => ({
+          ...prev,
+          error: response.data.message || "이메일 인증코드 발송 실패",
+        }));
       }
     } catch (err) {
       console.error(err);
-      setEmail({
-        ...email,
-        error: "이메일 인증 요청 중 오류가 발생했습니다.",
-      });
+      setEmail((prev) => ({
+        ...prev,
+        error: "이메일 요청 중 오류가 발생했습니다.",
+      }));
     }
   };
 
