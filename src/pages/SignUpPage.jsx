@@ -66,12 +66,21 @@ const SignupPage = () => {
   const [email, setEmail] = useState(initialEmailState);
   const [confirmEmail, setConfirmEmail] = useState(initialConfirmEmailState);
 
+  //이메일 도메인 선택 코드
+  const [emailId, setEmailId] = useState(""); // 사용자 입력
+  const [emailDomain, setEmailDomain] = useState(""); // 선택한 도메인
+
+  //이메일 도메인 직접 입력
+  const [isCustomDomain, setIsCustomDomain] = useState(false);
+  const [customDomain, setCustomDomain] = useState("");
+
   const [showPhoneConfirm, setShowPhoneConfirm] = useState(false);
   const [showEmailConfirm, setShowEmailConfirm] = useState(false);
 
   // 전화번호 인증 타이머 상태
   const [countdown, setCountdown] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
+
   // 이메일 인증 타이머 상태
   const [emailCountdown, setEmailCountdown] = useState(0);
   const [emailTimerActive, setEmailTimerActive] = useState(false);
@@ -105,6 +114,26 @@ const SignupPage = () => {
     }
     return () => clearInterval(emailTimer);
   }, [emailTimerActive, emailCountdown]);
+
+  //이메일 도메인 선택 코드
+  useEffect(() => {
+    let selectedDomain = emailDomain;
+    if (isCustomDomain) selectedDomain = customDomain;
+
+    if (emailId && selectedDomain) {
+      const fullEmail = `${emailId}@${selectedDomain}`;
+      const requiredEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fullEmail);
+      setEmail((prev) => ({
+        ...prev,
+        email: fullEmail,
+        isRequiredEmail: requiredEmail,
+        isEmailAvailable: false,
+        isCheckedEmail: false,
+        isValidEmail: false,
+        error: requiredEmail ? "" : "유효한 이메일을 입력해주세요.",
+      }));
+    }
+  }, [emailId, emailDomain, isCustomDomain, customDomain]);
 
   // 아이디 중복 검사
   const checkId = async () => {
@@ -519,19 +548,53 @@ const SignupPage = () => {
 
           <CheckWrapper>
             <CheckInput
-              name="email"
-              type="email"
-              placeholder="이메일"
-              value={email.email}
-              onChange={onChangeHandler("email")}
+              type="text"
+              placeholder="이메일 아이디"
+              value={emailId}
+              onChange={(e) => setEmailId(e.target.value)}
               required
               disabled={email.isValidEmail}
             />
+            <span>@</span>
+
+            <select
+              value={isCustomDomain ? "custom" : emailDomain}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === "custom") {
+                  setIsCustomDomain(true);
+                  setEmailDomain("");
+                  setCustomDomain("");
+                } else {
+                  setIsCustomDomain(false);
+                  setEmailDomain(value);
+                  setCustomDomain(""); // <- 혹시 모를 이전 값 초기화
+                }
+              }}
+              disabled={email.isValidEmail}
+              style={{
+                height: "44px",
+                fontSize: "14px",
+                borderRadius: "6px",
+                padding: "0 20px",
+                border: "1px solid #ccc",
+              }}
+            >
+              <option value="">도메인 선택</option>
+              <option value="gmail.com">gmail.com</option>
+              <option value="naver.com">naver.com</option>
+              <option value="daum.net">daum.net</option>
+              <option value="nate.com">nate.com</option>
+              <option value="kakao.com">kakao.com</option>
+              <option value="custom">직접입력</option>
+            </select>
+
+            {/* 인증 버튼 또는 완료 메시지 */}
             {!email.isValidEmail ? (
               <CheckButton
                 type="button"
                 onClick={verifyEmail}
-                disabled={!email.isRequiredEmail}
+                disabled={!emailId || (!emailDomain && !customDomain)}
               >
                 인증하기
               </CheckButton>
@@ -539,7 +602,19 @@ const SignupPage = () => {
               <SuccessText>이메일 인증 완료</SuccessText>
             )}
           </CheckWrapper>
-          {email.error && <ErrorText>{email.error}</ErrorText>}
+
+          {/* 직접입력란 추가 표시 (선택된 경우만!) */}
+          {isCustomDomain && (
+            <CheckWrapper>
+              <CheckInput
+                type="text"
+                placeholder="직접 도메인 입력 (예: example.com)"
+                value={customDomain}
+                onChange={(e) => setCustomDomain(e.target.value)}
+                disabled={email.isValidEmail}
+              />
+            </CheckWrapper>
+          )}
 
           {showEmailConfirm && (
             <>
@@ -588,7 +663,7 @@ const SignupBox = styled.div`
   padding: 32px;
   border-radius: 12px;
   width: 100%;
-  max-width: 400px;
+  max-width: 500px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border: 1px solid #ddd;
 `;
@@ -610,8 +685,29 @@ const Tab = styled.button`
   cursor: pointer;
 `;
 
+// const Input = styled.input`
+//   width: 100%;
+//   padding: 12px;
+//   margin-bottom: 16px;
+//   border: none;
+//   border-bottom: 1px solid #ccc;
+//   font-size: 16px;
+//   background: transparent;
+
+//   &:focus {
+//     outline: none;
+//     border-bottom: 2px solid rgb(105, 111, 148);
+//   }
+// `;
+
 const Input = styled.input`
   width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   padding: 12px;
   margin-bottom: 16px;
   border: none;
@@ -625,19 +721,51 @@ const Input = styled.input`
   }
 `;
 
+// const CheckWrapper = styled.div`
+//   width: 100%;
+//   display: flex;
+//   align-items: center;
+//   margin-bottom: 16px;
+// `;
+
+// const CheckInput = styled(Input)`
+//   margin-bottom: 0;
+// `;
+
+// const CheckButton = styled.button`
+//   margin-left: 12px;
+//   height: 44px;
+//   background: rgb(105, 111, 148);
+//   color: white;
+//   padding: 0 16px;
+//   font-size: 14px;
+//   border: none;
+//   border-radius: 6px;
+//   cursor: pointer;
+
+//   &:hover {
+//     background: rgb(85, 90, 130);
+//   }
+// `;
+
 const CheckWrapper = styled.div`
   width: 100%;
   display: flex;
   align-items: center;
   margin-bottom: 16px;
+  min-width: 0;
+  gap: 8px;
 `;
 
 const CheckInput = styled(Input)`
   margin-bottom: 0;
+  flex: 1;
+  min-width: 0;
 `;
 
 const CheckButton = styled.button`
   margin-left: 12px;
+  min-width: 80px;
   height: 44px;
   background: rgb(105, 111, 148);
   color: white;
@@ -646,6 +774,9 @@ const CheckButton = styled.button`
   border: none;
   border-radius: 6px;
   cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
   &:hover {
     background: rgb(85, 90, 130);
@@ -668,11 +799,34 @@ const JoinButton = styled.button`
   }
 `;
 
+// const ErrorText = styled.p`
+//   color: red;
+//   font-size: 12px;
+//   margin-top: -12px;
+//   margin-bottom: 12px;
+// `;
+
+// const SuccessText = styled.p`
+//   color: green;
+//   font-size: 12px;
+//   margin-top: -12px;
+//   margin-bottom: 12px;
+// `;
+
+// const TimerText = styled.p`
+//   font-size: 12px;
+//   text-align: right;
+//   color: #888;
+//   margin-bottom: 8px;
+// `;
+
 const ErrorText = styled.p`
   color: red;
   font-size: 12px;
   margin-top: -12px;
   margin-bottom: 12px;
+  word-break: keep-all;
+  white-space: pre-line;
 `;
 
 const SuccessText = styled.p`
@@ -680,6 +834,8 @@ const SuccessText = styled.p`
   font-size: 12px;
   margin-top: -12px;
   margin-bottom: 12px;
+  word-break: keep-all;
+  white-space: pre-line;
 `;
 
 const TimerText = styled.p`
@@ -687,4 +843,5 @@ const TimerText = styled.p`
   text-align: right;
   color: #888;
   margin-bottom: 8px;
+  white-space: nowrap;
 `;
