@@ -1,6 +1,6 @@
-import React from 'react';
-import styled from 'styled-components';
-import Product from './Product';
+import React from "react";
+import styled from "styled-components";
+import Product from "./Product";
 
 const ProductContainer = () => {
   return (

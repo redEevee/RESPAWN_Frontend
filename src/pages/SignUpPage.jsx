@@ -1,67 +1,61 @@
-import React, { useState } from 'react';
-import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
-import axios from '../api/axios';
+import React, { useState, useEffect } from "react";
+import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
+import axios from "../api/axios";
 
 const SignupPage = () => {
-  const navigate = useNavigate('');
+  const navigate = useNavigate("");
 
   const initialUsernameState = {
-    username: '',
-    isRequiredUsername: false, // 정규식
-    isUsernameAvailable: false, // 사용 가능 여부(중복)
-    success: '',
-    error: '',
+    username: "",
+    isRequiredUsername: false,
+    isUsernameAvailable: false,
+    success: "",
+    error: "",
   };
 
   const initialPasswordState = {
-    password: '',
-    isRequiredPassword: false, // 정규식
-    error: '',
+    password: "",
+    isRequiredPassword: false,
+    error: "",
   };
 
   const initialConfirmPasswordState = {
-    confirmPassword: '',
-    isCheckPassword: false, // 일치 확인
-    error: '',
+    confirmPassword: "",
+    isCheckPassword: false,
+    error: "",
   };
 
   const initialPhoneNumberState = {
-    phoneNumber: '',
-    isRequiredPhoneNumber: false, // 정규식
-    isPhoneNumberAvailable: false, // 사용 가능 여부(중복)
-    isValidPhoneNumber: false, // 인증성공 확인
-    isCheckedPhoneNumber: false, // 중복확인 버튼
-    error: '',
+    phoneNumber: "",
+    isRequiredPhoneNumber: false,
+    isPhoneNumberAvailable: false,
+    isValidPhoneNumber: false,
+    isCheckedPhoneNumber: false,
+    error: "",
   };
 
   const initialConfirmPhoneState = {
-    confirmPhone: '',
-    isValidConfirmPhone: false, // 인증번호 일치 확인
+    confirmPhone: "",
+    isValidConfirmPhone: false,
   };
 
   const initialEmailState = {
-    email: '',
-    isRequiredEmail: false, // 정규식
-    isEmailAvailable: false, // 사용 가능 여부(중복)
-    isValidEmail: false, // 인증성공 확인
-    isCheckedEmail: false, // 중복확인 버튼
-    error: '',
+    email: "",
+    isRequiredEmail: false,
+    isEmailAvailable: false,
+    isValidEmail: false,
+    isCheckedEmail: false,
+    error: "",
   };
 
   const initialConfirmEmailState = {
-    confirmEmail: '',
-    isValidConfirmEmail: false, // 인증번호 일치 확인
+    confirmEmail: "",
+    isValidConfirmEmail: false,
   };
 
-  // 선택 약관
-  // const checkHandler = () => {
-  //   setIsChecked();
-  // }
-
-  const [userType, setUserType] = useState('buyer'); // 'buyer' or 'seller'
-
-  const [name, setName] = useState('');
+  const [userType, setUserType] = useState("buyer");
+  const [name, setName] = useState("");
   const [username, setUsername] = useState(initialUsernameState);
   const [password, setPassword] = useState(initialPasswordState);
   const [confirmPassword, setConfirmPassword] = useState(
@@ -72,13 +66,74 @@ const SignupPage = () => {
   const [email, setEmail] = useState(initialEmailState);
   const [confirmEmail, setConfirmEmail] = useState(initialConfirmEmailState);
 
-  // const [isChecked, setIsChecked] = useState(false);
+  //이메일 도메인 선택 코드
+  const [emailId, setEmailId] = useState(""); // 사용자 입력
+  const [emailDomain, setEmailDomain] = useState(""); // 선택한 도메인
+
+  //이메일 도메인 직접 입력
+  const [isCustomDomain, setIsCustomDomain] = useState(false);
+  const [customDomain, setCustomDomain] = useState("");
 
   const [showPhoneConfirm, setShowPhoneConfirm] = useState(false);
   const [showEmailConfirm, setShowEmailConfirm] = useState(false);
 
-  const expectedPhoneCode = '123456';
-  const expectedEmailCode = '123456';
+  // 전화번호 인증 타이머 상태
+  const [countdown, setCountdown] = useState(0);
+  const [timerActive, setTimerActive] = useState(false);
+
+  // 이메일 인증 타이머 상태
+  const [emailCountdown, setEmailCountdown] = useState(0);
+  const [emailTimerActive, setEmailTimerActive] = useState(false);
+
+  // 전화번호 인증 타이머 useEffect
+  useEffect(() => {
+    let timer = null;
+    if (timerActive && countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    } else if (countdown === 0 && timerActive) {
+      setTimerActive(false);
+      setShowPhoneConfirm(false);
+      alert("인증 시간이 만료되었습니다. 다시 요청해주세요.");
+    }
+    return () => clearInterval(timer);
+  }, [timerActive, countdown]);
+
+  // 이메일 인증 타이머 useEffect
+  useEffect(() => {
+    let emailTimer = null;
+    if (emailTimerActive && emailCountdown > 0) {
+      emailTimer = setInterval(() => {
+        setEmailCountdown((prev) => prev - 1);
+      }, 1000);
+    } else if (emailCountdown === 0 && emailTimerActive) {
+      setEmailTimerActive(false);
+      setShowEmailConfirm(false);
+      alert("이메일 인증 시간이 만료되었습니다. 다시 시도해주세요.");
+    }
+    return () => clearInterval(emailTimer);
+  }, [emailTimerActive, emailCountdown]);
+
+  //이메일 도메인 선택 코드
+  useEffect(() => {
+    let selectedDomain = emailDomain;
+    if (isCustomDomain) selectedDomain = customDomain;
+
+    if (emailId && selectedDomain) {
+      const fullEmail = `${emailId}@${selectedDomain}`;
+      const requiredEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fullEmail);
+      setEmail((prev) => ({
+        ...prev,
+        email: fullEmail,
+        isRequiredEmail: requiredEmail,
+        isEmailAvailable: false,
+        isCheckedEmail: false,
+        isValidEmail: false,
+        error: requiredEmail ? "" : "유효한 이메일을 입력해주세요.",
+      }));
+    }
+  }, [emailId, emailDomain, isCustomDomain, customDomain]);
 
   // 아이디 중복 검사
   const checkId = async () => {
@@ -87,161 +142,198 @@ const SignupPage = () => {
         `http://localhost:8080/buyers/signup/username/${username.username}`
       );
       if (response.data === false) {
-        // 중복이 아닐 경우
         setUsername({
           ...username,
           isUsernameAvailable: true,
-          success: '사용 가능한 아이디입니다.',
-          error: '',
+          success: "사용 가능한 아이디입니다.",
+          error: "",
         });
       } else {
-        // 중복일 경우
         setUsername({
           ...username,
           isUsernameAvailable: false,
-          success: '',
-          error: '이미 사용중인 아이디입니다.',
+          success: "",
+          error: "이미 사용중인 아이디입니다.",
         });
       }
     } catch (error) {
-      setUsername({ ...username, error: ' 중복확인에 오류가 생겼습니다.' });
+      setUsername({ ...username, error: " 중복확인에 오류가 생겼습니다." });
     }
   };
 
-  // 전화번호 인증하기
   const verifyPhoneNumber = async () => {
-    try {
-      // 전화번호 중복 검사
-      const response = await axios.get(
-        `http://localhost:8080/buyers/signup/phoneNumber/${phoneNumber.phoneNumber}`
-      );
-
-      if (response.data === true) {
-        // 중복일 경우
-        setPhoneNumber({
-          ...phoneNumber,
-          isPhoneNumberAvailable: false,
-          error: '이미 가입된 전화번호입니다.',
-        });
-        return;
-      } else {
-        // 중복이 아닐 경우
-        setPhoneNumber({
-          ...phoneNumber,
-          isPhoneNumberAvailable: true,
-          error: '',
-        });
-
-        alert(`전화번호로 인증 코드 [${expectedPhoneCode}]가 전송되었습니다.`);
-        setShowPhoneConfirm(true);
-      }
-    } catch (err) {
-      console.error(err);
-      setPhoneNumber({
-        ...phoneNumber,
-        error: '전화번호 중복 확인 중 오류가 발생했습니다.',
-      });
-    }
-  };
-
-  const confirmPhoneVerificationCode = () => {
-    const valid = confirmPhone.confirmPhone === expectedPhoneCode;
-    setConfirmPhone({ ...confirmPhone, isValidConfirmPhone: valid });
-    if (valid) {
-      alert('전화번호 인증이 완료되었습니다.');
-      setPhoneNumber({
-        ...phoneNumber,
-        isValidPhoneNumber: true,
-        isCheckedPhoneNumber: true,
-        error: '',
-      });
-    } else {
-      alert('인증번호가 올바르지 않습니다.');
-    }
-  };
-
-  // 이메일 인증하기
-  const verifyEmail = async () => {
-    const requiredEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.email);
-    if (!requiredEmail) {
-      alert('유효한 이메일 주소를 입력해주세요.');
+    if (!/^\d{11}$/.test(phoneNumber.phoneNumber)) {
+      setPhoneNumber((prev) => ({
+        ...prev,
+        error: "유효한 전화번호를 입력해주세요.",
+      }));
       return;
     }
 
     try {
-      // 2. 중복 검사
-      const response = await axios.get(
-        `http://localhost:8080/buyers/signup/email/${email.email}`
+      const duplicateCheck = await axios.get(
+        `http://localhost:8080/buyers/signup/phoneNumber/${phoneNumber.phoneNumber}`
       );
 
-      if (response.data === true) {
-        // 3. 중복일 경우
-        setEmail({
-          ...email,
-          isEmailAvailable: false,
-          error: '이미 가입된 이메일입니다.',
-        });
+      if (duplicateCheck.data === true) {
+        setPhoneNumber((prev) => ({
+          ...prev,
+          error: "이미 등록된 전화번호입니다. 다른 번호를 입력해주세요.",
+        }));
         return;
-      } else {
-        // 4. 중복이 아니면 인증번호 발송
-        setEmail({
-          ...email,
-          isEmailAvailable: true,
-          error: '',
-        });
-
-        alert(`이메일로 인증 코드 [${expectedEmailCode}]가 전송되었습니다.`);
-
-        setEmail({ ...email, isValidEmail: true });
-        setShowEmailConfirm(true); // 인증코드 입력창 보이기
       }
+
+      // 중복이 아니면 인증 요청 시작
+      await axios.post("/verify-phone-number", {
+        phoneNumber: phoneNumber.phoneNumber,
+      });
+
+      setPhoneNumber((prev) => ({
+        ...prev,
+        isPhoneNumberAvailable: true,
+        error: "",
+      }));
+      alert("인증번호가 입력하신 전화번호로 전송되었습니다.");
+      setCountdown(300); // 5분
+      setTimerActive(true);
+      setShowPhoneConfirm(true);
     } catch (err) {
       console.error(err);
-      setEmail({
-        ...email,
-        error: '이메일 중복 확인 중 오류가 발생했습니다.',
-      });
+      setPhoneNumber((prev) => ({
+        ...prev,
+        isPhoneNumberAvailable: false,
+        error: "전화번호 인증 요청 중 오류가 발생했습니다.",
+      }));
     }
   };
 
-  const confirmEmailVerificationCode = (code) => {
-    const valid = confirmEmail.confirmEmail === expectedEmailCode;
-    setConfirmEmail({ ...confirmEmail, isValidConfirmEmail: valid });
-    if (valid) {
-      alert('이메일 인증이 완료되었습니다.');
-      setEmail({
-        ...email,
-        isValidEmail: true,
-        isCheckedEmail: true,
-        error: '',
+  const confirmPhoneVerificationCode = async () => {
+    try {
+      await axios.post("/phone-number/verification-code", {
+        code: confirmPhone.confirmPhone,
       });
-    } else {
-      alert('인증번호가 올바르지 않습니다.');
+      setConfirmPhone({ ...confirmPhone, isValidConfirmPhone: true });
+      setPhoneNumber({
+        ...phoneNumber,
+        isValidPhoneNumber: true,
+        isCheckedPhoneNumber: true,
+        error: "",
+      });
+      setShowPhoneConfirm(false);
+      setTimerActive(false);
+      alert("전화번호 인증이 완료되었습니다.");
+    } catch (error) {
+      console.error(error);
+      alert("인증번호가 올바르지 않거나, 인증에 실패했습니다.");
+      setConfirmPhone({ ...confirmPhone, isValidConfirmPhone: false });
+    }
+  };
+
+  // 이메일 인증코드 전송
+  const verifyEmail = async () => {
+    const requiredEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.email);
+    if (!requiredEmail) {
+      alert("유효한 이메일 주소를 입력해주세요.");
+      return;
+    }
+
+    try {
+      const duplicateCheck = await axios.get(
+        `http://localhost:8080/buyers/signup/email/${email.email}`
+      );
+
+      if (duplicateCheck.data === true) {
+        setEmail((prev) => ({
+          ...prev,
+          error: "이미 등록된 이메일입니다. 다른 이메일을 입력해주세요.",
+        }));
+        return;
+      }
+
+      // 중복이 아니면 인증 요청 시작
+      const response = await axios.get("/api/email/auth", {
+        params: {
+          address: email.email,
+        },
+      });
+
+      if (response.data.success) {
+        setEmail((prev) => ({
+          ...prev,
+          isEmailAvailable: true,
+          error: "",
+        }));
+        alert("이메일로 인증코드가 전송되었습니다.");
+        setShowEmailConfirm(true);
+        setEmailCountdown(600);
+        setEmailTimerActive(true);
+      } else {
+        setEmail((prev) => ({
+          ...prev,
+          error: response.data.message || "이메일 인증코드 발송 실패",
+        }));
+      }
+    } catch (err) {
+      console.error(err);
+      setEmail((prev) => ({
+        ...prev,
+        error: "이메일 요청 중 오류가 발생했습니다.",
+      }));
+    }
+  };
+
+  // 이메일 인증코드 확인
+  const confirmEmailVerificationCode = async () => {
+    try {
+      const response = await axios.post("/api/email/auth", null, {
+        params: {
+          address: email.email,
+          authCode: confirmEmail.confirmEmail,
+        },
+      });
+
+      if (response.data.success) {
+        alert("이메일 인증이 완료되었습니다.");
+        setConfirmEmail({ ...confirmEmail, isValidConfirmEmail: true });
+        setEmail({
+          ...email,
+          isValidEmail: true,
+          isCheckedEmail: true,
+          error: "",
+        });
+        setShowEmailConfirm(false);
+        setEmailTimerActive(false); // 타이머 종료
+      } else {
+        alert(response.data.message || "인증번호가 올바르지 않습니다.");
+        setConfirmEmail({ ...confirmEmail, isValidConfirmEmail: false });
+      }
+    } catch (err) {
+      console.error(err);
+      alert("이메일 인증 확인 중 오류가 발생했습니다.");
     }
   };
 
   // 유효성 검사
   const onChangeHandler = (name) => (e) => {
     const value = e.target.value;
-
     switch (name) {
-      case 'name':
+      case "name":
         setName(value);
         break;
-      case 'username':
+      case "username":
         const requiredUsername = /^[a-zA-Z0-9]{5,15}$/.test(value);
         setUsername({
           ...username,
           username: value,
           isRequiredUsername: requiredUsername,
           isUsernameAvailable: false,
-          success: '',
+          success: "",
           error: requiredUsername
-            ? ''
-            : '5~15자의 영문자, 숫자만 사용 가능합니다.',
+            ? ""
+            : "5~15자의 영문자, 숫자만 사용 가능합니다.",
         });
         break;
-      case 'password':
+      case "password":
         const requiredPassword =
           /^(?=.*[a-zA-Z])(?=.*[!@#$%^*+=-])(?=.*[0-9]).{8,25}$/.test(value);
         setPassword({
@@ -249,55 +341,56 @@ const SignupPage = () => {
           password: value,
           isRequiredPassword: requiredPassword,
           error: requiredPassword
-            ? ''
-            : '8자 이상의 영문자, 숫자, 특수문자를 사용해야합니다.',
+            ? ""
+            : "8자 이상의 영문자, 숫자, 특수문자를 사용해야합니다.",
         });
         break;
-      case 'confirmPassword':
+      case "confirmPassword":
         setConfirmPassword({
           ...confirmPassword,
           confirmPassword: value,
           isCheckPassword: value === password.password,
           error:
-            value === password.password ? '' : '비밀번호가 일치하지 않습니다.',
+            value === password.password ? "" : "비밀번호가 일치하지 않습니다.",
         });
         break;
-      case 'phoneNumber':
+      case "phoneNumber":
         const requiredPhoneNumber = /^\d{11}$/.test(value);
         setPhoneNumber({
           ...phoneNumber,
           phoneNumber: value,
           isRequiredPhoneNumber: requiredPhoneNumber,
           isPhoneNumberAvailable: false,
-          isCheckedPhoneNumber: false, // 다시 입력하면 중복확인 초기화
-          isValidPhoneNumber: false, // 인증 초기화
-          error: requiredPhoneNumber ? '' : '유효한 전화번호를 입력해주세요.',
+          isCheckedPhoneNumber: false,
+          isValidPhoneNumber: false,
+          error: requiredPhoneNumber ? "" : "유효한 전화번호를 입력해주세요.",
         });
+        setShowPhoneConfirm(false);
         break;
-      case 'confirmPhone':
+      case "confirmPhone":
         setConfirmPhone({
           ...confirmPhone,
           confirmPhone: value,
-          isValidConfirmPhone: false, // 매번 입력 변경 시 인증 초기화
+          isValidConfirmPhone: false,
         });
         break;
-      case 'email':
+      case "email":
         const requiredEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
         setEmail({
           ...email,
           email: value,
           isRequiredEmail: requiredEmail,
           isEmailAvailable: false,
-          isCheckedEmail: false, // 다시 입력하면 중복확인 초기화
-          isValidEmail: false, // 인증 초기화
-          error: requiredEmail ? '' : '유효한 이메일을 입력해주세요.',
+          isCheckedEmail: false,
+          isValidEmail: false,
+          error: requiredEmail ? "" : "유효한 이메일을 입력해주세요.",
         });
         break;
-      case 'confirmEmail':
+      case "confirmEmail":
         setConfirmEmail({
           ...confirmEmail,
           confirmEmail: value,
-          isValidConfirmEmail: false, // 매번 입력 변경 시 인증 초기화
+          isValidConfirmEmail: false,
         });
         break;
       default:
@@ -306,8 +399,7 @@ const SignupPage = () => {
   };
 
   const handleSignup = async (e) => {
-    e.preventDefault(); // 새로고침 방지
-
+    e.preventDefault();
     const signupData = {
       name,
       username: username.username,
@@ -315,33 +407,23 @@ const SignupPage = () => {
       phoneNumber: phoneNumber.phoneNumber,
       email: email.email,
     };
-
     try {
       const response = await axios.post(
         `http://localhost:8080/join`,
         signupData
       );
-      console.log('회원가입 성공', response.data);
-      navigate('/login');
+      console.log("회원가입 성공", response.data);
+      navigate("/login");
     } catch (error) {
       if (error.response) {
         alert(
-          '회원가입 실패: ' + (error.response.data.message || '알 수 없는 오류')
+          "회원가입 실패: " + (error.response.data.message || "알 수 없는 오류")
         );
       } else {
-        alert('서버와 통신 중 오류가 발생했습니다.');
+        alert("서버와 통신 중 오류가 발생했습니다.");
       }
-      console.error('Axios error:', error);
+      console.error("Axios error:", error);
     }
-
-    console.log(`[${userType}] 회원가입 정보:`, {
-      userType,
-      name,
-      username,
-      password,
-      phoneNumber,
-      email,
-    });
   };
 
   return (
@@ -349,14 +431,14 @@ const SignupPage = () => {
       <SignupBox>
         <TabHeader>
           <Tab
-            active={userType === 'buyer'}
-            onClick={() => setUserType('buyer')}
+            active={userType === "buyer"}
+            onClick={() => setUserType("buyer")}
           >
             구매회원 가입
           </Tab>
           <Tab
-            active={userType === 'seller'}
-            onClick={() => setUserType('seller')}
+            active={userType === "seller"}
+            onClick={() => setUserType("seller")}
           >
             판매회원 가입
           </Tab>
@@ -368,7 +450,7 @@ const SignupPage = () => {
             type="text"
             placeholder="이름"
             value={name}
-            onChange={onChangeHandler('name')}
+            onChange={onChangeHandler("name")}
             required
           />
 
@@ -378,7 +460,7 @@ const SignupPage = () => {
               type="text"
               placeholder="아이디"
               value={username.username}
-              onChange={onChangeHandler('username')}
+              onChange={onChangeHandler("username")}
               required
             />
             <CheckButton
@@ -397,7 +479,7 @@ const SignupPage = () => {
             type="password"
             placeholder="비밀번호"
             value={password.password}
-            onChange={onChangeHandler('password')}
+            onChange={onChangeHandler("password")}
             required
           />
           {password.error && <ErrorText>{password.error}</ErrorText>}
@@ -407,7 +489,7 @@ const SignupPage = () => {
             type="password"
             placeholder="비밀번호 확인"
             value={confirmPassword.confirmPassword}
-            onChange={onChangeHandler('confirmPassword')}
+            onChange={onChangeHandler("confirmPassword")}
             required
           />
           {confirmPassword.error && (
@@ -418,72 +500,145 @@ const SignupPage = () => {
             <CheckInput
               name="phoneNumber"
               type="text"
-              placeholder="전화번호"
+              placeholder="전화번호 (예: 01012345678 )"
               value={phoneNumber.phoneNumber}
-              onChange={onChangeHandler('phoneNumber')}
+              onChange={onChangeHandler("phoneNumber")}
               required
+              disabled={phoneNumber.isValidPhoneNumber}
             />
-            <CheckButton
-              type="button"
-              onClick={verifyPhoneNumber}
-              disabled={!phoneNumber.isRequiredPhoneNumber}
-            >
-              인증하기
-            </CheckButton>
+            {phoneNumber.isValidPhoneNumber ? (
+              <SuccessText>전화번호 인증 완료</SuccessText>
+            ) : (
+              <CheckButton
+                type="button"
+                onClick={verifyPhoneNumber}
+                disabled={!phoneNumber.isRequiredPhoneNumber}
+              >
+                인증하기
+              </CheckButton>
+            )}
           </CheckWrapper>
           {phoneNumber.error && <ErrorText>{phoneNumber.error}</ErrorText>}
 
-          {/* 전화번호 인증코드 입력칸: 인증하기 누른 후 보임 */}
-          {showPhoneConfirm && (
-            <CheckWrapper>
-              <CheckInput
-                name="confirmPhone"
-                type="text"
-                placeholder="전화번호 인증코드 입력"
-                value={confirmPhone.confirmPhone}
-                onChange={onChangeHandler('confirmPhone')}
-                required
-              />
-              <CheckButton type="button" onClick={confirmPhoneVerificationCode}>
-                인증확인
-              </CheckButton>
-            </CheckWrapper>
+          {/* 인증번호 입력칸 및 타이머 */}
+          {showPhoneConfirm && !phoneNumber.isValidPhoneNumber && (
+            <>
+              <TimerText>
+                인증 유효 시간: {Math.floor(countdown / 60)}:
+                {String(countdown % 60).padStart(2, "0")}
+              </TimerText>
+              <CheckWrapper>
+                <CheckInput
+                  name="confirmPhone"
+                  type="text"
+                  placeholder="전화번호 인증코드 입력"
+                  value={confirmPhone.confirmPhone}
+                  onChange={onChangeHandler("confirmPhone")}
+                  required
+                />
+                <CheckButton
+                  type="button"
+                  onClick={confirmPhoneVerificationCode}
+                >
+                  인증확인
+                </CheckButton>
+              </CheckWrapper>
+            </>
           )}
 
           <CheckWrapper>
             <CheckInput
-              name="email"
-              type="email"
-              placeholder="이메일"
-              value={email.email}
-              onChange={onChangeHandler('email')}
+              type="text"
+              placeholder="이메일 아이디"
+              value={emailId}
+              onChange={(e) => setEmailId(e.target.value)}
               required
+              disabled={email.isValidEmail}
             />
-            <CheckButton
-              type="button"
-              onClick={verifyEmail}
-              disabled={!email.isRequiredEmail}
-            >
-              인증하기
-            </CheckButton>
-          </CheckWrapper>
-          {email.error && <ErrorText>{email.error}</ErrorText>}
+            <span>@</span>
 
-          {/* 이메일 인증코드 입력칸: 인증하기 누른 후 보임 */}
-          {showEmailConfirm && (
+            <select
+              value={isCustomDomain ? "custom" : emailDomain}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === "custom") {
+                  setIsCustomDomain(true);
+                  setEmailDomain("");
+                  setCustomDomain("");
+                } else {
+                  setIsCustomDomain(false);
+                  setEmailDomain(value);
+                  setCustomDomain(""); // <- 혹시 모를 이전 값 초기화
+                }
+              }}
+              disabled={email.isValidEmail}
+              style={{
+                height: "44px",
+                fontSize: "14px",
+                borderRadius: "6px",
+                padding: "0 20px",
+                border: "1px solid #ccc",
+              }}
+            >
+              <option value="">도메인 선택</option>
+              <option value="gmail.com">gmail.com</option>
+              <option value="naver.com">naver.com</option>
+              <option value="daum.net">daum.net</option>
+              <option value="nate.com">nate.com</option>
+              <option value="kakao.com">kakao.com</option>
+              <option value="custom">직접입력</option>
+            </select>
+
+            {/* 인증 버튼 또는 완료 메시지 */}
+            {!email.isValidEmail ? (
+              <CheckButton
+                type="button"
+                onClick={verifyEmail}
+                disabled={!emailId || (!emailDomain && !customDomain)}
+              >
+                인증하기
+              </CheckButton>
+            ) : (
+              <SuccessText>이메일 인증 완료</SuccessText>
+            )}
+          </CheckWrapper>
+
+          {/* 직접입력란 추가 표시 (선택된 경우만!) */}
+          {isCustomDomain && (
             <CheckWrapper>
               <CheckInput
-                name="confirmEmail"
                 type="text"
-                placeholder="이메일 인증코드 입력"
-                value={confirmEmail.confirmEmail}
-                onChange={onChangeHandler('confirmEmail')}
-                required
+                placeholder="직접 도메인 입력 (예: example.com)"
+                value={customDomain}
+                onChange={(e) => setCustomDomain(e.target.value)}
+                disabled={email.isValidEmail}
               />
-              <CheckButton type="button" onClick={confirmEmailVerificationCode}>
-                인증확인
-              </CheckButton>
             </CheckWrapper>
+          )}
+
+          {showEmailConfirm && (
+            <>
+              <TimerText>
+                인증 유효 시간: {Math.floor(emailCountdown / 60)}:
+                {String(emailCountdown % 60).padStart(2, "0")}
+              </TimerText>
+              <CheckWrapper>
+                <CheckInput
+                  name="confirmEmail"
+                  type="text"
+                  placeholder="이메일 인증코드 입력"
+                  value={confirmEmail.confirmEmail}
+                  onChange={onChangeHandler("confirmEmail")}
+                  required
+                />
+                <CheckButton
+                  type="button"
+                  onClick={confirmEmailVerificationCode}
+                >
+                  인증확인
+                </CheckButton>
+              </CheckWrapper>
+            </>
           )}
 
           <JoinButton type="submit">회원가입</JoinButton>
@@ -508,7 +663,7 @@ const SignupBox = styled.div`
   padding: 32px;
   border-radius: 12px;
   width: 100%;
-  max-width: 400px;
+  max-width: 500px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border: 1px solid #ddd;
 `;
@@ -521,17 +676,38 @@ const TabHeader = styled.div`
 const Tab = styled.button`
   flex: 1;
   padding: 12px 0;
-  background: ${({ active }) => (active ? '#fff' : '#f1f1f1')};
+  background: ${({ active }) => (active ? "#fff" : "#f1f1f1")};
   border: none;
   border-bottom: ${({ active }) =>
-    active ? '2px solid rgb(105, 111, 148)' : '1px solid #ddd'};
-  font-weight: ${({ active }) => (active ? 'bold' : 'normal')};
-  cursor: pointer;
+    active ? "2px solid rgb(105, 111, 148)" : "1px solid #ddd"};
+  font-weight: ${({ active }) => (active ? "bold" : "normal")};
   border-radius: 8px 8px 0 0;
+  cursor: pointer;
 `;
+
+// const Input = styled.input`
+//   width: 100%;
+//   padding: 12px;
+//   margin-bottom: 16px;
+//   border: none;
+//   border-bottom: 1px solid #ccc;
+//   font-size: 16px;
+//   background: transparent;
+
+//   &:focus {
+//     outline: none;
+//     border-bottom: 2px solid rgb(105, 111, 148);
+//   }
+// `;
 
 const Input = styled.input`
   width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   padding: 12px;
   margin-bottom: 16px;
   border: none;
@@ -545,22 +721,51 @@ const Input = styled.input`
   }
 `;
 
-const CheckInput = styled.input`
-  flex: 1;
-  padding: 12px;
-  border: none;
-  border-bottom: 1px solid #ccc;
-  font-size: 16px;
-  background: transparent;
+// const CheckWrapper = styled.div`
+//   width: 100%;
+//   display: flex;
+//   align-items: center;
+//   margin-bottom: 16px;
+// `;
 
-  &:focus {
-    border-bottom: 2px solid rgb(105, 111, 148);
-    outline: none;
-  }
+// const CheckInput = styled(Input)`
+//   margin-bottom: 0;
+// `;
+
+// const CheckButton = styled.button`
+//   margin-left: 12px;
+//   height: 44px;
+//   background: rgb(105, 111, 148);
+//   color: white;
+//   padding: 0 16px;
+//   font-size: 14px;
+//   border: none;
+//   border-radius: 6px;
+//   cursor: pointer;
+
+//   &:hover {
+//     background: rgb(85, 90, 130);
+//   }
+// `;
+
+const CheckWrapper = styled.div`
+  width: 100%;
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  min-width: 0;
+  gap: 8px;
+`;
+
+const CheckInput = styled(Input)`
+  margin-bottom: 0;
+  flex: 1;
+  min-width: 0;
 `;
 
 const CheckButton = styled.button`
   margin-left: 12px;
+  min-width: 80px;
   height: 44px;
   background: rgb(105, 111, 148);
   color: white;
@@ -569,6 +774,9 @@ const CheckButton = styled.button`
   border: none;
   border-radius: 6px;
   cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
   &:hover {
     background: rgb(85, 90, 130);
@@ -576,6 +784,7 @@ const CheckButton = styled.button`
 `;
 
 const JoinButton = styled.button`
+  margin-top: 16px;
   width: 100%;
   background: rgb(105, 111, 148);
   color: white;
@@ -586,22 +795,38 @@ const JoinButton = styled.button`
   cursor: pointer;
 
   &:hover {
-    background: rgb(105, 111, 148);
+    background: rgb(85, 90, 130);
   }
 `;
 
-const CheckWrapper = styled.div`
-  width: 100%;
-  display: flex;
-  align-items: center;
-  margin-bottom: 16px;
-`;
+// const ErrorText = styled.p`
+//   color: red;
+//   font-size: 12px;
+//   margin-top: -12px;
+//   margin-bottom: 12px;
+// `;
+
+// const SuccessText = styled.p`
+//   color: green;
+//   font-size: 12px;
+//   margin-top: -12px;
+//   margin-bottom: 12px;
+// `;
+
+// const TimerText = styled.p`
+//   font-size: 12px;
+//   text-align: right;
+//   color: #888;
+//   margin-bottom: 8px;
+// `;
 
 const ErrorText = styled.p`
   color: red;
   font-size: 12px;
   margin-top: -12px;
   margin-bottom: 12px;
+  word-break: keep-all;
+  white-space: pre-line;
 `;
 
 const SuccessText = styled.p`
@@ -609,4 +834,14 @@ const SuccessText = styled.p`
   font-size: 12px;
   margin-top: -12px;
   margin-bottom: 12px;
+  word-break: keep-all;
+  white-space: pre-line;
+`;
+
+const TimerText = styled.p`
+  font-size: 12px;
+  text-align: right;
+  color: #888;
+  margin-bottom: 8px;
+  white-space: nowrap;
 `;
