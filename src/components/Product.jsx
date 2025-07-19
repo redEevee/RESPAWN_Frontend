@@ -1,6 +1,6 @@
-import React from 'react';
-import styled from 'styled-components';
-import productImg from '../assets/product1.jpg';
+import React from "react";
+import styled from "styled-components";
+import productImg from "../assets/product1.jpg";
 
 const Product = () => {
   return (

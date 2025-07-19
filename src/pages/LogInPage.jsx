@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
-import axios from '../api/axios';
-import Logo from '../components/Logo';
-import naver_icon from '../assets/login_naver.png';
-import google_icon from '../assets/login_google.png';
-import kakao_icon from '../assets/login_kakao.png';
+import React, { useState, useEffect } from "react";
+import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
+import axios from "../api/axios";
+import Logo from "../components/Logo";
+import naver_icon from "../assets/login_naver.png";
+import google_icon from "../assets/login_google.png";
+import kakao_icon from "../assets/login_kakao.png";
 
 const LoginPage = (e) => {
   // const [userType, setUserType] = useState('buyer'); // 'buyer' or 'seller'
   const [user, setUser] = useState({
-    username: '',
-    password: '',
+    username: "",
+    password: "",
   });
   const [popup, setPopup] = useState(null);
-  const [msg, setMsg] = useState('');
+  const [msg, setMsg] = useState("");
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -25,58 +25,58 @@ const LoginPage = (e) => {
   const handleLogIn = async (e) => {
     e.preventDefault();
     if (!user.username) {
-      setMsg('아이디를 입력해주세요.');
+      setMsg("아이디를 입력해주세요.");
       return;
     }
     if (!user.password) {
-      setMsg('비밀번호를 입력해주세요.');
+      setMsg("비밀번호를 입력해주세요.");
       return;
     }
 
     try {
       const formData = new FormData();
-      formData.append('username', user.username);
-      formData.append('password', user.password);
+      formData.append("username", user.username);
+      formData.append("password", user.password);
 
       const response = await axios({
-        url: 'http://localhost:8080/loginProc',
-        method: 'POST',
+        url: "http://localhost:8080/loginProc",
+        method: "POST",
         data: formData,
         withCredentials: true,
       });
-      console.log('로그인 성공', response.data);
+      console.log("로그인 성공", response.data);
 
-      localStorage.setItem('userData', JSON.stringify(response.data));
+      localStorage.setItem("userData", JSON.stringify(response.data));
 
-      navigate('/home');
+      navigate("/home");
     } catch (error) {
       if (error.response) {
         alert(
-          '아이디 또는 비밀번호가 올바르지 않습니다.'
+          "아이디 또는 비밀번호가 올바르지 않습니다."
           // '로그인 실패: ' + (error.response.data.message || '알 수 없는 오류')
         );
       } else {
-        alert('서버와 통신 중 오류가 발생했습니다.');
+        alert("서버와 통신 중 오류가 발생했습니다.");
       }
-      console.error('Axios error:', error);
+      console.error("Axios error:", error);
     }
   };
 
   useEffect(() => {
     // 팝업창에서 보내준 메시지 처리
     function handleMessage(event) {
-      if (event.data?.type === 'LOGIN_SUCCESS') {
+      if (event.data?.type === "LOGIN_SUCCESS") {
         // 로그인 성공 시 홈으로 이동
-        console.log('로그인 성공');
-        navigate('/home');
+        console.log("로그인 성공");
+        navigate("/home");
         // 팝업 변수 초기화
         setPopup(null);
       }
     }
-    window.addEventListener('message', handleMessage);
+    window.addEventListener("message", handleMessage);
 
     return () => {
-      window.removeEventListener('message', handleMessage);
+      window.removeEventListener("message", handleMessage);
     };
   }, [navigate]);
 
@@ -104,11 +104,13 @@ const LoginPage = (e) => {
     // 크기 지정(필요시)
     const popup = window.open(
       `http://localhost:8080/oauth2/authorization/${provider}`,
-      '_blank',
-      'width=600,height=700,resizable=yes,scrollbars=yes'
+      "_blank",
+      "width=600,height=700,resizable=yes,scrollbars=yes"
     );
     if (!popup) {
-      alert('팝업이 차단되어 새 창을 열 수 없습니다. 팝업 차단을 해제해주세요.');
+      alert(
+        "팝업이 차단되어 새 창을 열 수 없습니다. 팝업 차단을 해제해주세요."
+      );
     }
   };
 
@@ -159,15 +161,15 @@ const LoginPage = (e) => {
           <LLink href="/findpw">비밀번호 찾기</LLink>
         </LWrap>
 
-        <SocialButton onClick={() => handleSocialLogin('google')}>
+        <SocialButton onClick={() => handleSocialLogin("google")}>
           <img src={google_icon} alt="google" />
         </SocialButton>
 
-        <SocialButton onClick={() => handleSocialLogin('kakao')}>
+        <SocialButton onClick={() => handleSocialLogin("kakao")}>
           <img src={kakao_icon} alt="kakao" />
         </SocialButton>
 
-        <SocialButton onClick={() => handleSocialLogin('naver')}>
+        <SocialButton onClick={() => handleSocialLogin("naver")}>
           <img src={naver_icon} alt="naver" />
         </SocialButton>
       </LogInBox>

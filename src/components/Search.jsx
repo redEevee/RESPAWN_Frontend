@@ -1,6 +1,6 @@
-import React from 'react';
-import styled from 'styled-components';
-import searchIcon from '../assets/search_icon.png';
+import React from "react";
+import styled from "styled-components";
+import searchIcon from "../assets/search_icon.png";
 
 const Search = () => {
   return (

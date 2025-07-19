@@ -1,64 +1,66 @@
-import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
-import axios from '../api/axios';
+import React, { useState, useEffect } from "react";
+import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
+import axios from "../api/axios";
 
 const SignupPage = () => {
-  const navigate = useNavigate('');
+  const navigate = useNavigate("");
 
   const initialUsernameState = {
-    username: '',
+    username: "",
     isRequiredUsername: false,
     isUsernameAvailable: false,
-    success: '',
-    error: '',
+    success: "",
+    error: "",
   };
 
   const initialPasswordState = {
-    password: '',
+    password: "",
     isRequiredPassword: false,
-    error: '',
+    error: "",
   };
 
   const initialConfirmPasswordState = {
-    confirmPassword: '',
+    confirmPassword: "",
     isCheckPassword: false,
-    error: '',
+    error: "",
   };
 
   const initialPhoneNumberState = {
-    phoneNumber: '',
+    phoneNumber: "",
     isRequiredPhoneNumber: false,
     isPhoneNumberAvailable: false,
     isValidPhoneNumber: false,
     isCheckedPhoneNumber: false,
-    error: '',
+    error: "",
   };
 
   const initialConfirmPhoneState = {
-    confirmPhone: '',
+    confirmPhone: "",
     isValidConfirmPhone: false,
   };
 
   const initialEmailState = {
-    email: '',
+    email: "",
     isRequiredEmail: false,
     isEmailAvailable: false,
     isValidEmail: false,
     isCheckedEmail: false,
-    error: '',
+    error: "",
   };
 
   const initialConfirmEmailState = {
-    confirmEmail: '',
+    confirmEmail: "",
     isValidConfirmEmail: false,
   };
 
-  const [userType, setUserType] = useState('buyer');
-  const [name, setName] = useState('');
+  const [userType, setUserType] = useState("buyer");
+  const [name, setName] = useState("");
   const [username, setUsername] = useState(initialUsernameState);
   const [password, setPassword] = useState(initialPasswordState);
-  const [confirmPassword, setConfirmPassword] = useState(initialConfirmPasswordState);
+  const [confirmPassword, setConfirmPassword] = useState(
+    initialConfirmPasswordState
+  );
   const [phoneNumber, setPhoneNumber] = useState(initialPhoneNumberState);
   const [confirmPhone, setConfirmPhone] = useState(initialConfirmPhoneState);
   const [email, setEmail] = useState(initialEmailState);
@@ -81,7 +83,7 @@ const SignupPage = () => {
     } else if (countdown === 0 && timerActive) {
       setTimerActive(false);
       setShowPhoneConfirm(false);
-      alert('인증 시간이 만료되었습니다. 다시 요청해주세요.');
+      alert("인증 시간이 만료되었습니다. 다시 요청해주세요.");
     }
     return () => clearInterval(timer);
   }, [timerActive, countdown]);
@@ -96,34 +98,34 @@ const SignupPage = () => {
         setUsername({
           ...username,
           isUsernameAvailable: true,
-          success: '사용 가능한 아이디입니다.',
-          error: '',
+          success: "사용 가능한 아이디입니다.",
+          error: "",
         });
       } else {
         setUsername({
           ...username,
           isUsernameAvailable: false,
-          success: '',
-          error: '이미 사용중인 아이디입니다.',
+          success: "",
+          error: "이미 사용중인 아이디입니다.",
         });
       }
     } catch (error) {
-      setUsername({ ...username, error: ' 중복확인에 오류가 생겼습니다.' });
+      setUsername({ ...username, error: " 중복확인에 오류가 생겼습니다." });
     }
   };
 
   // 전화번호 인증하기
   const verifyPhoneNumber = async () => {
     try {
-      await axios.post('/verify-phone-number', {
+      await axios.post("/verify-phone-number", {
         phoneNumber: phoneNumber.phoneNumber,
       });
       setPhoneNumber({
         ...phoneNumber,
         isPhoneNumberAvailable: true,
-        error: '',
+        error: "",
       });
-      alert('인증번호가 입력하신 전화번호로 전송되었습니다.');
+      alert("인증번호가 입력하신 전화번호로 전송되었습니다.");
       setCountdown(300);
       setTimerActive(true);
       setShowPhoneConfirm(true);
@@ -132,14 +134,14 @@ const SignupPage = () => {
       setPhoneNumber({
         ...phoneNumber,
         isPhoneNumberAvailable: false,
-        error: '전화번호 인증 요청 중 오류가 발생했습니다.',
+        error: "전화번호 인증 요청 중 오류가 발생했습니다.",
       });
     }
   };
 
   const confirmPhoneVerificationCode = async () => {
     try {
-      await axios.post('/phone-number/verification-code', {
+      await axios.post("/phone-number/verification-code", {
         code: confirmPhone.confirmPhone,
       });
       setConfirmPhone({ ...confirmPhone, isValidConfirmPhone: true });
@@ -147,108 +149,108 @@ const SignupPage = () => {
         ...phoneNumber,
         isValidPhoneNumber: true,
         isCheckedPhoneNumber: true,
-        error: '',
+        error: "",
       });
       setShowPhoneConfirm(false);
       setTimerActive(false);
-      alert('전화번호 인증이 완료되었습니다.');
+      alert("전화번호 인증이 완료되었습니다.");
     } catch (error) {
       console.error(error);
-      alert('인증번호가 올바르지 않거나, 인증에 실패했습니다.');
+      alert("인증번호가 올바르지 않거나, 인증에 실패했습니다.");
       setConfirmPhone({ ...confirmPhone, isValidConfirmPhone: false });
     }
   };
 
   // 이메일 인증코드 전송
-const verifyEmail = async () => {
-  const requiredEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.email);
-  if (!requiredEmail) {
-    alert('유효한 이메일 주소를 입력해주세요.');
-    return;
-  }
+  const verifyEmail = async () => {
+    const requiredEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.email);
+    if (!requiredEmail) {
+      alert("유효한 이메일 주소를 입력해주세요.");
+      return;
+    }
 
-  try {
-    const response = await axios.get('/api/email/auth', {
-      params: {
-        address: email.email,
-      },
-    });
-
-    if (response.data.success) {
-      setEmail({
-        ...email,
-        isEmailAvailable: true,
-        error: '',
+    try {
+      const response = await axios.get("/api/email/auth", {
+        params: {
+          address: email.email,
+        },
       });
-      alert('이메일로 인증코드가 발송되었습니다.');
-      setShowEmailConfirm(true);
-    } else {
+
+      if (response.data.success) {
+        setEmail({
+          ...email,
+          isEmailAvailable: true,
+          error: "",
+        });
+        alert("이메일로 인증코드가 발송되었습니다.");
+        setShowEmailConfirm(true);
+      } else {
+        setEmail({
+          ...email,
+          error:
+            response.data.message || "이메일 인증코드 발송에 실패했습니다.",
+        });
+      }
+    } catch (err) {
+      console.error(err);
       setEmail({
         ...email,
-        error: response.data.message || '이메일 인증코드 발송에 실패했습니다.',
+        error: "이메일 인증 요청 중 오류가 발생했습니다.",
       });
     }
-  } catch (err) {
-    console.error(err);
-    setEmail({
-      ...email,
-      error: '이메일 인증 요청 중 오류가 발생했습니다.',
-    });
-  }
-};
+  };
 
-// 이메일 인증코드 확인
-const confirmEmailVerificationCode = async () => {
-  try {
-    const response = await axios.post('/api/email/auth', null, {
-      params: {
-        address: email.email,
-        authCode: confirmEmail.confirmEmail,
-      },
-    });
-
-    if (response.data.success) {
-      alert('이메일 인증이 완료되었습니다.');
-      setConfirmEmail({ ...confirmEmail, isValidConfirmEmail: true });
-      setEmail({
-        ...email,
-        isValidEmail: true,
-        isCheckedEmail: true,
-        error: '',
+  // 이메일 인증코드 확인
+  const confirmEmailVerificationCode = async () => {
+    try {
+      const response = await axios.post("/api/email/auth", null, {
+        params: {
+          address: email.email,
+          authCode: confirmEmail.confirmEmail,
+        },
       });
-      setShowEmailConfirm(false);
-    } else {
-      alert(response.data.message || '인증번호가 올바르지 않습니다.');
-      setConfirmEmail({ ...confirmEmail, isValidConfirmEmail: false });
-    }
-  } catch (err) {
-    console.error(err);
-    alert('이메일 인증 확인 중 오류가 발생했습니다.');
-  }
-};
 
+      if (response.data.success) {
+        alert("이메일 인증이 완료되었습니다.");
+        setConfirmEmail({ ...confirmEmail, isValidConfirmEmail: true });
+        setEmail({
+          ...email,
+          isValidEmail: true,
+          isCheckedEmail: true,
+          error: "",
+        });
+        setShowEmailConfirm(false);
+      } else {
+        alert(response.data.message || "인증번호가 올바르지 않습니다.");
+        setConfirmEmail({ ...confirmEmail, isValidConfirmEmail: false });
+      }
+    } catch (err) {
+      console.error(err);
+      alert("이메일 인증 확인 중 오류가 발생했습니다.");
+    }
+  };
 
   // 유효성 검사
   const onChangeHandler = (name) => (e) => {
     const value = e.target.value;
     switch (name) {
-      case 'name':
+      case "name":
         setName(value);
         break;
-      case 'username':
+      case "username":
         const requiredUsername = /^[a-zA-Z0-9]{5,15}$/.test(value);
         setUsername({
           ...username,
           username: value,
           isRequiredUsername: requiredUsername,
           isUsernameAvailable: false,
-          success: '',
+          success: "",
           error: requiredUsername
-            ? ''
-            : '5~15자의 영문자, 숫자만 사용 가능합니다.',
+            ? ""
+            : "5~15자의 영문자, 숫자만 사용 가능합니다.",
         });
         break;
-      case 'password':
+      case "password":
         const requiredPassword =
           /^(?=.*[a-zA-Z])(?=.*[!@#$%^*+=-])(?=.*[0-9]).{8,25}$/.test(value);
         setPassword({
@@ -256,19 +258,20 @@ const confirmEmailVerificationCode = async () => {
           password: value,
           isRequiredPassword: requiredPassword,
           error: requiredPassword
-            ? ''
-            : '8자 이상의 영문자, 숫자, 특수문자를 사용해야합니다.',
+            ? ""
+            : "8자 이상의 영문자, 숫자, 특수문자를 사용해야합니다.",
         });
         break;
-      case 'confirmPassword':
+      case "confirmPassword":
         setConfirmPassword({
           ...confirmPassword,
           confirmPassword: value,
           isCheckPassword: value === password.password,
-          error: value === password.password ? '' : '비밀번호가 일치하지 않습니다.',
+          error:
+            value === password.password ? "" : "비밀번호가 일치하지 않습니다.",
         });
         break;
-      case 'phoneNumber':
+      case "phoneNumber":
         const requiredPhoneNumber = /^\d{11}$/.test(value);
         setPhoneNumber({
           ...phoneNumber,
@@ -277,18 +280,18 @@ const confirmEmailVerificationCode = async () => {
           isPhoneNumberAvailable: false,
           isCheckedPhoneNumber: false,
           isValidPhoneNumber: false,
-          error: requiredPhoneNumber ? '' : '유효한 전화번호를 입력해주세요.',
+          error: requiredPhoneNumber ? "" : "유효한 전화번호를 입력해주세요.",
         });
         setShowPhoneConfirm(false);
         break;
-      case 'confirmPhone':
+      case "confirmPhone":
         setConfirmPhone({
           ...confirmPhone,
           confirmPhone: value,
           isValidConfirmPhone: false,
         });
         break;
-      case 'email':
+      case "email":
         const requiredEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
         setEmail({
           ...email,
@@ -297,10 +300,10 @@ const confirmEmailVerificationCode = async () => {
           isEmailAvailable: false,
           isCheckedEmail: false,
           isValidEmail: false,
-          error: requiredEmail ? '' : '유효한 이메일을 입력해주세요.',
+          error: requiredEmail ? "" : "유효한 이메일을 입력해주세요.",
         });
         break;
-      case 'confirmEmail':
+      case "confirmEmail":
         setConfirmEmail({
           ...confirmEmail,
           confirmEmail: value,
@@ -326,17 +329,17 @@ const confirmEmailVerificationCode = async () => {
         `http://localhost:8080/join`,
         signupData
       );
-      console.log('회원가입 성공', response.data);
-      navigate('/login');
+      console.log("회원가입 성공", response.data);
+      navigate("/login");
     } catch (error) {
       if (error.response) {
         alert(
-          '회원가입 실패: ' + (error.response.data.message || '알 수 없는 오류')
+          "회원가입 실패: " + (error.response.data.message || "알 수 없는 오류")
         );
       } else {
-        alert('서버와 통신 중 오류가 발생했습니다.');
+        alert("서버와 통신 중 오류가 발생했습니다.");
       }
-      console.error('Axios error:', error);
+      console.error("Axios error:", error);
     }
   };
 
@@ -345,14 +348,14 @@ const confirmEmailVerificationCode = async () => {
       <SignupBox>
         <TabHeader>
           <Tab
-            active={userType === 'buyer'}
-            onClick={() => setUserType('buyer')}
+            active={userType === "buyer"}
+            onClick={() => setUserType("buyer")}
           >
             구매회원 가입
           </Tab>
           <Tab
-            active={userType === 'seller'}
-            onClick={() => setUserType('seller')}
+            active={userType === "seller"}
+            onClick={() => setUserType("seller")}
           >
             판매회원 가입
           </Tab>
@@ -364,7 +367,7 @@ const confirmEmailVerificationCode = async () => {
             type="text"
             placeholder="이름"
             value={name}
-            onChange={onChangeHandler('name')}
+            onChange={onChangeHandler("name")}
             required
           />
 
@@ -374,7 +377,7 @@ const confirmEmailVerificationCode = async () => {
               type="text"
               placeholder="아이디"
               value={username.username}
-              onChange={onChangeHandler('username')}
+              onChange={onChangeHandler("username")}
               required
             />
             <CheckButton
@@ -393,7 +396,7 @@ const confirmEmailVerificationCode = async () => {
             type="password"
             placeholder="비밀번호"
             value={password.password}
-            onChange={onChangeHandler('password')}
+            onChange={onChangeHandler("password")}
             required
           />
           {password.error && <ErrorText>{password.error}</ErrorText>}
@@ -403,7 +406,7 @@ const confirmEmailVerificationCode = async () => {
             type="password"
             placeholder="비밀번호 확인"
             value={confirmPassword.confirmPassword}
-            onChange={onChangeHandler('confirmPassword')}
+            onChange={onChangeHandler("confirmPassword")}
             required
           />
           {confirmPassword.error && (
@@ -411,34 +414,35 @@ const confirmEmailVerificationCode = async () => {
           )}
 
           <CheckWrapper>
-  <CheckInput
-    name="phoneNumber"
-    type="text"
-    placeholder="전화번호 (예: 01012345678 )"
-    value={phoneNumber.phoneNumber}
-    onChange={onChangeHandler('phoneNumber')}
-    required
-    disabled={phoneNumber.isValidPhoneNumber}
-  />
-  {phoneNumber.isValidPhoneNumber ? (
-    <SuccessText>전화번호 인증 완료</SuccessText>
-  ) : (
-    <CheckButton
-      type="button"
-      onClick={verifyPhoneNumber}
-      disabled={!phoneNumber.isRequiredPhoneNumber}
-    >
-      인증하기
-    </CheckButton>
-  )}
-</CheckWrapper>
+            <CheckInput
+              name="phoneNumber"
+              type="text"
+              placeholder="전화번호 (예: 01012345678 )"
+              value={phoneNumber.phoneNumber}
+              onChange={onChangeHandler("phoneNumber")}
+              required
+              disabled={phoneNumber.isValidPhoneNumber}
+            />
+            {phoneNumber.isValidPhoneNumber ? (
+              <SuccessText>전화번호 인증 완료</SuccessText>
+            ) : (
+              <CheckButton
+                type="button"
+                onClick={verifyPhoneNumber}
+                disabled={!phoneNumber.isRequiredPhoneNumber}
+              >
+                인증하기
+              </CheckButton>
+            )}
+          </CheckWrapper>
           {phoneNumber.error && <ErrorText>{phoneNumber.error}</ErrorText>}
 
           {/* 인증번호 입력칸 및 타이머 */}
           {showPhoneConfirm && !phoneNumber.isValidPhoneNumber && (
             <>
               <TimerText>
-                인증 유효 시간: {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}
+                인증 유효 시간: {Math.floor(countdown / 60)}:
+                {String(countdown % 60).padStart(2, "0")}
               </TimerText>
               <CheckWrapper>
                 <CheckInput
@@ -446,10 +450,13 @@ const confirmEmailVerificationCode = async () => {
                   type="text"
                   placeholder="전화번호 인증코드 입력"
                   value={confirmPhone.confirmPhone}
-                  onChange={onChangeHandler('confirmPhone')}
+                  onChange={onChangeHandler("confirmPhone")}
                   required
                 />
-                <CheckButton type="button" onClick={confirmPhoneVerificationCode}>
+                <CheckButton
+                  type="button"
+                  onClick={confirmPhoneVerificationCode}
+                >
                   인증확인
                 </CheckButton>
               </CheckWrapper>
@@ -457,27 +464,27 @@ const confirmEmailVerificationCode = async () => {
           )}
 
           <CheckWrapper>
-  <CheckInput
-    name="email"
-    type="email"
-    placeholder="이메일"
-    value={email.email}
-    onChange={onChangeHandler('email')}
-    required
-    disabled={email.isValidEmail}
-  />
-  {!email.isValidEmail ? (
-    <CheckButton
-      type="button"
-      onClick={verifyEmail}
-      disabled={!email.isRequiredEmail}
-    >
-      인증하기
-    </CheckButton>
-  ) : (
-    <SuccessText>이메일 인증 완료</SuccessText>
-  )}
-</CheckWrapper>
+            <CheckInput
+              name="email"
+              type="email"
+              placeholder="이메일"
+              value={email.email}
+              onChange={onChangeHandler("email")}
+              required
+              disabled={email.isValidEmail}
+            />
+            {!email.isValidEmail ? (
+              <CheckButton
+                type="button"
+                onClick={verifyEmail}
+                disabled={!email.isRequiredEmail}
+              >
+                인증하기
+              </CheckButton>
+            ) : (
+              <SuccessText>이메일 인증 완료</SuccessText>
+            )}
+          </CheckWrapper>
           {email.error && <ErrorText>{email.error}</ErrorText>}
 
           {showEmailConfirm && (
@@ -487,7 +494,7 @@ const confirmEmailVerificationCode = async () => {
                 type="text"
                 placeholder="이메일 인증코드 입력"
                 value={confirmEmail.confirmEmail}
-                onChange={onChangeHandler('confirmEmail')}
+                onChange={onChangeHandler("confirmEmail")}
                 required
               />
               <CheckButton type="button" onClick={confirmEmailVerificationCode}>
@@ -531,11 +538,11 @@ const TabHeader = styled.div`
 const Tab = styled.button`
   flex: 1;
   padding: 12px 0;
-  background: ${({ active }) => (active ? '#fff' : '#f1f1f1')};
+  background: ${({ active }) => (active ? "#fff" : "#f1f1f1")};
   border: none;
   border-bottom: ${({ active }) =>
-    active ? '2px solid rgb(105, 111, 148)' : '1px solid #ddd'};
-  font-weight: ${({ active }) => (active ? 'bold' : 'normal')};
+    active ? "2px solid rgb(105, 111, 148)" : "1px solid #ddd"};
+  font-weight: ${({ active }) => (active ? "bold" : "normal")};
   border-radius: 8px 8px 0 0;
   cursor: pointer;
 `;
