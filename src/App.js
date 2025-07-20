@@ -9,6 +9,9 @@ import Mypage from './pages/Mypage';
 import LoginOkPage from './pages/LoginOkPage';
 import PublicRoute from './routes/PublicRoute';
 import PrivateRoute from './routes/PrivateRoute';
+import UploadProduct from './pages/UploadProduct';
+import ProductDetail from './pages/ProductDetail';
+import ProductList from './pages/ProductList';
 
 function App() {
   return (
@@ -17,12 +20,25 @@ function App() {
       <Routes>
         <Route path="/" element={<MainPage />} />
         <Route path="/home" element={<MainPage />} />
-        <Route path="/login"element={<PublicRoute>
+        <Route path="/uploadproduct" element={<UploadProduct />} />
+        <Route path="/productdetail/:id" element={<ProductDetail />} />
+        <Route path="/productlist" element={<ProductList />} />
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
               <LogInPage />
-            </PublicRoute>}/>
-        <Route path="/mypage"element={<PrivateRoute>
-            <Mypage />
-          </PrivateRoute>} />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/mypage"
+          element={
+            <PrivateRoute>
+              <Mypage />
+            </PrivateRoute>
+          }
+        />
         <Route path="/loginOk" element={<LoginOkPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/*" element={<NotFoundPage />} />
