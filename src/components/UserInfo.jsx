@@ -1,25 +1,25 @@
-import React, { useEffect, useState, useRef } from "react";
-import styled from "styled-components";
-import axios from "axios";
+import React, { useEffect, useState, useRef } from 'react';
+import styled from 'styled-components';
+import axios from 'axios';
 
 function UserInfo() {
-  const userData = JSON.parse(localStorage.getItem("userData"));
+  const userData = JSON.parse(localStorage.getItem('userData'));
   const username = userData?.username;
 
   const [user, setUser] = useState({
-    name: "",
-    username: "",
-    email: "",
-    phoneNumber: "",
-    role: "",
+    name: '',
+    username: '',
+    email: '',
+    phoneNumber: '',
+    role: '',
   });
 
   const [isAddingPhone, setIsAddingPhone] = useState(false);
-  const [newPhoneNumber, setNewPhoneNumber] = useState("");
+  const [newPhoneNumber, setNewPhoneNumber] = useState('');
 
   // 인증 관련 state
   const [isCodeSent, setIsCodeSent] = useState(false);
-  const [verificationCode, setVerificationCode] = useState("");
+  const [verificationCode, setVerificationCode] = useState('');
   const [isVerified, setIsVerified] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -35,7 +35,7 @@ function UserInfo() {
         });
         setUser(response.data);
       } catch (error) {
-        console.error("회원 정보 조회 실패", error);
+        console.error('회원 정보 조회 실패', error);
       }
     };
 
@@ -52,8 +52,8 @@ function UserInfo() {
           if (prev <= 1) {
             clearInterval(intervalRef.current);
             setIsCodeSent(false);
-            setVerificationCode("");
-            alert("인증 시간이 만료되었습니다. 다시 시도해주세요.");
+            setVerificationCode('');
+            alert('인증 시간이 만료되었습니다. 다시 시도해주세요.');
             return 0;
           }
           return prev - 1;
@@ -71,9 +71,9 @@ function UserInfo() {
   const handleAddPhoneNumber = () => {
     setIsAddingPhone(true);
     setIsCodeSent(false);
-    setVerificationCode("");
+    setVerificationCode('');
     setIsVerified(false);
-    setNewPhoneNumber("");
+    setNewPhoneNumber('');
     resetTimer();
   };
 
@@ -83,23 +83,23 @@ function UserInfo() {
 
   // 인증번호 발송 요청
   const sendVerificationCode = async () => {
-    if (newPhoneNumber.trim() === "") {
-      alert("전화번호를 입력하세요.");
+    if (newPhoneNumber.trim() === '') {
+      alert('전화번호를 입력하세요.');
       return;
     }
     try {
       setLoading(true);
       await axios.post(
-        "http://localhost:8080/verify-phone-number",
+        'http://localhost:8080/verify-phone-number',
         { phoneNumber: newPhoneNumber },
         { withCredentials: true }
       );
       setIsCodeSent(true);
       setTimer(300); // 5분
-      alert("인증번호가 발송되었습니다. 메시지를 확인해주세요.");
+      alert('인증번호가 발송되었습니다. 메시지를 확인해주세요.');
     } catch (error) {
-      console.error("인증번호 발송 실패", error);
-      alert("인증번호 발송에 실패했습니다. 나중에 다시 시도해주세요.");
+      console.error('인증번호 발송 실패', error);
+      alert('인증번호 발송에 실패했습니다. 나중에 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
@@ -111,23 +111,23 @@ function UserInfo() {
 
   // 인증번호 확인
   const verifyCode = async () => {
-    if (verificationCode.trim() === "") {
-      alert("인증번호를 입력하세요.");
+    if (verificationCode.trim() === '') {
+      alert('인증번호를 입력하세요.');
       return;
     }
     try {
       setLoading(true);
       await axios.post(
-        "http://localhost:8080/phone-number/verification-code",
+        'http://localhost:8080/phone-number/verification-code',
         { code: verificationCode },
         { withCredentials: true }
       );
-      alert("전화번호가 성공적으로 인증되었습니다.");
+      alert('전화번호가 성공적으로 인증되었습니다.');
       setIsVerified(true);
       resetTimer();
     } catch (error) {
-      console.error("인증 실패", error);
-      alert("인증번호가 올바르지 않습니다.");
+      console.error('인증 실패', error);
+      alert('인증번호가 올바르지 않습니다.');
     } finally {
       setLoading(false);
     }
@@ -136,30 +136,30 @@ function UserInfo() {
   // 인증 완료 후 전화번호 저장
   const handleSavePhoneNumber = async () => {
     if (!isVerified) {
-      alert("전화번호 인증을 먼저 완료하세요.");
+      alert('전화번호 인증을 먼저 완료하세요.');
       return;
     }
     try {
       setLoading(true);
       await axios.put(
-        "http://localhost:8080/myPage/setPhoneNumber",
+        'http://localhost:8080/myPage/setPhoneNumber',
         { phoneNumber: newPhoneNumber },
         { withCredentials: true }
       );
-      alert("전화번호가 추가되었습니다.");
-      const response = await axios.get("http://localhost:8080/user", {
+      alert('전화번호가 추가되었습니다.');
+      const response = await axios.get('http://localhost:8080/user', {
         withCredentials: true,
       });
       setUser(response.data);
       setIsAddingPhone(false);
-      setNewPhoneNumber("");
-      setVerificationCode("");
+      setNewPhoneNumber('');
+      setVerificationCode('');
       setIsCodeSent(false);
       setIsVerified(false);
       resetTimer();
     } catch (error) {
-      console.error("전화번호 추가 실패:", error);
-      alert("전화번호 추가 중 오류가 발생했습니다.");
+      console.error('전화번호 추가 실패:', error);
+      alert('전화번호 추가 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -178,8 +178,8 @@ function UserInfo() {
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60)
       .toString()
-      .padStart(2, "0");
-    const s = (seconds % 60).toString().padStart(2, "0");
+      .padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
     return `${m}:${s}`;
   };
 
@@ -187,17 +187,17 @@ function UserInfo() {
     <Container>
       <Title>마이페이지</Title>
       <UserDetail>
-        <Label>이름:</Label> {user.name || "-"}
+        <Label>이름:</Label> {user.name || '-'}
       </UserDetail>
       <UserDetail>
-        <Label>유저네임:</Label> {user.username || "-"}
+        <Label>유저네임:</Label> {user.username || '-'}
       </UserDetail>
       <UserDetail>
-        <Label>이메일:</Label> {user.email || "-"}
+        <Label>이메일:</Label> {user.email || '-'}
       </UserDetail>
       <UserDetail>
-        <Label>전화번호:</Label>{" "}
-        {user.phoneNumber ? user.phoneNumber : "등록된 전화번호가 없습니다."}
+        <Label>전화번호:</Label>{' '}
+        {user.phoneNumber ? user.phoneNumber : '등록된 전화번호가 없습니다.'}
       </UserDetail>
 
       {!user.phoneNumber && !isAddingPhone && (
@@ -215,7 +215,7 @@ function UserInfo() {
           />
           {!isCodeSent ? (
             <Button onClick={sendVerificationCode} disabled={loading}>
-              {loading ? "발송 중..." : "인증번호 보내기"}
+              {loading ? '발송 중...' : '인증번호 보내기'}
             </Button>
           ) : (
             <>
@@ -227,10 +227,10 @@ function UserInfo() {
               />
               <Button onClick={verifyCode} disabled={loading || isVerified}>
                 {loading
-                  ? "확인 중..."
+                  ? '확인 중...'
                   : isVerified
-                  ? "인증완료"
-                  : "인증번호 확인"}
+                  ? '인증완료'
+                  : '인증번호 확인'}
               </Button>
               {/* 타이머 표시 */}
               <TimerText>남은 시간: {formatTime(timer)}</TimerText>
@@ -248,7 +248,12 @@ function UserInfo() {
       )}
 
       <UserDetail>
-        <Label>권한:</Label> {user.role || "-"}
+        <Label>권한:</Label>
+        {user.role === 'ROLE_USER_SELLER'
+          ? '판매자'
+          : user.role === 'ROLE_USER_BUYER'
+          ? '구매자'
+          : '-'}
       </UserDetail>
     </Container>
   );
@@ -266,7 +271,7 @@ const Container = styled.div`
   border-radius: 8px;
   background-color: #fafafa;
   box-shadow: 0 2px 6px rgb(0 0 0 / 0.1);
-  font-family: "Noto Sans KR", sans-serif;
+  font-family: 'Noto Sans KR', sans-serif;
 `;
 
 const Title = styled.h1`
