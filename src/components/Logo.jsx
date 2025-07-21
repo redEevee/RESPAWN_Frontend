@@ -1,11 +1,11 @@
-import React from "react";
-import styled from "styled-components";
-import logo from "../assets/respawn_logo.png";
+import React from 'react';
+import styled from 'styled-components';
+import logo from '../assets/respawn_logo.png';
 
 const Logo = () => {
   return (
     <LogoContainer>
-      <a href="/home">
+      <a href="/">
         <img src={logo} alt="respawn logo" />
       </a>
     </LogoContainer>

@@ -1,8 +1,8 @@
-import React from "react";
-import { Navigate } from "react-router-dom";
+import React from 'react';
+import { Navigate } from 'react-router-dom';
 
 const PrivateRoute = ({ children }) => {
-  const userData = localStorage.getItem("userData");
+  const userData = localStorage.getItem('userData');
 
   if (!userData) {
     // 로그인 안 된 사용자라면 로그인 페이지로 이동

@@ -560,9 +560,8 @@ const SignupPage = () => {
               required
               disabled={email.isValidEmail}
             />
-            <span>@</span>
-
-            <select
+            <AtSymbol>@</AtSymbol>
+            <DomainSelect
               value={isCustomDomain ? 'custom' : emailDomain}
               onChange={(e) => {
                 const value = e.target.value;
@@ -577,13 +576,6 @@ const SignupPage = () => {
                 }
               }}
               disabled={email.isValidEmail}
-              style={{
-                height: '44px',
-                fontSize: '14px',
-                borderRadius: '6px',
-                padding: '0 20px',
-                border: '1px solid #ccc',
-              }}
             >
               <option value="">도메인 선택</option>
               <option value="gmail.com">gmail.com</option>
@@ -592,7 +584,7 @@ const SignupPage = () => {
               <option value="nate.com">nate.com</option>
               <option value="kakao.com">kakao.com</option>
               <option value="custom">직접입력</option>
-            </select>
+            </DomainSelect>
 
             {/* 인증 버튼 또는 완료 메시지 */}
             {!email.isValidEmail ? (
@@ -679,6 +671,7 @@ const SignupBox = styled.div`
   background: white;
   padding: 32px;
   border-radius: 12px;
+  box-sizing: border-box;
   width: 100%;
   max-width: 500px;
   margin-top: 40px;
@@ -723,9 +716,6 @@ const Input = styled.input`
   min-width: 0;
   min-height: 44px;
   box-sizing: border-box;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   padding: 12px;
   margin-bottom: 16px;
   border: none;
@@ -781,6 +771,26 @@ const CheckInput = styled(Input)`
   min-width: 0;
 `;
 
+const AtSymbol = styled.span`
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  white-space: nowrap;
+  user-select: none;
+  font-weight: 600;
+  flex-shrink: 0; /* 줄어들지 않도록 고정 */
+`;
+
+const DomainSelect = styled.select`
+  height: 44px;
+  font-size: 14px;
+  border-radius: 6px;
+  padding: 0 12px;
+  border: 1px solid #ccc;
+  width: 140px; /* 고정 너비 */
+  flex-shrink: 0; /* 줄어들지 않도록 */
+`;
+
 const CheckButton = styled.button`
   margin-left: 12px;
   min-width: 80px;
@@ -811,6 +821,7 @@ const JoinButton = styled.button`
   border: none;
   border-radius: 6px;
   cursor: pointer;
+  box-sizing: border-box;
 
   &:hover {
     background: rgb(85, 90, 130);

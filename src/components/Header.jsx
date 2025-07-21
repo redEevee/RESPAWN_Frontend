@@ -1,26 +1,26 @@
-import React, { useState } from "react";
-import styled from "styled-components";
-import Logo from "../components/Logo";
-import userIcon from "../assets/user_icon.png";
-import categoryIcon from "../assets/category_icon.png";
-import Search from "../components/Search";
-import axios from "../api/axios";
+import React, { useState } from 'react';
+import styled from 'styled-components';
+import Logo from '../components/Logo';
+import userIcon from '../assets/user_icon.png';
+import categoryIcon from '../assets/category_icon.png';
+import Search from '../components/Search';
+import axios from '../api/axios';
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const userData = JSON.parse(localStorage.getItem("userData"));
+  const userData = JSON.parse(localStorage.getItem('userData'));
   const name = userData?.name;
   console.log(userData);
 
   const handleLogout = async () => {
     try {
-      await axios.post("/logout");
-      localStorage.removeItem("userData");
-      alert("로그아웃 완료");
-      window.location.href = "/home";
+      await axios.post('/logout');
+      localStorage.removeItem('userData');
+      alert('로그아웃 완료');
+      window.location.href = '/home';
     } catch (error) {
-      console.error("로그아웃 에러:", error);
+      console.error('로그아웃 에러:', error);
     }
   };
 
@@ -31,12 +31,12 @@ const Header = () => {
           {name ? (
             <>
               <span>{name}님</span>
-              <span onClick={handleLogout} style={{ cursor: "pointer" }}>
+              <span onClick={handleLogout} style={{ cursor: 'pointer' }}>
                 로그아웃
               </span>
             </>
           ) : (
-            <a href="/login" style={{ textDecoration: "none", color: "#666" }}>
+            <a href="/login" style={{ textDecoration: 'none', color: '#666' }}>
               <span>로그인</span>
             </a>
           )}

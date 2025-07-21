@@ -56,7 +56,7 @@ function UploadProduct() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       alert('등록 성공!');
-      navigate('/home');
+      navigate('/');
     } catch (err) {
       alert('등록 실패: ' + err.response?.data?.message || err.message);
     }

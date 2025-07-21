@@ -1,16 +1,16 @@
 import React from 'react';
-import UserInfo from '../components/UserInfo';
+import ProductContainer from '../components/ProductContainer';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
-function Mypage() {
+const ProductListPage = () => {
   return (
     <>
       <Header />
-      <UserInfo />
+      <ProductContainer />
       <Footer />
     </>
   );
-}
+};
 
-export default Mypage;
+export default ProductListPage;

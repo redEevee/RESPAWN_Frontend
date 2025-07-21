@@ -1,16 +1,16 @@
 import React from 'react';
-import UserInfo from '../components/UserInfo';
 import Header from '../components/Header';
+import ProductDetail from '../components/ProductDetail';
 import Footer from '../components/Footer';
 
-function Mypage() {
+function ProductDetailPage() {
   return (
     <>
       <Header />
-      <UserInfo />
+      <ProductDetail />
       <Footer />
     </>
   );
 }
 
-export default Mypage;
+export default ProductDetailPage;

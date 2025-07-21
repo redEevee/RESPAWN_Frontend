@@ -249,9 +249,9 @@ function UserInfo() {
 
       <UserDetail>
         <Label>권한:</Label>
-        {user.role === 'ROLE_USER_SELLER'
+        {user.role === 'ROLE_SELLER'
           ? '판매자'
-          : user.role === 'ROLE_USER_BUYER'
+          : user.role === 'ROLE_USER'
           ? '구매자'
           : '-'}
       </UserDetail>

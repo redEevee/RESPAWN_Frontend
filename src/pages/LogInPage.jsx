@@ -47,7 +47,7 @@ const LoginPage = (e) => {
 
       localStorage.setItem('userData', JSON.stringify(response.data));
 
-      navigate('/home');
+      navigate('/');
     } catch (error) {
       if (error.response) {
         alert(
@@ -67,7 +67,7 @@ const LoginPage = (e) => {
       if (event.data?.type === 'LOGIN_SUCCESS') {
         // 로그인 성공 시 홈으로 이동
         console.log('로그인 성공');
-        navigate('/home');
+        navigate('/');
         // 팝업 변수 초기화
         setPopup(null);
       }
@@ -256,28 +256,30 @@ const Message = styled.p`
   text-align: center;
 `;
 
-const SocialButton = styled.div`
+const SocialButton = styled.button`
   margin-top: 12px;
-  display: flex;
-  justify-content: center;
   width: 100%;
+  max-width: 240px;
+  height: 48px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
 
-  a {
-    display: inline-block;
-    width: 240px;
-    height: 48px;
-  }
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   img {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* ← 이 부분 수정! */
+    object-fit: cover;
     border-radius: 8px;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   }
 
-  img:hover {
+  &:hover img {
     transform: scale(1.03);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }

@@ -1,11 +1,11 @@
-import React from "react";
-import styled from "styled-components";
-import ProductContainer from "./ProductContainer";
+import React from 'react';
+import styled from 'styled-components';
+import ProductContainer from './ProductContainer';
 
 const MainSection = () => {
   return (
     <Section>
-      <ProductContainer />
+      <ProductContainer limit={9} showMoreButton={true} />
     </Section>
   );
 };
