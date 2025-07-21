@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import Logo from '../components/Logo';
 import userIcon from '../assets/user_icon.png';
+import cartIcon from '../assets/cart_icon.png';
 import categoryIcon from '../assets/category_icon.png';
 import Search from '../components/Search';
 import axios from '../api/axios';
@@ -18,7 +19,7 @@ const Header = () => {
       await axios.post('/logout');
       localStorage.removeItem('userData');
       alert('로그아웃 완료');
-      window.location.href = '/home';
+      window.location.href = '/';
     } catch (error) {
       console.error('로그아웃 에러:', error);
     }
@@ -43,7 +44,9 @@ const Header = () => {
           <a href="/mypage">
             <UserIcon src={userIcon} alt="User Icon" />
           </a>
-          <span>장바구니</span>
+          <a href="/cart">
+            <CartIcon src={cartIcon} alt="Cart Icon" />
+          </a>
           <span>고객센터</span>
         </TopMenu>
       </TopBar>
@@ -110,6 +113,12 @@ const TopMenu = styled.div`
 const UserIcon = styled.img`
   width: 30px;
   height: 30px;
+  cursor: pointer;
+`;
+
+const CartIcon = styled.img`
+  width: 20px;
+  height: 20px;
   cursor: pointer;
 `;
 

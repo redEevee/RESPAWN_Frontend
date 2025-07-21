@@ -3,10 +3,10 @@ import { useParams } from 'react-router-dom';
 import axios from '../api/axios';
 import styled from 'styled-components';
 
-function ProductDetailPage() {
+function ProductDetail() {
   const { id } = useParams();
   const [item, setItem] = useState(null);
-  const [quantity, setQuantity] = useState(1);
+  const [count, setCount] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
 
   useEffect(() => {
@@ -16,15 +16,33 @@ function ProductDetailPage() {
       .catch((err) => console.error(err));
   }, [id]);
 
+  const handleAddToCart = () => {
+    axios
+      .post(
+        '/api/cart/add',
+        {
+          itemId: item.id,
+          count: count,
+        } // 인증 정보가 필요하다면
+      )
+      .then((res) => {
+        alert('장바구니에 담겼습니다.');
+      })
+      .catch((err) => {
+        console.error(err);
+        alert('장바구니 추가 실패');
+      });
+  };
+
   const handleDecrease = () => {
-    if (quantity > 1) setQuantity(quantity - 1);
+    if (count > 1) setCount(count - 1);
   };
 
   const handleIncrease = () => {
-    if (quantity < item.stockQuantity) setQuantity(quantity + 1);
+    if (count < item.stockQuantity) setCount(count + 1);
   };
 
-  const totalPrice = item ? item.price * quantity : 0;
+  const totalPrice = item ? item.price * count : 0;
 
   if (!item) return <div>불러오는 중...</div>;
 
@@ -51,25 +69,25 @@ function ProductDetailPage() {
               </Value>
             </InfoRow>
 
-            <QuantityRow>
+            <CountRow>
               <span>수량</span>
-              <QuantityControls>
+              <CountControls>
                 <QtyButton onClick={handleDecrease}>-</QtyButton>
-                <QtyDisplay>{quantity}</QtyDisplay>
+                <QtyDisplay>{count}</QtyDisplay>
                 <QtyButton onClick={handleIncrease}>+</QtyButton>
-              </QuantityControls>
-            </QuantityRow>
+              </CountControls>
+            </CountRow>
 
             <TotalRow>
               <span>총 상품 금액</span>
               <TotalPrice>
-                총 수량 {quantity}개 | {totalPrice.toLocaleString()} 원
+                총 수량 {count}개 | {totalPrice.toLocaleString()} 원
               </TotalPrice>
             </TotalRow>
 
             <ButtonRow>
               <BuyButton>바로 구매</BuyButton>
-              <CartButton>장바구니</CartButton>
+              <CartButton onClick={handleAddToCart}>장바구니</CartButton>
             </ButtonRow>
           </DetailBox>
         </TopSection>
@@ -119,7 +137,7 @@ function ProductDetailPage() {
   );
 }
 
-export default ProductDetailPage;
+export default ProductDetail;
 
 const Container = styled.div`
   display: flex;
@@ -186,23 +204,17 @@ const InfoRow = styled.div`
   margin-top: 80px;
 `;
 
-const Label = styled.div`
-  width: 120px;
-  font-weight: bold;
-  color: #666;
-`;
-
 const Value = styled.div`
   color: #333;
 `;
 
-const QuantityRow = styled.div`
+const CountRow = styled.div`
   display: flex;
   align-items: center;
   gap: 20px;
 `;
 
-const QuantityControls = styled.div`
+const CountControls = styled.div`
   display: flex;
   align-items: center;
   border: 1px solid #ccc;
