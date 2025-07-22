@@ -4,7 +4,6 @@ import axios from '../api/axios';
 
 const CartList = () => {
   const [cartItems, setCartItems] = useState([]);
-  const [checked, setChecked] = useState(true);
 
   useEffect(() => {
     axios
@@ -19,14 +18,49 @@ const CartList = () => {
       .catch((err) => console.error('장바구니 데이터 로드 실패', err));
   }, []);
 
-  const handleCountChange = (id, delta) => {
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? { ...item, count: Math.max(1, item.count + delta) }
-          : item
-      )
-    );
+  const handleCountIncrease = async (cartItemId) => {
+    try {
+      // 백엔드 수량 업데이트 요청
+      await axios.post(`/api/cart/items/${cartItemId}/increase`, {
+        amount: 1,
+      });
+
+      // 프론트 UI 업데이트
+      setCartItems((prev) =>
+        prev.map((item) =>
+          item.cartItemId === cartItemId
+            ? { ...item, count: item.count + 1 }
+            : item
+        )
+      );
+    } catch (error) {
+      console.error('수량 변경 실패:', error);
+      alert('수량 변경에 실패했습니다. 다시 시도해주세요.');
+    }
+  };
+
+  const handleCountDecrease = async (cartItemId) => {
+    const targetItem = cartItems.find((item) => item.cartItemId === cartItemId);
+    if (!targetItem || targetItem.count <= 1) return;
+
+    try {
+      // 백엔드 수량 업데이트 요청
+      await axios.post(`/api/cart/items/${cartItemId}/decrease`, {
+        amount: 1,
+      });
+
+      // 프론트 UI 업데이트
+      setCartItems((prev) =>
+        prev.map((item) =>
+          item.cartItemId === cartItemId
+            ? { ...item, count: item.count - 1 }
+            : item
+        )
+      );
+    } catch (error) {
+      console.error('수량 변경 실패:', error);
+      alert('수량 변경에 실패했습니다. 다시 시도해주세요.');
+    }
   };
 
   const handleCheck = (id) => {
@@ -74,11 +108,13 @@ const CartList = () => {
         <tbody>
           {cartItems.map((item) => (
             <ItemRow key={item.cartItemId}>
-              <input
-                type="checkbox"
-                checked={item.checked}
-                onChange={() => handleCheck(item.cartItemId)}
-              />
+              <td>
+                <input
+                  type="checkbox"
+                  checked={item.checked}
+                  onChange={() => handleCheck(item.cartItemId)}
+                />
+              </td>
               <td>
                 <ProductInfo>
                   <img src={item.imageUrl} alt={item.imageUrl} />
@@ -87,11 +123,11 @@ const CartList = () => {
               </td>
               <td>
                 <CountControl>
-                  <button onClick={() => handleCountChange(item.id, -1)}>
+                  <button onClick={() => handleCountDecrease(item.cartItemId)}>
                     -
                   </button>
                   <span>{item.count}</span>
-                  <button onClick={() => handleCountChange(item.id, 1)}>
+                  <button onClick={() => handleCountIncrease(item.cartItemId)}>
                     +
                   </button>
                 </CountControl>

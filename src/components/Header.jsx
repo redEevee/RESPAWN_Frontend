@@ -6,12 +6,15 @@ import cartIcon from '../assets/cart_icon.png';
 import categoryIcon from '../assets/category_icon.png';
 import Search from '../components/Search';
 import axios from '../api/axios';
+import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
 
   const userData = JSON.parse(localStorage.getItem('userData'));
   const name = userData?.name;
+  const role = userData?.authorities;
   console.log(userData);
 
   const handleLogout = async () => {
@@ -19,7 +22,7 @@ const Header = () => {
       await axios.post('/logout');
       localStorage.removeItem('userData');
       alert('로그아웃 완료');
-      window.location.href = '/';
+      navigate('/');
     } catch (error) {
       console.error('로그아웃 에러:', error);
     }
@@ -44,9 +47,21 @@ const Header = () => {
           <a href="/mypage">
             <UserIcon src={userIcon} alt="User Icon" />
           </a>
-          <a href="/cart">
-            <CartIcon src={cartIcon} alt="Cart Icon" />
-          </a>
+
+          {role === '[ROLE_USER]' && (
+            <a href="/cart">
+              <CartIcon src={cartIcon} alt="Cart Icon" />
+            </a>
+          )}
+
+          {role === '[ROLE_SELLER]' && (
+            <a
+              href="/seller-center"
+              style={{ textDecoration: 'none', color: '#666' }}
+            >
+              <span>판매자센터</span>
+            </a>
+          )}
           <span>고객센터</span>
         </TopMenu>
       </TopBar>

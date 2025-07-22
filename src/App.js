@@ -13,6 +13,7 @@ import ProductListPage from './pages/ProductListPage';
 import PublicRoute from './routes/PublicRoute';
 import PrivateRoute from './routes/PrivateRoute';
 import CartPage from './pages/CartPage';
+import OrderPage from './pages/OrderPage';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route path="/productdetail/:id" element={<ProductDetailPage />} />
         <Route path="/productlist" element={<ProductListPage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/order" element={<OrderPage />} />
         <Route
           path="/login"
           element={
