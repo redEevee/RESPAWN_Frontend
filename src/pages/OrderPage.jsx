@@ -1,16 +1,16 @@
 import React from 'react';
-import MypageDetail from '../components/Mypage/MypageDetail';
+import OrderList from '../components/OrderList';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
-function Mypage() {
+const OrderPage = () => {
   return (
     <>
       <Header />
-      <MypageDetail />
+      <OrderList />
       <Footer />
     </>
   );
-}
+};
 
-export default Mypage;
+export default OrderPage;

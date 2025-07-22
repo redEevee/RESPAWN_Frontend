@@ -24,8 +24,22 @@ function App() {
         <Route path="/uploadproduct" element={<UploadProduct />} />
         <Route path="/productdetail/:id" element={<ProductDetailPage />} />
         <Route path="/productlist" element={<ProductListPage />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/order" element={<OrderPage />} />
+        <Route
+          path="/cart"
+          element={
+            <PrivateRoute>
+              <CartPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/order"
+          element={
+            <PrivateRoute>
+              <OrderPage />
+            </PrivateRoute>
+          }
+        />
         <Route
           path="/login"
           element={

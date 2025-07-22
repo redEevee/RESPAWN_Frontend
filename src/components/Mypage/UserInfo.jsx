@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import styled from 'styled-components';
 import axios from 'axios';
+import AddressListModal from '../AddressListModal';
 
-function UserInfo() {
+function ProfilePage() {
   const userData = JSON.parse(localStorage.getItem('userData'));
   const username = userData?.username;
 
@@ -26,6 +27,9 @@ function UserInfo() {
   // 타이머
   const [timer, setTimer] = useState(0);
   const intervalRef = useRef(null);
+
+  // 주소지입력
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -183,117 +187,155 @@ function UserInfo() {
     return `${m}:${s}`;
   };
 
+  const handleOpenAddressModal = () => {
+    setIsAddressModalOpen(true);
+  };
+
+  const handleCloseAddressModal = () => {
+    setIsAddressModalOpen(false);
+  };
+
   return (
-    <Container>
-      <Title>마이페이지</Title>
-      <UserDetail>
-        <Label>이름:</Label> {user.name || '-'}
-      </UserDetail>
-      <UserDetail>
-        <Label>유저네임:</Label> {user.username || '-'}
-      </UserDetail>
-      <UserDetail>
-        <Label>이메일:</Label> {user.email || '-'}
-      </UserDetail>
-      <UserDetail>
-        <Label>전화번호:</Label>{' '}
-        {user.phoneNumber ? user.phoneNumber : '등록된 전화번호가 없습니다.'}
-      </UserDetail>
+    <Wrapper>
+      <Section>
+        <SectionTitle>내 정보 관리</SectionTitle>
+        <UserDetail>
+          <Label>이름</Label> <Value>{user.name || '-'}</Value>
+        </UserDetail>
+        <UserDetail>
+          <Label>유저네임</Label> <Value>{user.username || '-'}</Value>
+        </UserDetail>
+        <UserDetail>
+          <Label>이메일</Label> <Value>{user.email || '-'}</Value>
+        </UserDetail>
+        <UserDetail>
+          <Label>전화번호</Label>{' '}
+          <Value>
+            {user.phoneNumber
+              ? user.phoneNumber
+              : '등록된 전화번호가 없습니다.'}
+          </Value>
+        </UserDetail>
 
-      {!user.phoneNumber && !isAddingPhone && (
-        <Button onClick={handleAddPhoneNumber}>전화번호 추가하기</Button>
-      )}
+        {!user.phoneNumber && !isAddingPhone && (
+          <Button onClick={handleAddPhoneNumber}>전화번호 추가하기</Button>
+        )}
 
-      {isAddingPhone && (
-        <PhoneInputContainer>
-          <Input
-            type="text"
-            placeholder="전화번호 입력 (예: 01012345678 )"
-            value={newPhoneNumber}
-            onChange={handlePhoneNumberChange}
-            disabled={isCodeSent}
-          />
-          {!isCodeSent ? (
-            <Button onClick={sendVerificationCode} disabled={loading}>
-              {loading ? '발송 중...' : '인증번호 보내기'}
-            </Button>
-          ) : (
-            <>
-              <Input
-                type="text"
-                placeholder="인증번호 입력"
-                value={verificationCode}
-                onChange={handleVerificationCodeChange}
-              />
-              <Button onClick={verifyCode} disabled={loading || isVerified}>
-                {loading
-                  ? '확인 중...'
-                  : isVerified
-                  ? '인증완료'
-                  : '인증번호 확인'}
+        {isAddingPhone && (
+          <PhoneInputContainer>
+            <Input
+              type="text"
+              placeholder="전화번호 입력 (예: 01012345678 )"
+              value={newPhoneNumber}
+              onChange={handlePhoneNumberChange}
+              disabled={isCodeSent}
+            />
+            {!isCodeSent ? (
+              <Button onClick={sendVerificationCode} disabled={loading}>
+                {loading ? '발송 중...' : '인증번호 보내기'}
               </Button>
-              {/* 타이머 표시 */}
-              <TimerText>남은 시간: {formatTime(timer)}</TimerText>
-              {/* <CancelButton onClick={handleCancelAddPhoneNumber}>취소</CancelButton> */}
-            </>
-          )}
-        </PhoneInputContainer>
-      )}
+            ) : (
+              <>
+                <Input
+                  type="text"
+                  placeholder="인증번호 입력"
+                  value={verificationCode}
+                  onChange={handleVerificationCodeChange}
+                />
+                <Button onClick={verifyCode} disabled={loading || isVerified}>
+                  {loading
+                    ? '확인 중...'
+                    : isVerified
+                    ? '인증완료'
+                    : '인증번호 확인'}
+                </Button>
+                {/* 타이머 표시 */}
+                <TimerText>남은 시간: {formatTime(timer)}</TimerText>
+                {/* <CancelButton onClick={handleCancelAddPhoneNumber}>취소</CancelButton> */}
+              </>
+            )}
+          </PhoneInputContainer>
+        )}
 
-      {/* 인증 완료 시에만 전화번호 저장 버튼 노출 */}
-      {isVerified && (
-        <Button onClick={handleSavePhoneNumber} disabled={loading}>
-          저장
-        </Button>
-      )}
+        {/* 인증 완료 시에만 전화번호 저장 버튼 노출 */}
+        {isVerified && (
+          <Button onClick={handleSavePhoneNumber} disabled={loading}>
+            저장
+          </Button>
+        )}
 
-      <UserDetail>
-        <Label>권한:</Label>
-        {user.role === 'ROLE_SELLER'
-          ? '판매자'
-          : user.role === 'ROLE_USER'
-          ? '구매자'
-          : '-'}
-      </UserDetail>
-    </Container>
+        <UserDetail>
+          <Label>권한</Label>
+          <Value>
+            {user.role === 'ROLE_SELLER'
+              ? '판매자'
+              : user.role === 'ROLE_USER'
+              ? '구매자'
+              : '-'}
+          </Value>
+        </UserDetail>
+
+        <UserDetail>
+          <Label>주소지</Label>
+          <Button onClick={handleOpenAddressModal}>설정</Button>
+        </UserDetail>
+      </Section>
+      {/* 주소지 설정 모달 */}
+      {isAddressModalOpen && (
+        <AddressListModal onClose={handleCloseAddressModal} />
+      )}
+    </Wrapper>
   );
 }
 
-export default UserInfo;
+export default ProfilePage;
 
 // --- styled-components ---
 
-const Container = styled.div`
-  max-width: 600px;
-  margin: 40px auto 80px;
-  padding: 24px;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  background-color: #fafafa;
-  box-shadow: 0 2px 6px rgb(0 0 0 / 0.1);
+const Wrapper = styled.div`
+  max-width: 860px;
   font-family: 'Noto Sans KR', sans-serif;
+  color: #222;
 `;
 
-const Title = styled.h1`
-  margin-bottom: 24px;
-  font-size: 2rem;
+const Section = styled.section`
+  background: #fff;
+  border-radius: 8px;
+`;
+
+const SectionTitle = styled.h2`
   font-weight: 700;
+  font-size: 1.25rem;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 12px;
   color: #222;
-  text-align: center;
 `;
 
 const UserDetail = styled.p`
   font-size: 1rem;
   color: #444;
-  margin: 12px 0;
+  margin: 12px 0 5px 0;
   display: flex;
   align-items: center;
+  border-bottom: 1px solid #e0e0e0;
 `;
 
-const Label = styled.span`
+const Label = styled.div`
+  flex: 0 0 150px; // 고정 너비
+  background-color: #f7f7f7; // 연한 회색 배경
+  padding: 10px 16px;
   font-weight: 600;
-  width: 100px;
   color: #666;
+  border-right: 1px solid #ddd; // 오른쪽 세로 경계선
+  box-sizing: border-box;
+  text-align: left;
+`;
+
+const Value = styled.div`
+  flex: 1;
+  padding: 10px 16px;
+  color: #444;
 `;
 
 const Button = styled.button`
@@ -315,15 +357,6 @@ const Button = styled.button`
     cursor: not-allowed;
   }
 `;
-
-// const CancelButton = styled(Button)`
-//   background-color: #ccc;
-//   color: #333;
-//   margin-left: 8px;
-//   &:hover:enabled {
-//     background-color: #999;
-//   }
-// `;
 
 const PhoneInputContainer = styled.div`
   margin-top: 16px;
