@@ -3,8 +3,9 @@ import styled from 'styled-components';
 import DeliveryModal from './DeliveryModal';
 import axios from '../api/axios';
 
-function AddressListModal({ onClose }) {
+function AddressListModal({ onClose, onConfirm }) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [addresses, setAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
 
@@ -41,9 +42,20 @@ function AddressListModal({ onClose }) {
     }
   };
 
+  // 확인 버튼 클릭 핸들러
+  const handleConfirm = () => {
+    if (!selectedAddressId) {
+      alert('배송지를 선택해주세요.');
+      return;
+    }
+    onConfirm(selectedAddressId); // 부모에게 선택된 ID 전달
+    onClose(); // 모달 닫기
+  };
+
   return (
     <Overlay>
       <ModalBox>
+        <CloseButton onClick={onClose}>×</CloseButton>
         <Header>배송지 관리</Header>
         <Table>
           <thead>
@@ -78,7 +90,12 @@ function AddressListModal({ onClose }) {
         </Table>
         <ButtonWrapper>
           <Left>
-            <AddButton onClick={() => setIsAddModalOpen(true)}>
+            <AddButton
+              onClick={() => {
+                setIsEditMode(false);
+                setIsAddModalOpen(true);
+              }}
+            >
               배송지 추가
             </AddButton>
           </Left>
@@ -89,24 +106,23 @@ function AddressListModal({ onClose }) {
                   alert('수정할 주소를 선택해주세요.');
                   return;
                 }
+                setIsEditMode(true); // 수정 모드
                 setIsAddModalOpen(true);
               }}
             >
               수정
             </ModifyButton>
             <DeleteButton onClick={deleteAddresses}>삭제</DeleteButton>
+            <ConfirmButton onClick={handleConfirm}>확인</ConfirmButton>
           </Right>
         </ButtonWrapper>
-        {isAddModalOpen && (
-          <DeliveryModal onClose={() => setIsAddModalOpen(false)} />
-        )}
         {isAddModalOpen && (
           <DeliveryModal
             onClose={() => {
               setIsAddModalOpen(false);
               fetchAddresses(); // 목록 갱신
             }}
-            initialData={selectedAddress}
+            initialData={isEditMode ? selectedAddress : null}
           />
         )}
       </ModalBox>
@@ -130,6 +146,7 @@ const Overlay = styled.div`
 `;
 
 const ModalBox = styled.div`
+  position: relative;
   background: #fff;
   width: 800px;
   padding: 32px;
@@ -212,6 +229,20 @@ const DeleteButton = styled.button`
   }
 `;
 
+const ConfirmButton = styled.button`
+  padding: 12px 24px;
+  background-color: black;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #333;
+  }
+`;
+
 const ButtonWrapper = styled.div`
   display: flex;
   justify-content: space-between;
@@ -228,4 +259,20 @@ const Right = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 10px; /* 버튼 사이 간격 */
+`;
+
+const CloseButton = styled.button`
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  font-size: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #888;
+  z-index: 1001;
+
+  &:hover {
+    color: #000;
+  }
 `;

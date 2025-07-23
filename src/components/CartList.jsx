@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import axios from '../api/axios';
+import { useNavigate } from 'react-router-dom';
 
 const CartList = () => {
   const [cartItems, setCartItems] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     axios
@@ -11,12 +13,35 @@ const CartList = () => {
       .then((res) => {
         const itemsWithChecked = res.data.cartItems.map((item) => ({
           ...item,
-          checked: true, // ✅ 초기값 true or false
+          checked: false, // ✅ 초기값 true or false
         }));
         setCartItems(itemsWithChecked);
       })
       .catch((err) => console.error('장바구니 데이터 로드 실패', err));
   }, []);
+
+  const handleBuySelectedItems = () => {
+    const selectedItems = cartItems.filter((item) => item.checked);
+    const itemIds = selectedItems.map((item) => item.cartItemId);
+
+    if (itemIds.length === 0) {
+      alert('선택된 상품이 없습니다.');
+      return;
+    }
+
+    axios
+      .post('/api/orders/cart', {
+        cartItemIds: itemIds,
+      })
+      .then((res) => {
+        const orderId = res.data.orderId;
+        navigate(`/order/${orderId}`);
+      })
+      .catch((err) => {
+        console.error(err);
+        alert('주문 생성에 실패했습니다.');
+      });
+  };
 
   const handleCountIncrease = async (cartItemId) => {
     try {
@@ -136,7 +161,6 @@ const CartList = () => {
                 <Price>
                   {(item.itemPrice * item.count).toLocaleString()}원
                 </Price>
-                <OrderButton>주문하기</OrderButton>
                 <DeleteButton onClick={() => handleDeleteItem(item.cartItemId)}>
                   삭제
                 </DeleteButton>
@@ -150,7 +174,7 @@ const CartList = () => {
         <FinalPrice>
           결제 예정 금액 <span>{getTotalPrice().toLocaleString()}원</span>
         </FinalPrice>
-        <GreenButton>주문하기</GreenButton>
+        <GreenButton onClick={handleBuySelectedItems}>주문하기</GreenButton>
       </Summary>
     </Container>
   );
@@ -227,15 +251,6 @@ const CountControl = styled.div`
 const Price = styled.div`
   font-weight: bold;
   margin-bottom: 10px;
-`;
-
-const OrderButton = styled.button`
-  background-color: rgb(85, 90, 130);
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
 `;
 
 const Summary = styled.div`

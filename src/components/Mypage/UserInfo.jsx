@@ -280,7 +280,6 @@ function ProfilePage() {
           <Button onClick={handleOpenAddressModal}>설정</Button>
         </UserDetail>
       </Section>
-      {/* 주소지 설정 모달 */}
       {isAddressModalOpen && (
         <AddressListModal onClose={handleCloseAddressModal} />
       )}

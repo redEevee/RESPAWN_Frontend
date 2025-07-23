@@ -58,6 +58,7 @@ function App() {
         />
         <Route path="/loginOk" element={<LoginOkPage />} />
         <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/order/:orderId" element={<OrderPage />} />
         <Route path="/*" element={<NotFoundPage />} />
       </Routes>
     </>

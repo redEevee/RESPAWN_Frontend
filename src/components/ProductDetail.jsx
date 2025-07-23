@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from '../api/axios';
 import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom';
 
 function ProductDetail() {
   const { id } = useParams();
@@ -9,12 +10,30 @@ function ProductDetail() {
   const [count, setCount] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
 
+  const navigate = useNavigate();
+
   useEffect(() => {
     axios
       .get(`/api/items/${id}`)
       .then((res) => setItem(res.data))
       .catch((err) => console.error(err));
   }, [id]);
+
+  const handleBuyNow = () => {
+    axios
+      .post('/api/orders/prepare', {
+        itemId: item.id,
+        count: count,
+      })
+      .then((res) => {
+        const orderId = res.data.orderId;
+        navigate(`/order/${orderId}`);
+      })
+      .catch((err) => {
+        console.error(err);
+        alert('주문 생성에 실패했습니다.');
+      });
+  };
 
   const handleAddToCart = () => {
     axios
@@ -86,7 +105,7 @@ function ProductDetail() {
             </TotalRow>
 
             <ButtonRow>
-              <BuyButton>바로 구매</BuyButton>
+              <BuyButton onClick={handleBuyNow}>바로 구매</BuyButton>
               <CartButton onClick={handleAddToCart}>장바구니</CartButton>
             </ButtonRow>
           </DetailBox>

@@ -35,7 +35,7 @@ function DeliverModal({ onClose, initialData }) {
     });
   };
 
-  const handleZonCode = () => {
+  const handleZoneCode = () => {
     setIsDaumPostOpen(true);
   };
 
@@ -50,6 +50,7 @@ function DeliverModal({ onClose, initialData }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       if (initialData) {
         await axios.put(
@@ -71,8 +72,9 @@ function DeliverModal({ onClose, initialData }) {
   return (
     <ModalOverlay>
       <ModalContent>
+        <CloseButton onClick={onClose}>×</CloseButton>
         <Title>주소지 설정</Title>
-        <form>
+        <form onSubmit={handleSubmit}>
           <FormRow>
             <Label>주소지 별칭</Label>
             <Input
@@ -104,9 +106,9 @@ function DeliverModal({ onClose, initialData }) {
                 placeholder="우편 번호"
                 value={formData.zoneCode}
                 onChange={handleChange}
-                required
+                readOnly
               />
-              <AddressButton on onClick={handleZonCode}>
+              <AddressButton onClick={handleZoneCode}>
                 우편번호 검색
               </AddressButton>
             </FlexContainer>
@@ -150,7 +152,6 @@ function DeliverModal({ onClose, initialData }) {
               placeholder="추가 연락처"
               value={formData.subPhone}
               onChange={handleChange}
-              required
             />
           </FormRow>
           <FormRow>
@@ -163,12 +164,18 @@ function DeliverModal({ onClose, initialData }) {
             &nbsp;기본 배송지로 설정
           </FormRow>
 
-          <SubmitButton onClick={handleSubmit}>저장</SubmitButton>
+          <SubmitButton type="submit">저장</SubmitButton>
         </form>
 
         {isDaumPostOpen && (
           <PostcodeWrapper>
-            <DaumPostcode onComplete={handleComplete} />
+            <PostcodeCloseButton onClick={() => setIsDaumPostOpen(false)}>
+              ×
+            </PostcodeCloseButton>
+            <DaumPostcode
+              onComplete={handleComplete}
+              style={{ width: '100%', height: '450px' }}
+            />
           </PostcodeWrapper>
         )}
       </ModalContent>
@@ -192,6 +199,7 @@ const ModalOverlay = styled.div`
 `;
 
 const ModalContent = styled.div`
+  position: relative;
   background: #fff;
   padding: 24px;
   border-radius: 8px;
@@ -274,13 +282,50 @@ const FlexContainer = styled.div`
 `;
 
 const PostcodeWrapper = styled.div`
-  position: fixed; // 다른 요소 위에 고정
+  position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-0%, -50%);
-  z-index: 1000; // 충분히 높은 값으로 겹침 방지
+  transform: translate(-50%, -50%);
+  z-index: 1100;
   background-color: white;
-  border: 1px solid #ccc;
-  padding: 16px;
+  border-radius: 8px;
+  width: 450px;
+  height: 500px;
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+  padding: 40px 16px 16px 16px;
+  box-sizing: border-box;
+`;
+
+const CloseButton = styled.button`
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  font-size: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #888;
+  z-index: 1001;
+
+  &:hover {
+    color: #000;
+  }
+`;
+
+const PostcodeCloseButton = styled.button`
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1200;
+  font-size: 20px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+
+  &:hover {
+    background: #eee;
+  }
 `;
