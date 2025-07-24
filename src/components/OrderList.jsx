@@ -5,6 +5,151 @@ import AddressListModal from '../components/AddressListModal';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 
+// PaymentComponent를 모달 없이 바로 결제 실행하도록 수정
+const PaymentComponent = ({ orderInfo, onPaymentComplete, onClose }) => {
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.iamport.kr/js/iamport.payment-1.2.0.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    const requestPay = () => {
+      if (!window.IMP) {
+        alert('결제 모듈 로딩 실패');
+        onClose();
+        return;
+      }
+
+      const { IMP } = window;
+      IMP.init('imp72461217'); // 가맹점 식별코드
+
+      const merchantUid = `mid_${new Date().getTime()}`;
+
+      // orderInfo에서 필요한 정보 추출
+      const {
+        orderId,
+        totalAmount,
+        buyerInfo,
+        orders,
+        selectedPayment,
+        selectedAddressId,
+        selectedCartItemIds,
+      } = orderInfo;
+
+      // 상품명 생성 (첫 번째 상품명 + 외 n개)
+      const productName =
+        orders.length > 1
+          ? `${orders[0].itemName} 외 ${orders.length - 1}개`
+          : orders[0]?.itemName || '상품';
+
+      // 결제 수단에 따른 pg 설정
+      let pgProvider = 'html5_inicis';
+      let payMethod = 'card';
+
+      switch (selectedPayment) {
+        case '신용카드':
+          pgProvider = 'html5_inicis';
+          payMethod = 'card';
+          break;
+        case '무통장입금':
+          pgProvider = 'html5_inicis';
+          payMethod = 'vbank';
+          break;
+        case '카카오페이':
+          pgProvider = 'kakaopay';
+          payMethod = 'card';
+          break;
+        case '토스페이':
+          pgProvider = 'tosspay';
+          payMethod = 'card';
+          break;
+        case '네이버페이':
+          pgProvider = 'html5_inicis';
+          payMethod = 'card';
+          break;
+        case '페이코':
+          pgProvider = 'payco';
+          payMethod = 'card';
+          break;
+        case '삼성페이':
+          pgProvider = 'smilepay';
+          payMethod = 'card';
+          break;
+        default:
+          pgProvider = 'html5_inicis';
+          payMethod = 'card';
+      }
+
+      IMP.request_pay(
+        {
+          pg: pgProvider,
+          pay_method: payMethod,
+          merchant_uid: merchantUid,
+          name: productName,
+          amount: totalAmount,
+          buyer_name: buyerInfo.name,
+          buyer_email: buyerInfo.email,
+          buyer_tel: buyerInfo.phone,
+        },
+        async (response) => {
+          if (response.success) {
+            try {
+              const result = await fetch('/api/payments/verify', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  impUid: response.imp_uid,
+                  merchantUid: response.merchant_uid,
+                  orderId,
+                  selectedAddressId,
+                  selectedCartItemIds,
+                }),
+              });
+
+              const data = await result.json();
+
+              if (data.success) {
+                onPaymentComplete({
+                  impUid: response.imp_uid,
+                  merchantUid: response.merchant_uid,
+                  payMethod: selectedPayment,
+                  amount: totalAmount,
+                });
+              } else {
+                alert('서버 결제 검증 실패');
+                onClose();
+              }
+            } catch (error) {
+              console.error('결제 검증 오류:', error);
+              alert('서버 결제 검증 실패');
+              onClose();
+            }
+          } else {
+            alert(`결제 실패: ${response.error_msg}`);
+            onClose();
+          }
+        }
+      );
+    };
+
+    // 스크립트 로드 후 바로 결제 실행
+    script.onload = () => {
+      requestPay();
+    };
+
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, [orderInfo, onPaymentComplete, onClose]);
+
+  // 모달 UI 없이 빈 컴포넌트 반환 (결제창은 아임포트에서 자동으로 팝업)
+  return null;
+};
+
 const OrderList = () => {
   const navigate = useNavigate();
   const { orderId } = useParams();
@@ -23,6 +168,9 @@ const OrderList = () => {
   const [selectedAddressType, setSelectedAddressType] = useState('recent');
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState('신용카드');
+
+  // PaymentComponent 실행을 위한 상태
+  const [showPaymentComponent, setShowPaymentComponent] = useState(false);
 
   const PAYMENT_OPTIONS = {
     신용카드: ['삼성카드', '국민카드', '신한카드', '현대카드', '롯데카드'],
@@ -46,15 +194,32 @@ const OrderList = () => {
     setIsAddressModalOpen(false);
   };
 
-  const handleOrderComplete = () => {
+  // 결제하기 버튼 클릭 시 바로 PaymentComponent 실행 (모달 없이)
+  const handlePaymentClick = () => {
     if (selectedCartItemIds.length === 0) {
       alert('주소와 상품을 선택해주세요.');
       return;
     }
+
+    if (!selectedAddressId) {
+      alert('배송지를 선택해주세요.');
+      return;
+    }
+
+    // PaymentComponent 실행 (모달 없이 바로 결제창 팝업)
+    setShowPaymentComponent(true);
+  };
+
+  // PaymentComponent에서 결제 완료 시 호출될 함수
+  const handlePaymentComplete = (paymentResult) => {
+    setShowPaymentComponent(false);
+
+    // 결제 완료 후 주문 완료 처리
     axios
       .post(`/api/orders/${orderId}/complete`, {
         addressId: selectedAddressId,
         cartItemIds: selectedCartItemIds,
+        paymentInfo: paymentResult,
       })
       .then((res) => {
         alert(res.data.message || '주문이 완료되었습니다!');
@@ -63,6 +228,11 @@ const OrderList = () => {
       .catch((err) => {
         alert(err.response?.data?.error || '주문 처리 중 오류가 발생했습니다.');
       });
+  };
+
+  // PaymentComponent 닫기
+  const handlePaymentClose = () => {
+    setShowPaymentComponent(false);
   };
 
   const renderPaymentDetail = () => {
@@ -251,7 +421,7 @@ const OrderList = () => {
             <h3>최종 결제 정보</h3>
             <PriceRow>
               <span>주문금액</span>
-              <span>{}원</span>
+              <span>{totalAmount.toLocaleString()}원</span>
             </PriceRow>
             <PriceRow>
               <span>즉시 적립금 할인</span>
@@ -273,18 +443,36 @@ const OrderList = () => {
               <span>최종 결제금액</span>
               <span>{totalAmount.toLocaleString()}원</span>
             </PriceRow>
-            <PayButton onClick={handleOrderComplete}>
+            <PayButton onClick={handlePaymentClick}>
               {totalAmount.toLocaleString()}원 결제하기
             </PayButton>
           </Summary>
         </RightPanel>
       </CheckoutLayout>
+
+      {/* PaymentComponent - 모달 없이 바로 결제 실행 */}
+      {showPaymentComponent && (
+        <PaymentComponent
+          orderInfo={{
+            orderId,
+            totalAmount,
+            buyerInfo,
+            orders,
+            selectedPayment,
+            selectedAddressId,
+            selectedCartItemIds,
+          }}
+          onPaymentComplete={handlePaymentComplete}
+          onClose={handlePaymentClose}
+        />
+      )}
     </Container>
   );
 };
 
 export default OrderList;
 
+// 기존 스타일드 컴포넌트들 (모달 관련 스타일 제거)
 const Container = styled.div`
   padding: 40px;
   max-width: 1200px;
