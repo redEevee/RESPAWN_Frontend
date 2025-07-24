@@ -24,38 +24,10 @@ function App() {
         <Route path="/uploadproduct" element={<UploadProduct />} />
         <Route path="/productdetail/:id" element={<ProductDetailPage />} />
         <Route path="/productlist" element={<ProductListPage />} />
-        <Route
-          path="/cart"
-          element={
-            <PrivateRoute>
-              <CartPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/order"
-          element={
-            <PrivateRoute>
-              <OrderPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/login"
-          element={
-            <PublicRoute>
-              <LogInPage />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/mypage"
-          element={
-            <PrivateRoute>
-              <Mypage />
-            </PrivateRoute>
-          }
-        />
+        <Route path="/cart" element={<PrivateRoute><CartPage /></PrivateRoute>} />
+        <Route path="/order" element={<PrivateRoute><OrderPage /></PrivateRoute>} />
+        <Route path="/login" element={<PublicRoute><LogInPage /></PublicRoute>} />
+        <Route path="/mypage" element={<PrivateRoute><Mypage /></PrivateRoute>} />
         <Route path="/loginOk" element={<LoginOkPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/order/:orderId" element={<OrderPage />} />
