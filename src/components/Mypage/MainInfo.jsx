@@ -1,52 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import axios from 'axios';
+import axios from '../../api/axios';
 import SmallBanner from '../Banner/SmallBanner';
 
 function MainInfo() {
   const [user, setUser] = useState({});
-  const [orders, setOrders] = useState([]);
+  const [latestOrder, setLatestOrder] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const userRes = await axios.get('http://localhost:8080/user', {
-          withCredentials: true,
-        });
-
-        // 샘플 주문 데이터
-        const sampleOrders = [
-          {
-            orderId: 1,
-            imageUrl: '/images/sample1.jpg',
-            tag: '정기구독',
-            productName: '무릎담요 (베이지)',
-            originalPrice: 25000,
-            discountPrice: 17500,
-            count: 1,
-            shippingFee: 3000,
-            status: '배송완료',
-          },
-          {
-            orderId: 2,
-            imageUrl: '/images/sample2.jpg',
-            tag: '일반구매',
-            productName: '달무드등',
-            originalPrice: 18000,
-            discountPrice: 14500,
-            count: 2,
-            shippingFee: 2500,
-            status: '배송중',
-          },
-        ];
-
+        const userRes = await axios.get('http://localhost:8080/user');
+        const orderRes = await axios.get(
+          'http://localhost:8080/api/orders/latest'
+        );
         setUser(userRes.data);
-        setOrders(sampleOrders); // 여기를 샘플 데이터로 설정
+        setLatestOrder(orderRes.data);
       } catch (error) {
-        console.error('데이터 불러오기 실패', error);
+        console.error('유저 또는 주문 정보 불러오기 실패', error);
       }
     };
-
     fetchData();
   }, []);
 
@@ -71,39 +44,35 @@ function MainInfo() {
 
         <SectionTitle>주문배송조회</SectionTitle>
 
-        <OrderTable>
-          <thead>
-            <tr>
-              <th>상품정보</th>
-              <th>배송비</th>
-              <th>진행상태</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((order) => (
-              <tr key={order.orderId}>
-                <td>
-                  <ProductBox>
-                    <img src={order.imageUrl} alt="상품 이미지" />
-                    <div>
-                      <ProductTag>{order.tag || '기본구매'}</ProductTag>
-                      <div>{order.productName}</div>
-                      <PriceInfo>
-                        <del>{order.originalPrice.toLocaleString()}원</del>{' '}
-                        <strong>
-                          {order.discountPrice.toLocaleString()}원
-                        </strong>{' '}
-                        / 수량 {order.count}개
-                      </PriceInfo>
-                    </div>
-                  </ProductBox>
-                </td>
-                <td>{order.shippingFee.toLocaleString()}원</td>
-                <td>{order.status}</td>
-              </tr>
+        {latestOrder ? (
+          <OrderCardWrapper>
+            <OrderHeader>
+              <OrderDate>
+                {new Date(latestOrder.orderDate).toLocaleDateString()}
+              </OrderDate>
+              <OrderNumber>주문번호: {latestOrder.orderId}</OrderNumber>
+            </OrderHeader>
+
+            {latestOrder.items.map((item) => (
+              <OrderItemCard key={item.orderItemId}>
+                <ItemImage src={item.imageUrl} alt={item.itemName} />
+                <ItemInfo>
+                  <ItemName>{item.itemName}</ItemName>
+                  <ItemCount>{item.count}개</ItemCount>
+                  <ItemPrice>
+                    {(item.price * item.count).toLocaleString()}원
+                  </ItemPrice>
+                </ItemInfo>
+              </OrderItemCard>
             ))}
-          </tbody>
-        </OrderTable>
+
+            <OrderTotal>
+              총 결제 금액: {latestOrder.totalAmount.toLocaleString()}원
+            </OrderTotal>
+          </OrderCardWrapper>
+        ) : (
+          <NoOrderText>최근 주문 내역이 없습니다.</NoOrderText>
+        )}
       </MainContent>
     </Wrapper>
   );
@@ -112,38 +81,37 @@ function MainInfo() {
 export default MainInfo;
 
 const Wrapper = styled.div`
-  display: flex;
   max-width: 1200px;
+  margin: 0 auto;
   font-family: 'Noto Sans KR', sans-serif;
-  flex-direction: column; /* 세로 배치 */
+  padding: 20px;
 `;
 
 const MainContent = styled.div`
-  flex: 1;
-  padding: 20px 0 0 0;
+  margin-top: 20px;
 `;
 
 const TopInfoBox = styled.div`
   display: flex;
   border: 1px solid #ccc;
-  margin-bottom: 24px;
   background: #f4f4f4;
+  margin-bottom: 24px;
 `;
 
 const InfoItem = styled.div`
   flex: 1;
   padding: 20px;
-  border-right: 1px solid #ccc;
   text-align: center;
+  border-right: 1px solid #ccc;
+
+  &:last-child {
+    border-right: none;
+  }
 
   label {
     display: block;
     font-weight: bold;
     margin-bottom: 8px;
-  }
-
-  &:last-child {
-    border-right: none;
   }
 `;
 
@@ -154,55 +122,77 @@ const SectionTitle = styled.h3`
   padding-bottom: 6px;
 `;
 
-const OrderTable = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-
-  th,
-  td {
-    padding: 16px;
-    border-bottom: 1px solid #eee;
-    text-align: left;
-  }
-
-  th {
-    background: #f5f5f5;
-  }
+const OrderCardWrapper = styled.div`
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 20px;
+  background-color: #fafafa;
 `;
 
-const ProductBox = styled.div`
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-
-  img {
-    width: 80px;
-    height: 80px;
-    object-fit: cover;
-    border: 1px solid #ccc;
-  }
+const OrderHeader = styled.div`
+  margin-bottom: 12px;
+  color: #555;
+  font-size: 0.9rem;
 `;
 
-const ProductTag = styled.div`
-  display: inline-block;
-  background: #0d6efd;
-  color: white;
-  font-size: 0.75rem;
-  padding: 2px 6px;
-  border-radius: 4px;
+const OrderDate = styled.div`
   margin-bottom: 4px;
 `;
 
-const PriceInfo = styled.div`
-  margin-top: 4px;
+const OrderNumber = styled.div`
+  font-weight: 600;
+`;
+
+const OrderItemCard = styled.div`
+  display: flex;
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  background-color: #fff;
+  align-items: center;
+`;
+
+const ItemImage = styled.img`
+  width: 100px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-right: 16px;
+`;
+
+const ItemInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const ItemName = styled.span`
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 6px;
+`;
+
+const ItemCount = styled.span`
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 4px;
+`;
+
+const ItemPrice = styled.span`
+  font-weight: 700;
   color: #e60023;
+`;
 
-  del {
-    color: #999;
-    margin-right: 8px;
-  }
+const OrderTotal = styled.div`
+  text-align: right;
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-top: 16px;
+`;
 
-  strong {
-    font-weight: bold;
-  }
+const NoOrderText = styled.p`
+  color: #999;
+  text-align: center;
+  font-size: 1rem;
 `;

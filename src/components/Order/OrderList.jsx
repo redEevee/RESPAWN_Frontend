@@ -283,7 +283,7 @@ const OrderList = () => {
     <Container>
       <Section>
         <StepProgressWrapper>
-          <StepProgress currentStep={1} />
+          <StepProgress currentStep={2} />
         </StepProgressWrapper>
         <Title>주문결제</Title>
         <ProductTable>

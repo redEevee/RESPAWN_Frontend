@@ -59,7 +59,7 @@ function MypageDetail() {
               {section.items.map((item) => (
                 <MenuItem
                   key={item.key}
-                  active={selectedMenu === item.key}
+                  $active={selectedMenu === item.key}
                   onClick={() => setSelectedMenu(item.key)}
                   role="button"
                 >
@@ -127,16 +127,16 @@ const MenuItem = styled.li`
   padding: 10px 14px;
   margin-bottom: 5px;
   cursor: pointer;
-  font-weight: ${(props) => (props.active ? '700' : '500')};
+  font-weight: ${(props) => (props.$active ? '700' : '500')};
   font-size: 16px;
-  color: ${(props) => (props.active ? 'rgb(85, 90, 130)' : '#111')};
+  color: ${(props) => (props.$active ? 'rgb(85, 90, 130)' : '#111')};
   border-radius: 8px;
   transition: background-color 0.2s ease, color 0.2s ease;
 
   &::before {
     content: '▶';
     font-size: 13px;
-    color: ${(props) => (props.active ? 'rgb(85, 90, 130)' : 'transparent')};
+    color: ${(props) => (props.$active ? 'rgb(85, 90, 130)' : 'transparent')};
     transition: color 0.2s ease;
   }
 
