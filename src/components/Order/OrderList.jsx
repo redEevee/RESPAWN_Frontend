@@ -4,6 +4,7 @@ import axios from '../../api/axios';
 import AddressListModal from '../AddressListModal';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+import StepProgress from '../common/StepProgress';
 
 // PaymentComponent를 모달 없이 바로 결제 실행하도록 수정
 const PaymentComponent = ({ orderInfo, onPaymentComplete, onClose }) => {
@@ -281,6 +282,9 @@ const OrderList = () => {
   return (
     <Container>
       <Section>
+        <StepProgressWrapper>
+          <StepProgress currentStep={1} />
+        </StepProgressWrapper>
         <Title>주문결제</Title>
         <ProductTable>
           <thead>
@@ -476,10 +480,16 @@ const Section = styled.div`
   margin-bottom: 40px;
 `;
 
+const StepProgressWrapper = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px; /* 타이틀과 간격 */
+`;
+
 const Title = styled.h2`
-  font-size: 28px;
-  font-weight: bold;
-  margin-bottom: 20px;
+  font-size: 34px;
+  text-align: center;
+  margin: 0 0 40px 0; /* 아래쪽 마진 유지 */
 `;
 
 const ProductTable = styled.table`

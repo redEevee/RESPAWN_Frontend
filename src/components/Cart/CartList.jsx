@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import axios from '../../api/axios';
 import { useNavigate } from 'react-router-dom';
+import StepProgress from '../common/StepProgress';
 
 const CartList = () => {
   const [cartItems, setCartItems] = useState([]);
@@ -120,6 +121,9 @@ const CartList = () => {
 
   return (
     <Container>
+      <StepProgressWrapper>
+        <StepProgress currentStep={1} />
+      </StepProgressWrapper>
       <Title>장바구니</Title>
       <Table>
         <thead>
@@ -188,10 +192,16 @@ const Container = styled.div`
   margin: 0 auto;
 `;
 
+const StepProgressWrapper = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px; /* 타이틀과 간격 */
+`;
+
 const Title = styled.h2`
-  text-align: center;
   font-size: 34px;
-  margin-bottom: 40px;
+  text-align: center;
+  margin: 0 0 40px 0; /* 아래쪽 마진 유지 */
 `;
 
 const Table = styled.table`

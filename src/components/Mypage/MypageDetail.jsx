@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import UserInfo from '../Mypage/UserInfo';
+import UserInfo from './UserInfo';
 import MainInfo from './MainInfo';
+import OrderHistory from '../OrderHistory/OrderHistory';
 
 const menuItems = [
   {
@@ -28,7 +29,7 @@ function MypageDetail() {
   const renderContent = () => {
     switch (selectedMenu) {
       case 'orders':
-        return <div>주문내역 화면입니다.</div>;
+        return <OrderHistory />;
       case 'inquiry':
         return <div>문의하기</div>;
       case 'inquiry_history':
