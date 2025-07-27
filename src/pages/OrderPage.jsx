@@ -1,7 +1,7 @@
 import React from 'react';
-import OrderList from '../components/OrderList';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import OrderList from '../components/Order/OrderList';
+import Header from '../components/common/Header';
+import Footer from '../components/common/Footer';
 
 const OrderPage = () => {
   return (

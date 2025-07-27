@@ -1,7 +1,7 @@
 import React from 'react';
-import ProductContainer from '../components/ProductContainer';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import ProductContainer from '../components/Product/ProductContainer';
+import Header from '../components/common/Header';
+import Footer from '../components/common/Footer';
 
 const ProductListPage = () => {
   return (

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import axios from '../api/axios';
-import AddressListModal from '../components/AddressListModal';
+import axios from '../../api/axios';
+import AddressListModal from '../AddressListModal';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 
@@ -173,15 +173,8 @@ const OrderList = () => {
   const [showPaymentComponent, setShowPaymentComponent] = useState(false);
 
   const PAYMENT_OPTIONS = {
-    신용카드: ['삼성카드', '국민카드', '신한카드', '현대카드', '롯데카드'],
-    무통장입금: [
-      '국민은행',
-      '기업은행',
-      '신한은행',
-      '우리은행',
-      '하나은행',
-      '농협',
-    ],
+    신용카드: '신용카드 결제창이 전환됩니다.',
+    무통장입금: '무통장입금 결제창이 전환됩니다.',
     카카오페이: '카카오페이 앱으로 결제창이 전환됩니다.',
     토스페이: '토스 앱으로 결제창이 전환됩니다.',
     네이버페이: '네이버페이 결제창으로 이동합니다.',

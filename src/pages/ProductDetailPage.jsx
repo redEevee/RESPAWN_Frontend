@@ -1,7 +1,7 @@
 import React from 'react';
-import Header from '../components/Header';
-import ProductDetail from '../components/ProductDetail';
-import Footer from '../components/Footer';
+import Header from '../components/common/Header';
+import ProductDetail from '../components/Product/ProductDetail';
+import Footer from '../components/common/Footer';
 
 function ProductDetailPage() {
   return (

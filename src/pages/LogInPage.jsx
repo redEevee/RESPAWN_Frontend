@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axios';
-import Logo from '../components/Logo';
+import Logo from '../components/common/Logo';
 import naver_icon from '../assets/login_naver.png';
 import google_icon from '../assets/login_google.png';
 import kakao_icon from '../assets/login_kakao.png';

@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import Logo from '../components/Logo';
+import Logo from './common/Logo';
 
 const SellerHeader = () => {
   //   const userData = JSON.parse(localStorage.getItem('userData'));

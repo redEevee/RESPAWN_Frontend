@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import axios from '../api/axios';
+import axios from '../../api/axios';
 import styled from 'styled-components';
-import ProductCard from '../components/ProductCard';
+import ProductCard from './ProductCard';
 import { useNavigate } from 'react-router-dom';
 
 const ProductContainer = ({ limit, showMoreButton }) => {
@@ -17,6 +17,21 @@ const ProductContainer = ({ limit, showMoreButton }) => {
 
   const limitedProducts = limit ? products.slice(0, limit) : products;
 
+  const handleAddToCart = (product) => {
+    axios
+      .post('/api/cart/add', {
+        itemId: product.id,
+        count: 1,
+      })
+      .then(() => {
+        alert(`${product.name}이(가) 장바구니에 담겼습니다.`);
+      })
+      .catch((err) => {
+        console.error('장바구니 담기 실패:', err);
+        alert('장바구니 담기 실패');
+      });
+  };
+
   return (
     <ProductWrapper>
       {showMoreButton && (
@@ -26,7 +41,11 @@ const ProductContainer = ({ limit, showMoreButton }) => {
       )}
       <Grid>
         {limitedProducts.map((product) => (
-          <ProductCard key={product.id} product={product} />
+          <ProductCard
+            key={product.id}
+            product={product}
+            onAddToCart={handleAddToCart}
+          />
         ))}
       </Grid>
     </ProductWrapper>
@@ -49,10 +68,23 @@ const Grid = styled.div`
 
 const MoreButton = styled.button`
   display: block;
-  margin: 0 10px 20px auto; // 오른쪽 마진을 자동으로 줘서 오른쪽 정렬
-  padding: 10px 10px;
+  margin: 0 10px 20px auto;
+  padding: 10px 20px;
   font-size: 14px;
-  border: none;
-  border-radius: 8px;
+  font-weight: 500;
+  color: #333;
+  background-color: #f0f0f0;
+  border: 1px solid #dcdcdc;
+  border-radius: 20px;
   cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: #e0e0e0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  }
+
+  &:active {
+    background-color: #d4d4d4;
+  }
 `;

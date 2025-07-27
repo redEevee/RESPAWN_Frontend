@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import Logo from '../components/Logo';
+import Logo from '../components/common/Logo';
 import axios from '../api/axios';
 
 const SignupPage = () => {

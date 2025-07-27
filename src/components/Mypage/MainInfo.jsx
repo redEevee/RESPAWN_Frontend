@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import axios from 'axios';
-import SmallBanner from '../SmallBanner';
+import SmallBanner from '../Banner/SmallBanner';
 
 function MainInfo() {
   const [user, setUser] = useState({});

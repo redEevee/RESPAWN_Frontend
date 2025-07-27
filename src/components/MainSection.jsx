@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import ProductContainer from './ProductContainer';
+import ProductContainer from './Product/ProductContainer';
 
 const MainSection = () => {
   return (

@@ -3,156 +3,156 @@ import styled from 'styled-components';
 import UserInfo from '../Mypage/UserInfo';
 import MainInfo from './MainInfo';
 
-function MypageInfo() {
-  return <MainInfo />;
-}
-
-function ProfileManagement() {
-  return <UserInfo />;
-}
-
-function OrderHistory() {
-  return <div>주문내역 화면입니다.</div>;
-}
-
-function DeliveryTracking() {
-  return <div>주문배송조회 화면입니다.</div>;
-}
-
-function Review() {
-  return <div>사용후기 화면입니다.</div>;
-}
-
-function Inquiry() {
-  return <div>1:1 문의 화면입니다.</div>;
-}
+const menuItems = [
+  {
+    title: 'MY 쇼핑',
+    items: [{ key: 'orders', label: '주문목록/배송조회' }],
+  },
+  {
+    title: 'MY 활동',
+    items: [
+      { key: 'inquiry', label: '문의하기' },
+      { key: 'inquiry_history', label: '문의내역 확인' },
+      { key: 'review', label: '구매후기' },
+    ],
+  },
+  {
+    title: 'MY 정보',
+    items: [{ key: 'profile', label: '개인정보확인/수정' }],
+  },
+];
 
 function MypageDetail() {
   const [selectedMenu, setSelectedMenu] = useState('mypage');
 
+  const renderContent = () => {
+    switch (selectedMenu) {
+      case 'orders':
+        return <div>주문내역 화면입니다.</div>;
+      case 'inquiry':
+        return <div>문의하기</div>;
+      case 'inquiry_history':
+        return <div>문의내역 확인</div>;
+      case 'review':
+        return <div>구매후기</div>;
+      case 'profile':
+        return <UserInfo />;
+      default:
+        return <MainInfo />;
+    }
+  };
+
   return (
     <Wrapper>
       <Sidebar>
-        <MenuTitle onClick={() => setSelectedMenu('mypage')}>My Page</MenuTitle>
-        <MenuList>
-          <li
-            className={selectedMenu === 'profile' ? 'active' : ''}
-            onClick={() => setSelectedMenu('profile')}
-          >
-            내정보관리
-          </li>
-          <li
-            className={selectedMenu === 'orders' ? 'active' : ''}
-            onClick={() => setSelectedMenu('orders')}
-          >
-            주문내역
-          </li>
-          <li
-            className={selectedMenu === 'delivery' ? 'active' : ''}
-            onClick={() => setSelectedMenu('delivery')}
-          >
-            주문배송조회
-          </li>
-          <li
-            className={selectedMenu === 'review' ? 'active' : ''}
-            onClick={() => setSelectedMenu('review')}
-          >
-            사용후기
-          </li>
-          <li
-            className={selectedMenu === 'inquiry' ? 'active' : ''}
-            onClick={() => setSelectedMenu('inquiry')}
-          >
-            1:1 문의
-          </li>
-        </MenuList>
+        <MenuTitle
+          className={selectedMenu === 'mypage' ? 'active' : ''}
+          onClick={() => setSelectedMenu('mypage')}
+        >
+          My Page
+        </MenuTitle>
+        {menuItems.map((section) => (
+          <div key={section.title}>
+            <SubMenuTitle>{section.title}</SubMenuTitle>
+            <MenuList>
+              {section.items.map((item) => (
+                <MenuItem
+                  key={item.key}
+                  active={selectedMenu === item.key}
+                  onClick={() => setSelectedMenu(item.key)}
+                  role="button"
+                >
+                  {item.label}
+                </MenuItem>
+              ))}
+            </MenuList>
+          </div>
+        ))}
       </Sidebar>
 
-      <MainContent>
-        {selectedMenu === 'mypage' && <MypageInfo />}
-        {selectedMenu === 'profile' && <ProfileManagement />}
-        {selectedMenu === 'orders' && <OrderHistory />}
-        {selectedMenu === 'delivery' && <DeliveryTracking />}
-        {selectedMenu === 'review' && <Review />}
-        {selectedMenu === 'inquiry' && <Inquiry />}
-      </MainContent>
+      <MainContent>{renderContent()}</MainContent>
     </Wrapper>
   );
 }
 
 export default MypageDetail;
 
+// Styled Components
+
 const Wrapper = styled.div`
   display: flex;
   max-width: 1200px;
   margin: 40px auto;
   font-family: 'Noto Sans KR', sans-serif;
-  /* 박스 그림자와 둥근 테두리 제거 */
-  background: transparent;
-  border-radius: 0;
-  box-shadow: none;
 `;
 
 const Sidebar = styled.aside`
   width: 220px;
-  display: flex;
-  flex-direction: column;
   padding: 20px 10px;
-  box-sizing: border-box;
-  background-color: transparent;
-  color: #111;
-  /* 연한 실선 (1px, 밝은 회색) */
   border-right: 1px solid rgba(0, 0, 0, 0.1);
 `;
 
-const MenuTitle = styled.h2`
-  font-size: 1.6rem;
-  margin-bottom: 20px;
+const MenuTitle = styled.h1`
+  font-size: 32px;
+  margin-bottom: 30px;
+  font-weight: 900;
+  color: #333;
   cursor: pointer;
-  user-select: none;
-  font-weight: 700;
-  letter-spacing: 1.2px;
-  color: #111;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: rgb(85, 90, 130);
+  }
 `;
 
+const SubMenuTitle = styled.h2`
+  font-size: 18px;
+  margin-bottom: 10px;
+  font-weight: 700;
+  color: #444;
+`;
+
+// styled
 const MenuList = styled.ul`
   list-style: none;
   padding: 0;
-  margin: 0;
+  margin: 0 0 25px 0;
+`;
 
-  li {
-    padding: 10px 12px;
-    margin-bottom: 6px;
-    border-radius: 0; /* 둥근 모서리 제거 */
-    cursor: pointer;
-    font-weight: 500;
-    font-size: 1rem;
-    transition: background-color 0.15s ease, color 0.15s ease;
-    user-select: none;
-    color: #111;
+const MenuItem = styled.li`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  margin-bottom: 5px;
+  cursor: pointer;
+  font-weight: ${(props) => (props.active ? '700' : '500')};
+  font-size: 16px;
+  color: ${(props) => (props.active ? 'rgb(85, 90, 130)' : '#111')};
+  border-radius: 8px;
+  transition: background-color 0.2s ease, color 0.2s ease;
 
-    &.active {
-      background-color: transparent; /* 배경 없음 */
-      color: #2563eb; /* 파란색 글씨 강조 */
-      font-weight: 700;
-      box-shadow: none;
-    }
+  &::before {
+    content: '▶';
+    font-size: 13px;
+    color: ${(props) => (props.active ? 'rgb(85, 90, 130)' : 'transparent')};
+    transition: color 0.2s ease;
+  }
 
-    &:hover {
-      background-color: #f0f4ff; /* 아주 연한 파란 배경 (부드럽게) */
-      color: #2563eb;
+  &:hover {
+    background-color: #f3f6ff;
+    color: rgb(85, 90, 130);
+
+    &::before {
+      color: rgb(85, 90, 130);
     }
   }
 `;
 
 const MainContent = styled.div`
   flex: 1;
-  padding: 30px 0 0 40px;
-  background-color: transparent; /* 배경 투명 */
+  padding: 30px 40px;
   min-height: 600px;
-  box-sizing: border-box;
-  border-left: none; /* 테두리 제거 */
-  border-radius: 0;
   overflow-y: auto;
-  box-shadow: none;
+  border-radius: 8px;
 `;

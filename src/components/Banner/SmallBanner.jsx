@@ -3,8 +3,8 @@ import styled from 'styled-components';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay } from 'swiper/modules';
 import 'swiper/css';
-import banner1 from '../assets/banner1.png';
-import banner2 from '../assets/banner2.png';
+import banner1 from '../../assets/banner1.png';
+import banner2 from '../../assets/banner2.png';
 
 const SmallBanner = () => {
   return (

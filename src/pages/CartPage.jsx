@@ -1,7 +1,7 @@
 import React from 'react';
-import CartList from '../components/CartList';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import CartList from '../components/Cart/CartList';
+import Header from '../components/common/Header';
+import Footer from '../components/common/Footer';
 
 const CartPage = () => {
   return (

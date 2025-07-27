@@ -1,9 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import styled from 'styled-components';
-import axios from 'axios';
+import axios from '../../api/axios';
 import AddressListModal from '../AddressListModal';
 
 function ProfilePage() {
+  const [password, setPassword] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   const userData = JSON.parse(localStorage.getItem('userData'));
   const username = userData?.username;
 
@@ -30,6 +33,27 @@ function ProfilePage() {
 
   // 주소지입력
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+
+  const handlePasswordCheck = async () => {
+    if (!password) {
+      alert('비밀번호를 입력해주세요.');
+      return;
+    }
+    try {
+      const response = await axios.post(
+        'http://localhost:8080/myPage/checkPassword',
+        { password }
+      );
+      if (response.data === true) {
+        setIsAuthenticated(true);
+      } else {
+        alert('비밀번호가 일치하지 않습니다.');
+      }
+    } catch (error) {
+      console.error('비밀번호 확인 실패', error);
+      alert('서버 오류로 비밀번호 확인에 실패했습니다.');
+    }
+  };
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -194,6 +218,30 @@ function ProfilePage() {
   const handleCloseAddressModal = () => {
     setIsAddressModalOpen(false);
   };
+
+  if (!isAuthenticated) {
+    return (
+      <Wrapper>
+        <Section>
+          <SectionTitle>내 정보 확인</SectionTitle>
+          <UserDetail>
+            <Label>아이디</Label>
+            <Value>{userData?.username || '-'}</Value>
+          </UserDetail>
+          <UserDetail>
+            <Label>비밀번호</Label>
+            <Input
+              type="password"
+              placeholder="비밀번호 입력"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </UserDetail>
+          <Button onClick={handlePasswordCheck}>확인</Button>
+        </Section>
+      </Wrapper>
+    );
+  }
 
   return (
     <Wrapper>
