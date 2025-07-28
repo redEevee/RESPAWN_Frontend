@@ -16,7 +16,6 @@ const OrderHistory = () => {
     const fetchOrderHistory = async () => {
       try {
         const response = await axios.get('/api/orders/history');
-        console.log('주문 내역 응답:', response.data);
         setOrders(response.data);
       } catch (error) {
         console.error('주문 내역 조회 실패:', error);
@@ -81,7 +80,7 @@ const OrderHistory = () => {
 export default OrderHistory;
 
 const Container = styled.div`
-  max-width: 900px;
+  max-width: 1000px;
   margin: 0 auto;
   padding: 2rem;
 `;
