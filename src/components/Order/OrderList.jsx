@@ -250,6 +250,38 @@ const OrderList = () => {
   };
 
   useEffect(() => {
+    const isRefresh = () => {
+      const navEntries = performance.getEntriesByType('navigation');
+      return navEntries.length > 0 && navEntries[0].type === 'reload';
+    };
+
+    const sendDeleteRequest = () => {
+      fetch('/api/orders/temporary', {
+        method: 'DELETE',
+        keepalive: true, // 페이지가 닫혀도 요청을 보냄
+      });
+    };
+
+    const handleBeforeUnload = (event) => {
+      if (!isRefresh()) {
+        sendDeleteRequest();
+      }
+    };
+
+    const handlePopState = () => {
+      sendDeleteRequest();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!orderId) return;
 
     axios
