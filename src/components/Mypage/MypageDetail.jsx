@@ -23,25 +23,17 @@ const menuItems = [
   },
 ];
 
+const contentMap = {
+  orders: <OrderHistory />,
+  inquiry: <div>문의하기</div>,
+  inquiry_history: <div>문의내역 확인</div>,
+  review: <div>구매후기</div>,
+  profile: <UserInfo />,
+  mypage: <MainInfo />,
+};
+
 function MypageDetail() {
   const [selectedMenu, setSelectedMenu] = useState('mypage');
-
-  const renderContent = () => {
-    switch (selectedMenu) {
-      case 'orders':
-        return <OrderHistory />;
-      case 'inquiry':
-        return <div>문의하기</div>;
-      case 'inquiry_history':
-        return <div>문의내역 확인</div>;
-      case 'review':
-        return <div>구매후기</div>;
-      case 'profile':
-        return <UserInfo />;
-      default:
-        return <MainInfo />;
-    }
-  };
 
   return (
     <Wrapper>
@@ -52,26 +44,25 @@ function MypageDetail() {
         >
           My Page
         </MenuTitle>
-        {menuItems.map((section) => (
-          <div key={section.title}>
-            <SubMenuTitle>{section.title}</SubMenuTitle>
+        {menuItems.map(({ title, items }) => (
+          <div key={title}>
+            <SubMenuTitle>{title}</SubMenuTitle>
             <MenuList>
-              {section.items.map((item) => (
+              {items.map(({ key, label }) => (
                 <MenuItem
-                  key={item.key}
-                  $active={selectedMenu === item.key}
-                  onClick={() => setSelectedMenu(item.key)}
+                  key={key}
+                  $active={selectedMenu === key}
+                  onClick={() => setSelectedMenu(key)}
                   role="button"
                 >
-                  {item.label}
+                  {label}
                 </MenuItem>
               ))}
             </MenuList>
           </div>
         ))}
       </Sidebar>
-
-      <MainContent>{renderContent()}</MainContent>
+      <MainContent>{contentMap[selectedMenu] || <MainInfo />}</MainContent>
     </Wrapper>
   );
 }
@@ -113,7 +104,6 @@ const SubMenuTitle = styled.h2`
   color: #444;
 `;
 
-// styled
 const MenuList = styled.ul`
   list-style: none;
   padding: 0;
