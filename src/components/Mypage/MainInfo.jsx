@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import axios from '../../api/axios';
 import SmallBanner from '../Banner/SmallBanner';
+import OrderCard from '../OrderHistory/OrderCard';
 
 function MainInfo() {
   const [user, setUser] = useState({});
@@ -45,31 +46,7 @@ function MainInfo() {
         <SectionTitle>주문배송조회</SectionTitle>
 
         {latestOrder ? (
-          <OrderCardWrapper>
-            <OrderHeader>
-              <OrderDate>
-                {new Date(latestOrder.orderDate).toLocaleDateString()}
-              </OrderDate>
-              <OrderNumber>주문번호: {latestOrder.orderId}</OrderNumber>
-            </OrderHeader>
-
-            {latestOrder.items.map((item) => (
-              <OrderItemCard key={item.orderItemId}>
-                <ItemImage src={item.imageUrl} alt={item.itemName} />
-                <ItemInfo>
-                  <ItemName>{item.itemName}</ItemName>
-                  <ItemCount>{item.count}개</ItemCount>
-                  <ItemPrice>
-                    {(item.price * item.count).toLocaleString()}원
-                  </ItemPrice>
-                </ItemInfo>
-              </OrderItemCard>
-            ))}
-
-            <OrderTotal>
-              총 결제 금액: {latestOrder.totalAmount.toLocaleString()}원
-            </OrderTotal>
-          </OrderCardWrapper>
+          <OrderCard order={latestOrder} />
         ) : (
           <NoOrderText>최근 주문 내역이 없습니다.</NoOrderText>
         )}
@@ -120,75 +97,6 @@ const SectionTitle = styled.h3`
   margin-bottom: 20px;
   border-bottom: 2px solid #222;
   padding-bottom: 6px;
-`;
-
-const OrderCardWrapper = styled.div`
-  border: 1px solid #d1d5db;
-  border-radius: 12px;
-  padding: 20px;
-  background-color: #fafafa;
-`;
-
-const OrderHeader = styled.div`
-  margin-bottom: 12px;
-  color: #555;
-  font-size: 0.9rem;
-`;
-
-const OrderDate = styled.div`
-  margin-bottom: 4px;
-`;
-
-const OrderNumber = styled.div`
-  font-weight: 600;
-`;
-
-const OrderItemCard = styled.div`
-  display: flex;
-  padding: 12px 16px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  background-color: #fff;
-  align-items: center;
-`;
-
-const ItemImage = styled.img`
-  width: 100px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  margin-right: 16px;
-`;
-
-const ItemInfo = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-const ItemName = styled.span`
-  font-weight: 700;
-  font-size: 1rem;
-  margin-bottom: 6px;
-`;
-
-const ItemCount = styled.span`
-  font-size: 0.9rem;
-  color: #666;
-  margin-bottom: 4px;
-`;
-
-const ItemPrice = styled.span`
-  font-weight: 700;
-  color: #e60023;
-`;
-
-const OrderTotal = styled.div`
-  text-align: right;
-  font-weight: 700;
-  font-size: 1.1rem;
-  margin-top: 16px;
 `;
 
 const NoOrderText = styled.p`
