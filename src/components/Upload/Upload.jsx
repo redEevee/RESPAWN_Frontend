@@ -3,12 +3,14 @@ import NoticeBox from './NoticeBox';
 import axios from '../../api/axios';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
+import TiptapEditor from './TiptapEditor';
 
 function Upload() {
   const navigate = useNavigate();
+
   const [item, setItem] = useState({
     name: '',
-    description: '',
+    description: '상품 상세 정보를 입력해주세요.',
     deliveryType: '',
     deliveryFee: '',
     price: '',
@@ -18,6 +20,13 @@ function Upload() {
   });
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
+
+  const handleDescriptionChange = (html) => {
+    setItem((prev) => ({
+      ...prev,
+      description: html,
+    }));
+  };
 
   // 입력 변경 처리
   const handleChange = (e) => {
@@ -94,7 +103,6 @@ function Upload() {
                   placeholder="상품명"
                   value={item.name}
                   onChange={handleChange}
-                  required
                 />
                 <Row>
                   <Input
@@ -152,11 +160,9 @@ function Upload() {
 
             <EditorBox>
               <EditorTitle>상품 상세 정보</EditorTitle>
-              <EditorArea
-                name="description"
-                placeholder="상품에 대한 자세한 설명을 입력해주세요."
+              <TiptapEditor
                 value={item.description}
-                onChange={handleChange}
+                onChange={handleDescriptionChange}
               />
             </EditorBox>
 
@@ -253,25 +259,16 @@ const Unit = styled.span`
   color: #555;
 `;
 
-const EditorBox = styled.div`
-  margin-top: 10px;
+export const EditorBox = styled.div`
+  max-width: 800px;
+  background: #fff;
+  border-radius: 12px;
+  font-family: 'Pretendard', sans-serif;
 `;
 
-const EditorTitle = styled.h3`
-  font-size: 20px;
-  margin-bottom: 10px;
-`;
-
-const EditorArea = styled.textarea`
-  width: 100%;
-  height: 300px;
-  padding: 15px;
-  font-size: 16px;
-  line-height: 1.6;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  resize: vertical;
-  box-sizing: border-box;
+export const EditorTitle = styled.h2`
+  font-size: 24px;
+  font-weight: 700;
 `;
 
 const BottomActions = styled.div`

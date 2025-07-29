@@ -135,7 +135,7 @@ function ProductDetail() {
         {activeTab === 'description' && (
           <DescriptionBox>
             <h3>상품 상세 설명</h3>
-            <p>{item.description}</p>
+            <div dangerouslySetInnerHTML={{ __html: item.description }} />
           </DescriptionBox>
         )}
 
