@@ -49,7 +49,7 @@ function App() {
           }
         />
         <Route
-          path="/mypage"
+          path="/mypage/*"
           element={
             <PrivateRoute>
               <Mypage />

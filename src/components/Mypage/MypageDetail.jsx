@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styled from 'styled-components';
-import UserInfo from './UserInfo';
-import MainInfo from './MainInfo';
-import OrderHistory from '../OrderHistory/OrderHistory';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 
 const menuItems = [
   {
@@ -23,24 +21,16 @@ const menuItems = [
   },
 ];
 
-const contentMap = {
-  orders: <OrderHistory />,
-  inquiry: <div>문의하기</div>,
-  inquiry_history: <div>문의내역 확인</div>,
-  review: <div>구매후기</div>,
-  profile: <UserInfo />,
-  mypage: <MainInfo />,
-};
-
 function MypageDetail() {
-  const [selectedMenu, setSelectedMenu] = useState('mypage');
+  const navigate = useNavigate();
+  const location = useLocation();
 
   return (
     <Wrapper>
       <Sidebar>
         <MenuTitle
-          className={selectedMenu === 'mypage' ? 'active' : ''}
-          onClick={() => setSelectedMenu('mypage')}
+          className={location.pathname === '/mypage' ? 'active' : ''}
+          onClick={() => navigate('/mypage')}
         >
           My Page
         </MenuTitle>
@@ -48,21 +38,25 @@ function MypageDetail() {
           <div key={title}>
             <SubMenuTitle>{title}</SubMenuTitle>
             <MenuList>
-              {items.map(({ key, label }) => (
-                <MenuItem
-                  key={key}
-                  $active={selectedMenu === key}
-                  onClick={() => setSelectedMenu(key)}
-                  role="button"
-                >
-                  {label}
-                </MenuItem>
-              ))}
+              {items.map(({ key, label }) => {
+                const currentKey = location.pathname.split('/').pop();
+                return (
+                  <MenuItem
+                    key={key}
+                    $active={currentKey === key}
+                    onClick={() => navigate(`/mypage/${key}`)}
+                  >
+                    {label}
+                  </MenuItem>
+                );
+              })}
             </MenuList>
           </div>
         ))}
       </Sidebar>
-      <MainContent>{contentMap[selectedMenu] || <MainInfo />}</MainContent>
+      <MainContent>
+        <Outlet />
+      </MainContent>
     </Wrapper>
   );
 }
