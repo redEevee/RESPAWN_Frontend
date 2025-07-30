@@ -1,10 +1,26 @@
 import React from 'react';
 import styled from 'styled-components';
-import Logo from './common/Logo';
+import Logo from '../common/Logo';
+import axios from '../../api/axios';
+import { useNavigate } from 'react-router-dom';
 
 const SellerHeader = () => {
-  //   const userData = JSON.parse(localStorage.getItem('userData'));
-  //   console.log(userData);
+  const navigate = useNavigate();
+
+  const userData = JSON.parse(localStorage.getItem('userData'));
+  const name = userData?.name;
+  console.log(userData);
+
+  const handleLogout = async () => {
+    try {
+      await axios.post('/logout');
+      localStorage.removeItem('userData');
+      alert('로그아웃 완료');
+      navigate('/');
+    } catch (error) {
+      console.error('로그아웃 에러:', error);
+    }
+  };
 
   return (
     <HeaderContainer>
@@ -14,10 +30,10 @@ const SellerHeader = () => {
             <Logo />
           </Left>
           <Right>
-            <span>로그아웃</span>
-            <span>회원관리</span>
-            <span>상품등록</span>
-            <span>상품관리</span>
+            <span>{name}님</span>
+            <span onClick={handleLogout} style={{ cursor: 'pointer' }}>
+              로그아웃
+            </span>
             <span>고객센터</span>
           </Right>
         </TopMenu>
