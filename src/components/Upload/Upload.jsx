@@ -10,13 +10,14 @@ function Upload() {
 
   const [item, setItem] = useState({
     name: '',
-    description: '상품 상세 정보를 입력해주세요.',
     deliveryType: '',
     deliveryFee: '',
     price: '',
     stockQuantity: '',
-    sellerId: '',
+    company: '',
+    companyNumber: '',
     categoryIds: '',
+    description: '상품 상세 정보를 입력해주세요.',
   });
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -144,9 +145,15 @@ function Upload() {
                   onChange={handleChange}
                 />
                 <Input
-                  name="sellerId"
-                  placeholder="판매자ID"
-                  value={item.sellerId}
+                  name="company"
+                  placeholder="판매사"
+                  value={item.company}
+                  onChange={handleChange}
+                />
+                <Input
+                  name="companyNumber"
+                  placeholder="사업자등록번호"
+                  value={item.companyNumber}
                   onChange={handleChange}
                 />
                 <Input
@@ -219,8 +226,8 @@ const ImageUpload = styled.div`
 `;
 
 const ImageBox = styled.div`
-  width: 250px;
-  height: 250px;
+  width: 300px;
+  height: 320px;
   background-color: #ddd;
   display: flex;
   justify-content: center;
