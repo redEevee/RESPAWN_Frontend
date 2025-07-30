@@ -17,7 +17,10 @@ function Mypage() {
           <Route index element={<MainInfo />} />
           <Route path="orders" element={<OrderHistory />} />
           <Route path="profile" element={<UserInfo />} />
-          <Route path="refund/:orderId" element={<RefundPage />} />
+          <Route
+            path="orders/:orderId/items/:itemId/refund"
+            element={<RefundPage />}
+          />
         </Route>
       </Routes>
       <Footer />

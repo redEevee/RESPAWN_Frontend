@@ -4,11 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 
 const RefundPage = () => {
   const navigate = useNavigate();
-  const { orderId } = useParams();
-
-  const handleGoBack = () => {
-    navigate(-1); // 브라우저 history에서 한 단계 뒤로
-  };
+  const { orderId, itemId: orderItemId } = useParams();
 
   // 주문 정보 상태
   const [order, setOrder] = useState(null);
@@ -22,6 +18,15 @@ const RefundPage = () => {
       .then(setOrder)
       .catch(console.error);
   }, [orderId]);
+
+  const selectedItem = useMemo(() => {
+    if (!order?.items) return null;
+    return order.items.find(
+      (it) => String(it.orderItemId) === String(orderItemId)
+    );
+  }, [order, orderItemId]);
+
+  const handleGoBack = () => navigate(-1);
 
   // 폼 상태 (사유/상세내용만)
   const [reason, setReason] = useState('');
@@ -37,35 +42,24 @@ const RefundPage = () => {
     e.preventDefault();
 
     const payload = {
-      orderId: Number(orderId),
       reason,
       detail,
     };
 
     console.log('전송할 데이터:', payload);
 
-    // 서버에서 전체 환불 요청 저장 엔드포인트 예시:
-    // POST /api/orders/refund
-    // Content-Type: application/json
-    //
-    // 요청 바디(JSON):
-    // {
-    //   "orderId": 123,
-    //   "reason": "defect",
-    //   "detail": "옷에 봉제 불량이 있습니다."
-    // }
-
-    // 서버 응답: 200 OK (또는 201 Created)
-
     try {
-      const res = await fetch(`/api/orders/${orderId}/refund`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        `/api/orders/${orderId}/items/${selectedItem.orderItemId}/refund`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }
+      );
       if (!res.ok) throw new Error('환불 요청 실패');
       alert('환불 요청이 접수되었습니다.');
-      navigate(-1);
+      navigate('/mypage');
     } catch (err) {
       console.error(err);
       alert('환불 요청 중 오류가 발생했습니다.');
@@ -73,7 +67,7 @@ const RefundPage = () => {
   };
 
   // 로딩/에러/빈 orderId 처리
-  if (!orderId) {
+  if (!orderId || !selectedItem) {
     return (
       <PageWrap>
         <Header>
@@ -96,7 +90,7 @@ const RefundPage = () => {
       {/* 주문 요약 (읽기 전용) */}
       <Section>
         <SectionTitle>주문 정보</SectionTitle>
-        {order && (
+        {order && selectedItem && (
           <>
             <OrderMeta>
               <div>주문번호: {order.orderId}</div>
@@ -105,34 +99,37 @@ const RefundPage = () => {
                   주문일시: {new Date(order.orderDate).toLocaleString()}
                 </div>
               )}
-              <div>총 결제금액: {order.totalAmount?.toLocaleString()}원</div>
             </OrderMeta>
 
-            {Array.isArray(order.items) && order.items.length > 0 && (
-              <ItemList>
-                {order.items.map((item) => (
-                  <ItemRow key={item.itemId}>
-                    <Thumb
-                      onClick={() =>
-                        window.open(`/ProductDetail/${item.itemId}`, '_blank')
-                      }
-                    >
-                      {item.imageUrl ? (
-                        <img src={item.imageUrl} alt={item.itemName} />
-                      ) : (
-                        <NoImage>NO IMAGE</NoImage>
-                      )}
-                    </Thumb>
-                    <ItemInfo>
-                      <div className="name">{item.itemName}</div>
-                      <div className="meta">
-                        수량 {item.count}개 · {item.price?.toLocaleString()}원
-                      </div>
-                    </ItemInfo>
-                  </ItemRow>
-                ))}
-              </ItemList>
-            )}
+            {/* selectedItem만 보여주기 */}
+            <ItemList>
+              <ItemRow key={selectedItem.itemId}>
+                <Thumb
+                  onClick={() =>
+                    window.open(
+                      `/ProductDetail/${selectedItem.itemId}`,
+                      '_blank'
+                    )
+                  }
+                >
+                  {selectedItem.imageUrl ? (
+                    <img
+                      src={selectedItem.imageUrl}
+                      alt={selectedItem.itemName}
+                    />
+                  ) : (
+                    <NoImage>NO IMAGE</NoImage>
+                  )}
+                </Thumb>
+                <ItemInfo>
+                  <div className="name">{selectedItem.itemName}</div>
+                  <div className="meta">
+                    수량 {selectedItem.count}개 ·{' '}
+                    {selectedItem.orderPrice?.toLocaleString()}원
+                  </div>
+                </ItemInfo>
+              </ItemRow>
+            </ItemList>
           </>
         )}
       </Section>

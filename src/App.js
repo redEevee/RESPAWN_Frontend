@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import GlobalStyle from './styles/GlobalStyle';
 import MainPage from './pages/MainPage';
 import LogInPage from './pages/LogInPage';
@@ -7,13 +7,15 @@ import SignUpPage from './pages/SignUpPage';
 import NotFoundPage from './pages/NotFoundPage';
 import Mypage from './pages/Mypage';
 import LoginOkPage from './pages/LoginOkPage';
-import UploadProduct from './pages/UploadProduct';
+import UploadProduct from './components/Seller/Upload/UploadProduct';
 import ProductDetailPage from './pages/ProductDetailPage';
 import ProductListPage from './pages/ProductListPage';
 import PublicRoute from './routes/PublicRoute';
 import PrivateRoute from './routes/PrivateRoute';
 import CartPage from './pages/CartPage';
 import OrderPage from './pages/OrderPage';
+import SellerCenterPage from './pages/SellerCenterPage';
+import ProductList from './components/Seller/ProductList';
 
 function App() {
   return (
@@ -59,6 +61,11 @@ function App() {
         <Route path="/loginOk" element={<LoginOkPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/order/:orderId" element={<OrderPage />} />
+        <Route path="/sellerCenter" element={<SellerCenterPage />}>
+          <Route index element={<Navigate to="productList" replace />} />
+          <Route path="productList" element={<ProductList />} />
+          <Route path="uploadProduct" element={<UploadProduct />} />
+        </Route>
         <Route path="/*" element={<NotFoundPage />} />
       </Routes>
     </>
