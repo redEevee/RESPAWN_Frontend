@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import NoticeBox from './NoticeBox';
-import axios from '../../api/axios';
+import axios from '../../../api/axios';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import TiptapEditor from './TiptapEditor';
 
-function Upload() {
+function UploadProduct() {
   const navigate = useNavigate();
 
   const [item, setItem] = useState({
@@ -186,7 +186,7 @@ function Upload() {
   );
 }
 
-export default Upload;
+export default UploadProduct;
 
 const Container = styled.div`
   display: flex;
