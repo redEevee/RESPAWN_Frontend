@@ -290,9 +290,9 @@ const OrderList = () => {
         const data = res.data;
         setOrders(res.data.orderItems || []);
         setBuyerInfo({
-          name: data.buyerName || '',
-          phone: data.buyerPhone || '',
-          email: data.buyerEmail || '',
+          name: data.name || '',
+          phone: data.phoneNumber || '',
+          email: data.email || '',
         });
         setSelectedAddressId(1);
         setSelectedCartItemIds(

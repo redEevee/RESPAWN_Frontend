@@ -147,6 +147,7 @@ const RefundPage = () => {
               onChange={(e) => setReason(e.target.value)}
               required
             >
+              <option value="">사유를 선택하세요.</option>
               <option value="불량/하자">불량/하자</option>
               <option value="단순 변심">단순 변심</option>
               <option value="오배송">오배송</option>
@@ -185,7 +186,6 @@ const RefundPage = () => {
 
 export default RefundPage;
 
-/* -------------------- styled -------------------- */
 const PageWrap = styled.div`
   max-width: 920px;
   margin: 0 auto;

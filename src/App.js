@@ -15,7 +15,11 @@ import PrivateRoute from './routes/PrivateRoute';
 import CartPage from './pages/CartPage';
 import OrderPage from './pages/OrderPage';
 import SellerCenterPage from './pages/SellerCenterPage';
-import ProductList from './components/Seller/ProductList';
+import ProductList from './components/Seller/List/ProductList';
+import RefundList from './components/Seller/List/RefundList';
+import RefundDetail from './components/Seller/Detail/RefundDetail';
+import OrderList from './components/Seller/List/OrderList';
+import ReviewList from './components/Seller/List/ReviewList';
 
 function App() {
   return (
@@ -65,6 +69,10 @@ function App() {
           <Route index element={<Navigate to="productList" replace />} />
           <Route path="productList" element={<ProductList />} />
           <Route path="uploadProduct" element={<UploadProduct />} />
+          <Route path="refundList" element={<RefundList />} />
+          <Route path="orderList" element={<OrderList />} />
+          <Route path="reviewList" element={<ReviewList />} />
+          <Route path="refund/:orderItemId" element={<RefundDetail />} />
         </Route>
         <Route path="/*" element={<NotFoundPage />} />
       </Routes>

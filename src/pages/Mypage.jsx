@@ -7,6 +7,7 @@ import OrderHistory from '../components/OrderHistory/OrderHistory';
 import UserInfo from '../components/Mypage/UserInfo';
 import MainInfo from '../components/Mypage/MainInfo';
 import RefundPage from '../components/ReturnExchange/RefundPage';
+import ReviewPage from '../components/Review/ReviewPage';
 
 function Mypage() {
   return (
@@ -18,8 +19,12 @@ function Mypage() {
           <Route path="orders" element={<OrderHistory />} />
           <Route path="profile" element={<UserInfo />} />
           <Route
-            path="orders/:orderId/items/:itemId/refund"
+            path="orders/:orderId/items/:itemId/registerRefund"
             element={<RefundPage />}
+          />
+          <Route
+            path="orders/:orderId/items/:itemId/registerReview"
+            element={<ReviewPage />}
           />
         </Route>
       </Routes>

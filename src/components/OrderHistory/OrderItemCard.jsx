@@ -22,8 +22,19 @@ const OrderItemCard = ({ item, orderId, orderStatus }) => {
   const itemRefundSt = String(item?.refundStatus ?? 'NONE').toUpperCase();
   const canRequestRefund = orderSt === 'PAID' && itemRefundSt === 'NONE';
 
+  const deliverSt = String(item?.deliverState ?? '').toUpperCase();
+  const canWriteReview = deliverSt === 'DELIVERED';
+
   const goToRefundPage = () => {
-    navigate(`/mypage/orders/${orderId}/items/${item.orderItemId}/refund`);
+    navigate(
+      `/mypage/orders/${orderId}/items/${item.orderItemId}/registerRefund`
+    );
+  };
+
+  const goToReviewPage = () => {
+    navigate(
+      `/mypage/orders/${orderId}/items/${item.orderItemId}/registerReview`
+    );
   };
 
   const openProductPage = () => {
@@ -40,10 +51,15 @@ const OrderItemCard = ({ item, orderId, orderStatus }) => {
         <Quantity>{item.count}개</Quantity>
         <Price>{(item.orderPrice * item.count).toLocaleString()}원</Price>
       </Info>
-      <StatusText>{statusText}</StatusText>
-      {canRequestRefund && (
-        <RefundButton onClick={goToRefundPage}>환불 신청</RefundButton>
-      )}
+      <ButtonGroup>
+        <StatusText>{statusText}</StatusText>
+        {canRequestRefund && (
+          <RefundButton onClick={goToRefundPage}>환불 신청</RefundButton>
+        )}
+        {canWriteReview && (
+          <ReviewButton onClick={goToReviewPage}>리뷰 작성하기</ReviewButton>
+        )}
+      </ButtonGroup>
     </ItemBox>
   );
 };
@@ -120,5 +136,30 @@ const RefundButton = styled.button`
 
   &:hover {
     background-color: rgba(105, 111, 148, 0.1); /* hover 시 살짝 배경 강조 */
+  }
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+  align-items: flex-end;
+`;
+
+const ReviewButton = styled.button`
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 8px 14px;
+  border: 1.5px solid #4b5563;
+  border-radius: 8px;
+  cursor: pointer;
+  background: transparent;
+  color: #4b5563;
+  height: fit-content;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: rgba(75, 85, 99, 0.1);
   }
 `;
