@@ -10,6 +10,7 @@ const SellerLayout = () => {
         <Nav>
           <StyledNavLink to="productList">상품 관리</StyledNavLink>
           <StyledNavLink to="orderList">주문 관리</StyledNavLink>
+          <StyledNavLink to="refundList">환불 관리</StyledNavLink>
           <StyledNavLink to="reviewList">리뷰</StyledNavLink>
           <StyledNavLink to="inquiryList">문의 관리</StyledNavLink>
         </Nav>
@@ -27,7 +28,7 @@ export default SellerLayout;
 
 const Wrapper = styled.div`
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
   background: #f5f6fa;
   padding: 20px; /* 전체 여백 */
   gap: 20px; /* Sidebar와 Content 사이 간격 */
@@ -42,11 +43,6 @@ const Sidebar = styled.div`
   flex-direction: column;
   align-items: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-
-  /* 귀여운 패턴 이미지 - 선택 */
-  background-image: url('/images/sidebar-pattern.png');
-  background-size: cover;
-  background-position: center;
 `;
 
 const LogoBox = styled.h2`

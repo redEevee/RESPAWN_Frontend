@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import axios from '../../api/axios';
+import axios from '../../../api/axios';
 import { useNavigate } from 'react-router-dom';
 
 const ProductList = () => {
@@ -116,9 +116,9 @@ const ProductList = () => {
 export default ProductList;
 
 const Container = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  max-width: 1600px;
+  margin: 60px auto;
+  padding: 0 20px;
 `;
 
 const TopBar = styled.div`
@@ -127,18 +127,24 @@ const TopBar = styled.div`
   align-items: center;
 `;
 
-const Title = styled.h1`
+const Title = styled.h2`
   font-size: 20px;
   font-weight: 700;
+  margin-bottom: 20px;
+  color: #555a82;
 `;
 
 const AddButton = styled.button`
   padding: 8px 16px;
-  background: rgb(85, 90, 130);
+  background: #555a82;
   border: none;
   border-radius: 6px;
   color: white;
   cursor: pointer;
+
+  &:hover {
+    background: #4a4e70;
+  }
 `;
 
 const Table = styled.table`
@@ -150,13 +156,18 @@ const Table = styled.table`
 
   th,
   td {
-    padding: 12px;
-    border-bottom: 1px solid #eee;
+    padding: 12px 15px;
     text-align: center;
+    border-bottom: 1px solid #eee;
   }
 
   th {
-    background: #f7f8fb;
+    background: #e6e8f4;
+    color: #333;
+  }
+
+  tr:hover {
+    background: #f5f7fa;
   }
 `;
 
@@ -176,16 +187,23 @@ const Thumb = styled.div`
 
 const ActionBtn = styled.button`
   margin: 0 4px;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border: none;
   border-radius: 6px;
-  background: ${(props) => (props.$danger ? '#ff6b6b' : '#ccc')};
+  font-size: 14px;
   color: white;
+  background: ${(props) => (props.$danger ? '#ff4d4f' : '#555a82')};
   cursor: pointer;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: ${(props) => (props.$danger ? '#d9363e' : '#3e4263')};
+  }
 `;
 
 const Message = styled.div`
   text-align: center;
   padding: 20px;
   color: #666;
+  font-size: 15px;
 `;
