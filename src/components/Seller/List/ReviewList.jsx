@@ -1,22 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-// import axios from '../../api/axios';
+import axios from '../../../api/axios';
+import { useNavigate } from 'react-router-dom';
 
 const ReviewList = () => {
   const [reviews, setReviews] = useState([]);
-
-  //   useEffect(() => {
-  //     fetchReviews();
-  //   }, []);
-
-  //   const fetchReviews = async () => {
-  //     try {
-  //       const res = await axios.get('/api/reviews/my-items'); // ← 리뷰 API 경로
-  //       setReviews(res.data);
-  //     } catch (err) {
-  //       console.error('리뷰 불러오기 실패:', err);
-  //     }
-  //   };
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchReviews();
@@ -24,38 +13,8 @@ const ReviewList = () => {
 
   const fetchReviews = async () => {
     try {
-      // 실제 API 호출 부분 (나중에 사용 가능)
-      // const res = await axios.get('/api/reviews/my-items');
-      // setReviews(res.data);
-
-      // 더미 데이터로 대체
-      const dummyData = [
-        {
-          reviewId: 1,
-          buyerName: '홍길동',
-          itemName: '테스트 상품 A',
-          rating: 4,
-          content: '제품이 생각보다 좋네요!',
-          createdAt: '2025-07-30T12:00:00Z',
-        },
-        {
-          reviewId: 2,
-          buyerName: '김철수',
-          itemName: '테스트 상품 B',
-          rating: 5,
-          content: '최고에요! 강력 추천합니다.',
-          createdAt: '2025-07-29T09:30:00Z',
-        },
-        {
-          reviewId: 3,
-          buyerName: '이영희',
-          itemName: '테스트 상품 C',
-          rating: 3,
-          content: '보통이에요. 가격 대비 무난합니다.',
-          createdAt: '2025-07-28T18:45:00Z',
-        },
-      ];
-      setReviews(dummyData);
+      const res = await axios.get('/api/reviews/seller/my-reviews');
+      setReviews(res.data);
     } catch (err) {
       console.error('리뷰 불러오기 실패:', err);
     }
@@ -67,13 +26,24 @@ const ReviewList = () => {
     return filled + empty;
   };
 
+  const handleRowClick = (review) => {
+    navigate(`/sellerCenter/reviewList/${review.reviewId}`, {
+      state: { review },
+    });
+  };
+
+  const truncateContent = (content, length = 20) => {
+    if (!content) return '';
+    return content.length > length ? content.slice(0, length) + '...' : content;
+  };
+
   return (
     <Container>
       <Title>상품 리뷰 목록</Title>
       <Table>
         <thead>
           <tr>
-            <th>리뷰 ID</th>
+            <th>번호</th>
             <th>작성자</th>
             <th>상품명</th>
             <th>평점</th>
@@ -89,14 +59,18 @@ const ReviewList = () => {
               </td>
             </tr>
           ) : (
-            reviews.map((review) => (
-              <tr key={review.reviewId}>
-                <td>{review.reviewId}</td>
-                <td>{review.buyerName}</td>
+            reviews.map((review, index) => (
+              <tr
+                key={review.reviewId}
+                onClick={() => handleRowClick(review)}
+                style={{ cursor: 'pointer' }}
+              >
+                <td>{reviews.length - index}</td>
+                <td>{review.buyerId}</td>
                 <td>{review.itemName}</td>
                 <td>{renderStars(review.rating)}</td>
-                <td>{review.content}</td>
-                <td>{new Date(review.createdAt).toLocaleDateString()}</td>
+                <td>{truncateContent(review.content)}</td>
+                <td>{new Date(review.createdDate).toLocaleDateString()}</td>
               </tr>
             ))
           )}
