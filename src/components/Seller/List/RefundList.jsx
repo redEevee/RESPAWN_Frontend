@@ -36,7 +36,7 @@ const RefundList = () => {
   }, []);
 
   const handleClick = (orderItemId) => {
-    navigate(`/sellerCenter/refund/${orderItemId}`);
+    navigate(`/sellerCenter/refundList/${orderItemId}`);
   };
 
   // 보여줄 데이터 선택

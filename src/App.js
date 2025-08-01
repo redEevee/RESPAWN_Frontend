@@ -20,6 +20,7 @@ import RefundList from './components/Seller/List/RefundList';
 import RefundDetail from './components/Seller/Detail/RefundDetail';
 import OrderList from './components/Seller/List/OrderList';
 import ReviewList from './components/Seller/List/ReviewList';
+import ReviewDetail from './components/Seller/Detail/ReviewDetail';
 
 function App() {
   return (
@@ -72,7 +73,8 @@ function App() {
           <Route path="refundList" element={<RefundList />} />
           <Route path="orderList" element={<OrderList />} />
           <Route path="reviewList" element={<ReviewList />} />
-          <Route path="refund/:orderItemId" element={<RefundDetail />} />
+          <Route path="refundList/:orderItemId" element={<RefundDetail />} />
+          <Route path="reviewList/:reviewId" element={<ReviewDetail />} />
         </Route>
         <Route path="/*" element={<NotFoundPage />} />
       </Routes>

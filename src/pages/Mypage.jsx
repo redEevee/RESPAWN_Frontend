@@ -8,6 +8,7 @@ import UserInfo from '../components/Mypage/UserInfo';
 import MainInfo from '../components/Mypage/MainInfo';
 import RefundPage from '../components/ReturnExchange/RefundPage';
 import ReviewPage from '../components/Review/ReviewPage';
+import RefundDetail from '../components/ReturnExchange/RefundDetail';
 
 function Mypage() {
   return (
@@ -18,6 +19,7 @@ function Mypage() {
           <Route index element={<MainInfo />} />
           <Route path="orders" element={<OrderHistory />} />
           <Route path="profile" element={<UserInfo />} />
+          <Route path="refund" element={<RefundDetail />} />
           <Route
             path="orders/:orderId/items/:itemId/registerRefund"
             element={<RefundPage />}

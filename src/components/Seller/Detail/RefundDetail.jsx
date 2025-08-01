@@ -91,7 +91,7 @@ function RefundDetail() {
       <Card>
         <SectionTitle>주문 정보</SectionTitle>
         <InfoRow>
-          <strong>주문번호:</strong> {refundItem.orderId}
+          <strong>주문번호:</strong> {refundItem.orderItemId}
         </InfoRow>
         <InfoRow>
           <strong>주문일시:</strong>{' '}
@@ -103,8 +103,10 @@ function RefundDetail() {
             <div>
               <strong>{refundItem.itemName}</strong>
             </div>
+            <div>수량 {refundItem.count}개 </div>
             <div>
-              수량 {refundItem.count}개 {refundItem.orderPrice}원
+              전체가격{' '}
+              {(refundItem.count * refundItem.orderPrice).toLocaleString()}원
             </div>
           </div>
         </ProductBox>

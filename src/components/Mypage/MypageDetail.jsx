@@ -12,6 +12,7 @@ const menuItems = [
     items: [
       { key: 'inquiry', label: '문의하기' },
       { key: 'inquiry_history', label: '문의내역 확인' },
+      { key: 'refund', label: '환불내역 확인' },
       { key: 'review', label: '구매후기' },
     ],
   },

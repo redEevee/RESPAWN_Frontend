@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import styled from 'styled-components';
 import { useParams, useNavigate } from 'react-router-dom';
+import axios from '../../api/axios';
 
 const RefundPage = () => {
   const navigate = useNavigate();
@@ -13,10 +14,12 @@ const RefundPage = () => {
     if (!orderId) return;
 
     // 주문 단건 조회 API 호출
-    fetch(`/api/orders/history/${orderId}`)
-      .then((res) => res.json())
-      .then(setOrder)
-      .catch(console.error);
+    axios
+      .get(`/api/orders/history/${orderId}`)
+      .then((res) => setOrder(res.data))
+      .catch((err) => {
+        console.error('주문 정보 불러오기 실패:', err);
+      });
   }, [orderId]);
 
   const selectedItem = useMemo(() => {
@@ -49,15 +52,10 @@ const RefundPage = () => {
     console.log('전송할 데이터:', payload);
 
     try {
-      const res = await fetch(
+      await axios.post(
         `/api/orders/${orderId}/items/${selectedItem.orderItemId}/refund`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        }
+        payload
       );
-      if (!res.ok) throw new Error('환불 요청 실패');
       alert('환불 요청이 접수되었습니다.');
       navigate('/mypage');
     } catch (err) {
