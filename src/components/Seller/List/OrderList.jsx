@@ -1,60 +1,37 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-// import axios from '../../api/axios';
+import axios from '../../../api/axios';
 
 function OrderList() {
   const [orders, setOrders] = useState([]);
 
-  //   useEffect(() => {
-  //     fetchOrders();
-  //   }, []);
-
-  //   const fetchOrders = async () => {
-  //     try {
-  //       const response = await axios.get('/seller/orders'); // 예시 API
-  //       setOrders(response.data);
-  //     } catch (error) {
-  //       console.error('주문 목록 가져오기 실패:', error);
-  //     }
-  //   };
+  const statusMap = {
+    TEMPORARY: '임시주문',
+    ORDERED: '주문접수',
+    PAID: '결제완료',
+    CANCELED: '주문취소',
+    RETURNED: '반품',
+    REFUND_REQUESTED: '환불신청',
+    REFUNDED: '환불',
+  };
 
   useEffect(() => {
     fetchOrders();
   }, []);
 
   const fetchOrders = async () => {
-    // 실제 API 호출 대신 더미 데이터 사용
-    const dummyData = [
-      {
-        orderItemId: 1,
-        orderNumber: '20250731-0001',
-        buyerName: '홍길동',
-        itemName: '게이밍 마우스',
-        count: 2,
-        totalPrice: 59800,
-        status: '결제완료',
-      },
-      {
-        orderItemId: 2,
-        orderNumber: '20250731-0002',
-        buyerName: '김철수',
-        itemName: '기계식 키보드',
-        count: 1,
-        totalPrice: 79800,
-        status: '배송중',
-      },
-      {
-        orderItemId: 3,
-        orderNumber: '20250731-0003',
-        buyerName: '이영희',
-        itemName: '게이밍 체어',
-        count: 1,
-        totalPrice: 159800,
-        status: '배송완료',
-      },
-    ];
-    setOrders(dummyData);
+    try {
+      const response = await axios.get('/api/orders/seller/orders'); // 예시 API
+      setOrders(response.data);
+      console.log(response.data);
+    } catch (error) {
+      console.error('주문 목록 가져오기 실패:', error);
+    }
   };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
   return (
     <Container>
@@ -62,23 +39,37 @@ function OrderList() {
       <Table>
         <thead>
           <tr>
+            <th>번호</th>
             <th>주문번호</th>
-            <th>구매자</th>
             <th>상품명</th>
+            <th>구매자</th>
             <th>수량</th>
             <th>결제금액</th>
+            <th>주문일시</th>
             <th>주문상태</th>
           </tr>
         </thead>
         <tbody>
-          {orders.map((order) => (
-            <tr key={order.orderItemId}>
-              <td>{order.orderNumber}</td>
-              <td>{order.buyerName}</td>
+          {orders.map((order, index) => (
+            <tr key={order.orderId}>
+              <td>{orders.length - index}</td>
+              <td>{order.orderId}</td>
               <td>{order.itemName}</td>
+              <td>{order.buyerName}</td>
               <td>{order.count}</td>
               <td>{order.totalPrice.toLocaleString()}원</td>
-              <td>{order.status}</td>
+              <td>
+                {order.orderDate
+                  ? new Date(order.orderDate).toLocaleString('ko-KR', {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                  : '-'}
+              </td>
+              <td>{statusMap[order.orderStatus]}</td>
             </tr>
           ))}
         </tbody>
