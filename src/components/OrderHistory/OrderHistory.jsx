@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import OrderCard from './OrderCard';
 import axios from '../../api/axios';
 import Pagination from '../Pagination';
+import { useLocation } from 'react-router-dom';
 
 const ORDERS_PER_PAGE = 5;
 
@@ -11,18 +12,28 @@ const OrderHistory = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const location = useLocation();
+
+  const fetchOrderHistory = async () => {
+    try {
+      const response = await axios.get('/api/orders/history');
+      setOrders(response.data);
+    } catch (error) {
+      console.error('주문 내역 조회 실패:', error);
+    }
+  };
 
   useEffect(() => {
-    const fetchOrderHistory = async () => {
-      try {
-        const response = await axios.get('/api/orders/history');
-        setOrders(response.data);
-      } catch (error) {
-        console.error('주문 내역 조회 실패:', error);
-      }
-    };
     fetchOrderHistory();
   }, []);
+
+  useEffect(() => {
+    if (location.state?.refresh) {
+      fetchOrderHistory();
+      // 상태 초기화: 뒤로가거나 새로고침 시 같은 효과 방지 location.state가 변경될때만
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // 검색 필터
   const filteredOrders = orders.filter((order) =>

@@ -1,10 +1,30 @@
 // OrderItemCard.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
+import axios from '../../api/axios';
 
 const OrderItemCard = ({ item, orderId, orderStatus }) => {
   const navigate = useNavigate();
+  const [reviewExists, setReviewExists] = useState(null);
+
+  useEffect(() => {
+    const checkReview = async () => {
+      try {
+        const res = await axios.get(
+          `/api/reviews/order-items/${item.orderItemId}`
+        );
+        setReviewExists(res.data.reviewExists);
+      } catch (error) {
+        console.error('리뷰 존재 여부 확인 실패', error);
+        setReviewExists(false); // 오류 시 버튼 보여줄지 말지 결정 가능
+      }
+    };
+
+    if (item.orderItemId) {
+      checkReview();
+    }
+  }, [item.orderItemId]);
 
   const status = String(item?.status ?? '').toUpperCase();
   const statusMap = {
@@ -22,8 +42,9 @@ const OrderItemCard = ({ item, orderId, orderStatus }) => {
   const itemRefundSt = String(item?.refundStatus ?? 'NONE').toUpperCase();
   const canRequestRefund = orderSt === 'PAID' && itemRefundSt === 'NONE';
 
-  const deliverSt = String(item?.deliverState ?? '').toUpperCase();
-  const canWriteReview = deliverSt === 'DELIVERED';
+  const canWriteReview =
+    String(item?.deliveryStatus ?? '').toUpperCase() === 'DELIVERED' &&
+    reviewExists === false;
 
   const goToRefundPage = () => {
     navigate(
@@ -53,12 +74,14 @@ const OrderItemCard = ({ item, orderId, orderStatus }) => {
       </Info>
       <ButtonGroup>
         <StatusText>{statusText}</StatusText>
-        {canRequestRefund && (
-          <RefundButton onClick={goToRefundPage}>환불 신청</RefundButton>
-        )}
-        {canWriteReview && (
-          <ReviewButton onClick={goToReviewPage}>리뷰 작성하기</ReviewButton>
-        )}
+        <ButtonsRow>
+          {canRequestRefund && (
+            <RefundButton onClick={goToRefundPage}>환불 신청</RefundButton>
+          )}
+          {canWriteReview && (
+            <ReviewButton onClick={goToReviewPage}>리뷰 작성하기</ReviewButton>
+          )}
+        </ButtonsRow>
       </ButtonGroup>
     </ItemBox>
   );
@@ -74,6 +97,7 @@ const ItemBox = styled.div`
   border-radius: 12px;
   margin-bottom: 16px;
   background-color: #ffffff;
+  align-items: center;
 `;
 
 const ImageWrapper = styled.div`
@@ -89,6 +113,7 @@ const ImageWrapper = styled.div`
 `;
 
 const Info = styled.div`
+  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -116,48 +141,50 @@ const Price = styled.div`
 `;
 
 const StatusText = styled.div`
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  color: #374151; /* 글자색만 */
-`;
-
-const RefundButton = styled.button`
-  font-size: 0.9rem;
-  font-weight: 600;
-  padding: 8px 14px;
-  border: 1.5px solid rgb(105, 111, 148); /* 테두리 색상 */
-  border-radius: 8px;
-  cursor: pointer;
-  align-items: center;
-  background: transparent; /* 배경 투명 */
-  color: rgb(105, 111, 148); /* 글자색 */
-  height: fit-content;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background-color: rgba(105, 111, 148, 0.1); /* hover 시 살짝 배경 강조 */
-  }
+  color: #374151;
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 8px;
   justify-content: center;
   align-items: flex-end;
+  min-width: 140px;
 `;
 
-const ReviewButton = styled.button`
+const ButtonsRow = styled.div`
+  display: flex;
+  gap: 12px;
+  flex-direction: column;
+  margin-top: 6px;
+`;
+
+const ButtonBase = styled.button`
   font-size: 0.9rem;
   font-weight: 600;
   padding: 8px 14px;
-  border: 1.5px solid #4b5563;
   border-radius: 8px;
   cursor: pointer;
-  background: transparent;
-  color: #4b5563;
   height: fit-content;
   transition: all 0.2s ease;
+  background: transparent;
+  border: 1.5px solid;
+`;
+
+const RefundButton = styled(ButtonBase)`
+  border-color: rgb(105, 111, 148);
+  color: rgb(105, 111, 148);
+
+  &:hover {
+    background-color: rgba(105, 111, 148, 0.1);
+  }
+`;
+
+const ReviewButton = styled(ButtonBase)`
+  border-color: #4b5563;
+  color: #4b5563;
 
   &:hover {
     background-color: rgba(75, 85, 99, 0.1);

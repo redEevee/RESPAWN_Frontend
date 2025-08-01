@@ -1,41 +1,32 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import axios from '../../api/axios';
 
 const ReviewPage = () => {
   const navigate = useNavigate();
+  const { orderId, itemId: orderItemId } = useParams();
+  const [order, setOrder] = useState(null);
 
-  // 주석 처리된 실제 데이터
-  // const { orderId, itemId: orderItemId } = useParams();
-  // const [order, setOrder] = useState(null);
-  // useEffect(() => {
-  //   if (!orderId) return;
-  //   fetch(`/api/orders/history/${orderId}`)
-  //     .then((res) => res.json())
-  //     .then(setOrder)
-  //     .catch(console.error);
-  // }, [orderId]);
+  useEffect(() => {
+    if (!orderId) return;
+    axios
+      .get(`/api/orders/history/${orderId}`)
+      .then((res) => setOrder(res.data))
+      .catch((err) => {
+        console.error('주문 정보 불러오기 실패:', err);
+      });
+  }, [orderId]);
 
-  // const selectedItem = useMemo(() => {
-  //   if (!order?.items) return null;
-  //   return order.items.find(
-  //     (it) => String(it.orderItemId) === String(orderItemId)
-  //   );
-  // }, [order, orderItemId]);
-
-  // ✨ 더미 아이템 데이터
-  const selectedItem = {
-    orderItemId: 1,
-    itemId: 101,
-    itemName: '샘플 상품명',
-    imageUrl: 'https://via.placeholder.com/150',
-    orderPrice: 12000,
-    count: 2,
-  };
+  const selectedItem = useMemo(() => {
+    if (!order?.items) return null;
+    return order.items.find(
+      (it) => String(it.orderItemId) === String(orderItemId)
+    );
+  }, [order, orderItemId]);
 
   const [rating, setRating] = useState(0);
   const [content, setContent] = useState('');
-
   const isValid = useMemo(() => {
     return Boolean(rating && content.trim());
   }, [rating, content]);
@@ -64,12 +55,44 @@ const ReviewPage = () => {
     );
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     alert(`⭐ ${rating}점\n\n${content}`);
+    e.preventDefault();
+
+    const review = {
+      rating,
+      content,
+    };
+
+    console.log('전송할 데이터:', review);
+
+    try {
+      await axios.post(
+        `/api/reviews/order-items/${selectedItem.orderItemId}`,
+        review
+      );
+      alert('리뷰가 작성되었습니다.');
+      navigate('/mypage/orders', { state: { refresh: true } });
+    } catch (err) {
+      console.error('리뷰 작성 오류:', err);
+      if (err.response) {
+        console.error('응답 상태:', err.response.status);
+        console.error('응답 메시지:', err.response.data);
+        alert(
+          `리뷰 작성 실패: ${err.response.data.message || '알 수 없는 오류'}`
+        );
+      } else {
+        alert('리뷰 작성 중 네트워크 오류가 발생했습니다.');
+      }
+    }
   };
 
   const handleGoBack = () => navigate(-1);
+
+  if (!selectedItem) {
+    return <div>상품 정보를 불러오는 중입니다...</div>;
+  }
 
   return (
     <PageWrap>
