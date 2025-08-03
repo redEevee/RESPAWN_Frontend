@@ -147,7 +147,6 @@ function ProductDetail() {
 
         {activeTab === 'reviews' && (
           <DescriptionBox>
-            <h3>상품평</h3>
             <ReviewList itemId={id} />
           </DescriptionBox>
         )}
