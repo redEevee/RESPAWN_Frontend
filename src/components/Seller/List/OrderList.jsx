@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import axios from '../../../api/axios';
+import { useNavigate } from 'react-router-dom';
 
 function OrderList() {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
 
   const statusMap = {
-    TEMPORARY: '임시주문',
     ORDERED: '주문접수',
     PAID: '결제완료',
     CANCELED: '주문취소',
@@ -51,7 +52,13 @@ function OrderList() {
         </thead>
         <tbody>
           {orders.map((order, index) => (
-            <tr key={order.orderId}>
+            <tr
+              key={order.orderId}
+              onClick={() =>
+                navigate(`/sellerCenter/orderList/${order.orderItemId}`)
+              }
+              style={{ cursor: 'pointer' }}
+            >
               <td>{orders.length - index}</td>
               <td>{order.orderId}</td>
               <td>{order.itemName}</td>
