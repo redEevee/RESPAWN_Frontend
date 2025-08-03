@@ -1,15 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SketchPicker } from 'react-color';
 import styled, { css } from 'styled-components';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Underline from '@tiptap/extension-underline';
-import Link from '@tiptap/extension-link';
-import Image from '@tiptap/extension-image';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
 import TextAlign from '@tiptap/extension-text-align';
+import CustomImage from './CustomImage';
 
 // tiptap 툴바 컴포넌트
 const MenuBar = ({ editor }) => {
@@ -79,8 +77,61 @@ const MenuBar = ({ editor }) => {
           label: '↦',
           command: () => editor.chain().focus().setTextAlign('right').run(),
         },
+        {
+          label: '🖼←',
+          command: () => {
+            if (editor.isActive('image')) {
+              editor
+                .chain()
+                .focus()
+                .updateAttributes('image', {
+                  style: 'display: block; margin: 0;',
+                })
+                .run();
+            }
+          },
+          active:
+            editor.isActive('image') &&
+            editor.getAttributes('image').style?.includes('margin: 0;'),
+        },
+        {
+          label: '🖼↔',
+          command: () => {
+            if (editor.isActive('image')) {
+              editor
+                .chain()
+                .focus()
+                .updateAttributes('image', {
+                  style: 'display: block; margin: 0 auto;',
+                })
+                .run();
+            }
+          },
+          active:
+            editor.isActive('image') &&
+            editor.getAttributes('image').style?.includes('margin: 0 auto;'),
+        },
+        {
+          label: '🖼→',
+          command: () => {
+            if (editor.isActive('image')) {
+              editor
+                .chain()
+                .focus()
+                .updateAttributes('image', {
+                  style: 'display: block; margin: 0 0 0 auto;',
+                })
+                .run();
+            }
+          },
+          active:
+            editor.isActive('image') &&
+            editor
+              .getAttributes('image')
+              .style?.includes('margin: 0 0 0 auto;'),
+        },
       ].map((btn, i) => (
-        <MenuButton key={i} onClick={btn.command} active={btn.active}>
+        <MenuButton key={i} onClick={btn.command} $active={btn.active}>
           {btn.label}
         </MenuButton>
       ))}
@@ -140,9 +191,7 @@ export default function TiptapEditor({ value = '', onChange }) {
           levels: [1, 2],
         },
       }),
-      Underline,
-      Link,
-      Image,
+      CustomImage,
       TextStyle,
       Color,
       Highlight.configure({ multicolor: true }),
@@ -153,6 +202,12 @@ export default function TiptapEditor({ value = '', onChange }) {
       onChange && onChange(editor.getHTML());
     },
   });
+
+  useEffect(() => {
+    if (editor) {
+      editor.commands.setContent(value, false);
+    }
+  }, [value, editor]);
 
   return (
     <EditorContainer>
@@ -217,7 +272,7 @@ const MenuButton = styled.button.attrs(() => ({
   cursor: pointer;
   border-radius: 4px;
 
-  ${(props) => props.active && activeStyle}
+  ${(props) => props.$active && activeStyle}
 
   &:hover {
     background: #e6f0ff;
