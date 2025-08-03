@@ -1,13 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../../api/axios';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 const RefundList = () => {
-  const [activeTab, setActiveTab] = useState('requested'); // requested or completed
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const queryParams = new URLSearchParams(location.search);
+  const initialTab = queryParams.get('tab') || 'requested';
+  const [activeTab, setActiveTab] = useState(initialTab);
+
   const [requestedRefunds, setRequestedRefunds] = useState([]);
   const [completedRefunds, setCompletedRefunds] = useState([]);
-  const navigate = useNavigate();
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    navigate(`/sellerCenter/refundList?tab=${tab}`);
+  };
 
   useEffect(() => {
     // 요청된 환불 리스트 가져오기
@@ -49,13 +59,13 @@ const RefundList = () => {
       <TabMenu>
         <TabButton
           active={activeTab === 'requested'}
-          onClick={() => setActiveTab('requested')}
+          onClick={() => handleTabChange('requested')}
         >
           환불 요청 중
         </TabButton>
         <TabButton
           active={activeTab === 'completed'}
-          onClick={() => setActiveTab('completed')}
+          onClick={() => handleTabChange('completed')}
         >
           환불 완료
         </TabButton>

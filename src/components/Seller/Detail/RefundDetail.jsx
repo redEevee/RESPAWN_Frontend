@@ -10,7 +10,9 @@ function RefundDetail() {
   const [refundItem, setRefundItem] = useState(null);
 
   const handleBack = () => {
-    navigate(-1);
+    const tab =
+      refundItem?.refundStatus === 'REQUESTED' ? 'requested' : 'completed';
+    navigate(`/sellerCenter/refundList?tab=${tab}`);
   };
 
   const handleAcceptRefund = async () => {
