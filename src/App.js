@@ -21,6 +21,8 @@ import RefundDetail from './components/Seller/Detail/RefundDetail';
 import OrderList from './components/Seller/List/OrderList';
 import ReviewList from './components/Seller/List/ReviewList';
 import ReviewDetail from './components/Seller/Detail/ReviewDetail';
+import EditProduct from './components/Seller/Detail/EditProduct';
+import OrderDetail from './components/Seller/Detail/OrderDetail';
 
 function App() {
   return (
@@ -75,6 +77,8 @@ function App() {
           <Route path="reviewList" element={<ReviewList />} />
           <Route path="refundList/:orderItemId" element={<RefundDetail />} />
           <Route path="reviewList/:reviewId" element={<ReviewDetail />} />
+          <Route path="productList/:id" element={<EditProduct />} />
+          <Route path="orderList/:orderItemId" element={<OrderDetail />} />
         </Route>
         <Route path="/*" element={<NotFoundPage />} />
       </Routes>

@@ -27,18 +27,6 @@ const ProductList = () => {
     fetchItems();
   }, []);
 
-  // 삭제 기능
-  const handleDelete = async (id) => {
-    if (!window.confirm('정말 삭제하시겠습니까?')) return;
-
-    try {
-      await axios.delete(`/api/items/${id}`);
-      setItems((prev) => prev.filter((item) => item.id !== id));
-    } catch (err) {
-      alert('삭제 실패');
-    }
-  };
-
   return (
     <Container>
       <TopBar>
@@ -94,13 +82,10 @@ const ProductList = () => {
                   <td>
                     <ActionBtn
                       onClick={() =>
-                        navigate(`/sellerCenter/product/${item.id}`)
+                        navigate(`/sellerCenter/productList/${item.id}`)
                       }
                     >
-                      수정
-                    </ActionBtn>
-                    <ActionBtn $danger onClick={() => handleDelete(item.id)}>
-                      삭제
+                      관리
                     </ActionBtn>
                   </td>
                 </tr>
