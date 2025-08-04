@@ -4,6 +4,7 @@ import axios from '../../../api/axios';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import TiptapEditor from './TiptapEditor';
+import Select from 'react-select';
 
 function UploadProduct() {
   const navigate = useNavigate();
@@ -16,11 +17,18 @@ function UploadProduct() {
     stockQuantity: '',
     company: '',
     companyNumber: '',
-    categoryIds: '',
-    description: '상품 상세 정보를 입력해주세요.',
+    categoryIds: [],
+    description: '',
   });
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
+
+  const categoryOptions = [
+    { value: '헤드셋', label: '헤드셋' },
+    { value: '마우스', label: '마우스' },
+    { value: '키보드', label: '키보드' },
+    { value: '모니터', label: '모니터' },
+  ];
 
   const handleDescriptionChange = (html) => {
     setItem((prev) => ({
@@ -32,6 +40,13 @@ function UploadProduct() {
   // 입력 변경 처리
   const handleChange = (e) => {
     setItem({ ...item, [e.target.name]: e.target.value });
+  };
+
+  const handleCategoryChange = (selected) => {
+    setItem((prev) => ({
+      ...prev,
+      categoryIds: selected.map((s) => s.value),
+    }));
   };
 
   // 이미지 파일 선택 시
@@ -52,15 +67,7 @@ function UploadProduct() {
     // React 객체를 JSON 문자열로 만든 후 Blob 형태로 FormData에 담는다
     formData.append(
       'itemDto',
-      new Blob(
-        [
-          JSON.stringify({
-            ...item,
-            categoryIds: item.categoryIds.split(',').map((id) => id.trim()), // 쉼표 구분
-          }),
-        ],
-        { type: 'application/json' }
-      )
+      new Blob([JSON.stringify({ ...item })], { type: 'application/json' })
     );
     if (image) formData.append('image', image);
 
@@ -99,69 +106,97 @@ function UploadProduct() {
                 />
               </ImageUpload>
               <Inputs>
-                <Input
-                  name="name"
-                  placeholder="상품명"
-                  value={item.name}
-                  onChange={handleChange}
-                />
-                <Row>
+                <InputGroup>
+                  <Label>상품명</Label>
                   <Input
-                    name="price"
-                    type="number"
-                    placeholder="판매가"
-                    value={item.price}
+                    name="name"
+                    value={item.name}
                     onChange={handleChange}
                   />
-                  <Unit>원</Unit>
+                </InputGroup>
+
+                <Row>
+                  <InputGroup style={{ flex: 1 }}>
+                    <Label>판매가</Label>
+                    <FlexRow>
+                      <Input
+                        name="price"
+                        type="number"
+                        value={item.price}
+                        onChange={handleChange}
+                      />
+                      <Unit>원</Unit>
+                    </FlexRow>
+                  </InputGroup>
                 </Row>
 
                 <Row>
-                  <Input
-                    name="deliveryFee"
-                    type="number"
-                    placeholder="기본 배송비"
-                    value={item.deliveryFee}
-                    onChange={handleChange}
-                  />
-                  <Unit>원</Unit>
+                  <InputGroup style={{ flex: 1 }}>
+                    <Label>재고</Label>
+                    <FlexRow>
+                      <Input
+                        name="stockQuantity"
+                        type="number"
+                        value={item.stockQuantity}
+                        onChange={handleChange}
+                      />
+                      <Unit>개</Unit>
+                    </FlexRow>
+                  </InputGroup>
                 </Row>
 
                 <Row>
-                  <Input
-                    name="stockQuantity"
-                    placeholder="재고"
-                    type="number"
-                    value={item.stockQuantity}
-                    onChange={handleChange}
-                  />
-                  <Unit>개</Unit>
+                  <InputGroup style={{ flex: 1 }}>
+                    <Label>배송비</Label>
+                    <FlexRow>
+                      <Input
+                        name="deliveryFee"
+                        type="number"
+                        value={item.deliveryFee}
+                        onChange={handleChange}
+                      />
+                      <Unit>원</Unit>
+                    </FlexRow>
+                  </InputGroup>
                 </Row>
 
-                <Input
-                  name="deliveryType"
-                  placeholder="배송방식"
-                  value={item.deliveryType}
-                  onChange={handleChange}
-                />
-                <Input
-                  name="company"
-                  placeholder="판매사"
-                  value={item.company}
-                  onChange={handleChange}
-                />
-                <Input
-                  name="companyNumber"
-                  placeholder="사업자등록번호"
-                  value={item.companyNumber}
-                  onChange={handleChange}
-                />
-                <Input
-                  name="categoryIds"
-                  placeholder="카테고리ID(쉼표로 구분)"
-                  value={item.categoryIds}
-                  onChange={handleChange}
-                />
+                <InputGroup>
+                  <Label>배송방식</Label>
+                  <SelectStyled
+                    name="deliveryType"
+                    value={
+                      item.deliveryType
+                        ? { label: item.deliveryType, value: item.deliveryType }
+                        : null
+                    }
+                    options={[
+                      { value: '택배', label: '택배' },
+                      { value: '퀵', label: '퀵배송' },
+                      { value: '직접배송', label: '직접배송' },
+                    ]}
+                    onChange={(selected) =>
+                      handleChange({
+                        target: {
+                          name: 'deliveryType',
+                          value: selected?.value || '',
+                        },
+                      })
+                    }
+                  />
+                </InputGroup>
+
+                <InputGroup>
+                  <Label>카테고리</Label>
+                  <SelectStyled
+                    isMulti
+                    name="categoryIds"
+                    options={categoryOptions}
+                    onChange={handleCategoryChange}
+                    value={categoryOptions.filter((opt) =>
+                      item.categoryIds.includes(opt.value)
+                    )}
+                  />
+                </InputGroup>
               </Inputs>
             </FormTopRow>
 
@@ -244,6 +279,12 @@ const PreviewImage = styled.img`
   object-fit: cover;
 `;
 
+const FlexRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
 const Inputs = styled.div`
   display: flex;
   flex-direction: column;
@@ -297,4 +338,20 @@ const SubmitButton = styled.button`
   border: none;
   padding: 10px 20px;
   cursor: pointer;
+`;
+
+const InputGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+
+const Label = styled.label`
+  font-weight: 600;
+  font-size: 14px;
+`;
+
+const SelectStyled = styled(Select)`
+  width: 300px;
+  font-size: 14px;
 `;

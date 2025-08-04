@@ -4,6 +4,7 @@ import axios from '../../../api/axios';
 import styled from 'styled-components';
 import { useNavigate, useParams } from 'react-router-dom';
 import TiptapEditor from '../Upload/TiptapEditor';
+import Select from 'react-select';
 
 function EditProduct() {
   const navigate = useNavigate();
@@ -12,6 +13,13 @@ function EditProduct() {
   const [item, setItem] = useState(null);
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
+
+  const categoryOptions = [
+    { value: '헤드셋', label: '헤드셋' },
+    { value: '마우스', label: '마우스' },
+    { value: '키보드', label: '키보드' },
+    { value: '모니터', label: '모니터' },
+  ];
 
   const STATUS = {
     SALE: 'SALE', // 판매중
@@ -207,60 +215,88 @@ function EditProduct() {
                   value={item.name}
                   onChange={handleChange}
                 />
+
                 <Row>
-                  <Input
-                    name="price"
-                    type="number"
-                    placeholder="판매가"
-                    value={item.price}
-                    onChange={handleChange}
-                  />
-                  <Unit>원</Unit>
+                  <FlexRow>
+                    <Input
+                      name="price"
+                      type="number"
+                      placeholder="판매가"
+                      value={item.price}
+                      onChange={handleChange}
+                    />
+                    <Unit>원</Unit>
+                  </FlexRow>
                 </Row>
+
                 <Row>
-                  <Input
-                    name="deliveryFee"
-                    type="number"
-                    placeholder="기본 배송비"
-                    value={item.deliveryFee}
-                    onChange={handleChange}
-                  />
-                  <Unit>원</Unit>
+                  <FlexRow>
+                    <Input
+                      name="stockQuantity"
+                      placeholder="재고"
+                      type="number"
+                      value={item.stockQuantity}
+                      onChange={handleChange}
+                    />
+                    <Unit>개</Unit>
+                  </FlexRow>
                 </Row>
+
                 <Row>
-                  <Input
-                    name="stockQuantity"
-                    placeholder="재고"
-                    type="number"
-                    value={item.stockQuantity}
-                    onChange={handleChange}
-                  />
-                  <Unit>개</Unit>
+                  <FlexRow>
+                    <Input
+                      name="deliveryFee"
+                      type="number"
+                      placeholder="기본 배송비"
+                      value={item.deliveryFee}
+                      onChange={handleChange}
+                    />
+                    <Unit>원</Unit>
+                  </FlexRow>
                 </Row>
-                <Input
-                  name="deliveryType"
-                  placeholder="배송방식"
-                  value={item.deliveryType}
-                  onChange={handleChange}
-                />
-                <Input
-                  name="company"
-                  placeholder="판매사"
-                  value={item.company}
-                  onChange={handleChange}
-                />
-                <Input
-                  name="companyNumber"
-                  placeholder="사업자등록번호"
-                  value={item.companyNumber}
-                  onChange={handleChange}
-                />
-                <Input
-                  name="categoryIds"
-                  placeholder="카테고리ID(쉼표로 구분)"
-                  value={item.categoryIds}
-                  onChange={handleChange}
-                />
+
+                <InputGroup>
+                  <Label>배송방식</Label>
+                  <SelectStyled
+                    name="deliveryType"
+                    value={
+                      item.deliveryType
+                        ? { label: item.deliveryType, value: item.deliveryType }
+                        : null
+                    }
+                    options={[
+                      { value: '택배', label: '택배' },
+                      { value: '퀵', label: '퀵배송' },
+                      { value: '직접배송', label: '직접배송' },
+                    ]}
+                    onChange={(selected) =>
+                      handleChange({
+                        target: {
+                          name: 'deliveryType',
+                          value: selected?.value || '',
+                        },
+                      })
+                    }
+                  />
+                </InputGroup>
+
+                <InputGroup>
+                  <Label>카테고리</Label>
+                  <SelectStyled
+                    isMulti
+                    name="categoryIds"
+                    options={categoryOptions}
+                    onChange={(selected) =>
+                      setItem((prev) => ({
+                        ...prev,
+                        categoryIds: selected.map((s) => s.value),
+                      }))
+                    }
+                    value={categoryOptions.filter((opt) =>
+                      item.categoryIds.includes(opt.value)
+                    )}
+                  />
+                </InputGroup>
               </Inputs>
             </FormTopRow>
 
@@ -370,6 +406,12 @@ const Input = styled.input`
   padding: 8px;
   border: 1px solid #ccc;
   width: 300px;
+`;
+
+const FlexRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
 `;
 
 const Row = styled.div`
@@ -486,4 +528,20 @@ const NoticeMessage = styled.div`
   font-family: 'Pretendard', sans-serif;
   text-align: center;
   box-shadow: 0 0 8px rgba(195, 208, 255, 0.5);
+`;
+
+const InputGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+
+const Label = styled.label`
+  font-weight: 600;
+  font-size: 14px;
+`;
+
+const SelectStyled = styled(Select)`
+  width: 300px;
+  font-size: 14px;
 `;
