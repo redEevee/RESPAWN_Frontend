@@ -23,7 +23,7 @@ const ProductCard = ({ product, onAddToCart }) => {
           </Overlay>
         </ImageWrapper>
         <Info>
-          <ProductStoreName>YS Market</ProductStoreName>
+          <ProductStoreName>{product.company}</ProductStoreName>
           <ProductName>{product.name}</ProductName>
           <ProcuctPrice>{product.price.toLocaleString()}원</ProcuctPrice>
         </Info>
