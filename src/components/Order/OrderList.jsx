@@ -212,12 +212,11 @@ const OrderList = () => {
     axios
       .post(`/api/orders/${orderId}/complete`, {
         addressId: selectedAddressId,
-        cartItemIds: selectedCartItemIds,
         paymentInfo: paymentResult,
       })
       .then((res) => {
         alert(res.data.message || '주문이 완료되었습니다!');
-        navigate('/mypage');
+        navigate(`/order/${orderId}/complete`);
       })
       .catch((err) => {
         alert(err.response?.data?.error || '주문 처리 중 오류가 발생했습니다.');
@@ -250,6 +249,38 @@ const OrderList = () => {
   };
 
   useEffect(() => {
+    const isRefresh = () => {
+      const navEntries = performance.getEntriesByType('navigation');
+      return navEntries.length > 0 && navEntries[0].type === 'reload';
+    };
+
+    const sendDeleteRequest = () => {
+      fetch('/api/orders/temporary', {
+        method: 'DELETE',
+        keepalive: true, // 페이지가 닫혀도 요청을 보냄
+      });
+    };
+
+    const handleBeforeUnload = (event) => {
+      if (!isRefresh()) {
+        sendDeleteRequest();
+      }
+    };
+
+    const handlePopState = () => {
+      sendDeleteRequest();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!orderId) return;
 
     axios
@@ -258,9 +289,9 @@ const OrderList = () => {
         const data = res.data;
         setOrders(res.data.orderItems || []);
         setBuyerInfo({
-          name: data.buyerName || '',
-          phone: data.buyerPhone || '',
-          email: data.buyerEmail || '',
+          name: data.name || '',
+          phone: data.phoneNumber || '',
+          email: data.email || '',
         });
         setSelectedAddressId(1);
         setSelectedCartItemIds(

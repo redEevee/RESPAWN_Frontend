@@ -3,11 +3,13 @@ import { useParams } from 'react-router-dom';
 import axios from '../../api/axios';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
+import ReviewList from './ReviewList';
 
 function ProductDetail() {
   const { id } = useParams();
   const [item, setItem] = useState(null);
   const [count, setCount] = useState(1);
+
   const [activeTab, setActiveTab] = useState('description');
 
   const navigate = useNavigate();
@@ -71,11 +73,7 @@ function ProductDetail() {
         <TopSection>
           {item.imageUrl && (
             <ImageBox>
-              <ProductImage
-                src={`http://localhost:8080${item.imageUrl}`}
-                width={300}
-                alt={item.name}
-              />
+              <ProductImage src={item.imageUrl} width={300} alt={item.name} />
             </ImageBox>
           )}
           <DetailBox>
@@ -113,29 +111,31 @@ function ProductDetail() {
 
         <TabMenu>
           <TabItem
-            active={activeTab === 'description'}
+            $active={activeTab === 'description'}
             onClick={() => setActiveTab('description')}
           >
             설명
           </TabItem>
+
           <TabItem
-            active={activeTab === 'additional'}
+            $active={activeTab === 'additional'}
             onClick={() => setActiveTab('additional')}
           >
             추가 정보
           </TabItem>
+
           <TabItem
-            active={activeTab === 'reviews'}
+            $active={activeTab === 'reviews'}
             onClick={() => setActiveTab('reviews')}
           >
-            상품평 (0)
+            상품평
           </TabItem>
         </TabMenu>
 
         {activeTab === 'description' && (
           <DescriptionBox>
             <h3>상품 상세 설명</h3>
-            <p>{item.description}</p>
+            <div dangerouslySetInnerHTML={{ __html: item.description }} />
           </DescriptionBox>
         )}
 
@@ -147,8 +147,7 @@ function ProductDetail() {
 
         {activeTab === 'reviews' && (
           <DescriptionBox>
-            <h3>상품평</h3>
-            <p>아직 상품평이 없습니다.</p>
+            <ReviewList itemId={id} />
           </DescriptionBox>
         )}
       </PageLayout>
@@ -342,10 +341,10 @@ const TabItem = styled.button`
   padding: 12px 20px;
   font-size: 16px;
   cursor: pointer;
-  color: ${({ active }) => (active ? '#000' : '#888')};
-  border-bottom: ${({ active }) =>
-    active ? '2px solid #000' : '2px solid transparent'};
-  font-weight: ${({ active }) => (active ? 'bold' : 'normal')};
+  color: ${({ $active }) => ($active ? '#000' : '#888')};
+  border-bottom: ${({ $active }) =>
+    $active ? '2px solid #000' : '2px solid transparent'};
+  font-weight: ${({ $active }) => ($active ? 'bold' : 'normal')};
 
   &:hover {
     color: #000;

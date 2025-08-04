@@ -219,7 +219,7 @@ function ProfilePage() {
     setIsAddressModalOpen(false);
   };
 
-  if (!isAuthenticated) {
+  if (user.provider === 'local' && !isAuthenticated) {
     return (
       <Wrapper>
         <Section>

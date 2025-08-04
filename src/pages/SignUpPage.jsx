@@ -55,6 +55,18 @@ const SignupPage = () => {
     isValidConfirmEmail: false,
   };
 
+  const initialCompanyState = {
+    company: '',
+    isRequiredCompany: false,
+    error: '',
+  };
+
+  const initialCompanyNumberState = {
+    companyNumber: '',
+    isRequiredCompanyNumber: false,
+    error: '',
+  };
+
   const [userType, setUserType] = useState('buyer');
   const [name, setName] = useState('');
   const [username, setUsername] = useState(initialUsernameState);
@@ -66,6 +78,8 @@ const SignupPage = () => {
   const [confirmPhone, setConfirmPhone] = useState(initialConfirmPhoneState);
   const [email, setEmail] = useState(initialEmailState);
   const [confirmEmail, setConfirmEmail] = useState(initialConfirmEmailState);
+  const [company, setCompany] = useState(initialCompanyState);
+  const [companyNumber, setCompanyNumber] = useState(initialCompanyNumberState);
 
   //이메일 도메인 선택 코드
   const [emailId, setEmailId] = useState(''); // 사용자 입력
@@ -160,6 +174,14 @@ const SignupPage = () => {
     } catch (error) {
       setUsername({ ...username, error: ' 중복확인에 오류가 생겼습니다.' });
     }
+  };
+
+  const formatCompanyNumber = (value) => {
+    const digits = value.replace(/\D/g, '').slice(0, 10); // 최대 10자리
+    const len = digits.length;
+    if (len < 4) return digits;
+    if (len < 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+    return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
   };
 
   const verifyPhoneNumber = async () => {
@@ -355,6 +377,27 @@ const SignupPage = () => {
             value === password.password ? '' : '비밀번호가 일치하지 않습니다.',
         });
         break;
+      case 'company':
+        setCompany({
+          ...company,
+          company: value,
+          isRequiredCompany: value.trim().length > 0,
+          error: value.trim() ? '' : '스토어 이름을 입력해주세요.',
+        });
+        break;
+      case 'companyNumber': {
+        const formatted = formatCompanyNumber(value);
+        const isValid = /^\d{3}-\d{2}-\d{5}$/.test(formatted);
+        setCompanyNumber({
+          ...companyNumber,
+          companyNumber: formatted,
+          isRequiredCompanyNumber: isValid,
+          error: isValid
+            ? ''
+            : '사업자등록번호 형식(예: 123-45-67890)에 맞게 입력해주세요.',
+        });
+        break;
+      }
       case 'phoneNumber':
         const requiredPhoneNumber = /^\d{11}$/.test(value);
         setPhoneNumber({
@@ -409,6 +452,12 @@ const SignupPage = () => {
       phoneNumber: phoneNumber.phoneNumber,
       email: email.email,
     };
+    if (userType === 'seller') {
+      signupData.company = company.company;
+      signupData.companyNumber = Number(
+        companyNumber.companyNumber.replace(/\D/g, '')
+      );
+    }
     try {
       const response = await axios.post(
         `http://localhost:8080/join/${userType}`,
@@ -499,6 +548,32 @@ const SignupPage = () => {
           />
           {confirmPassword.error && (
             <ErrorText>{confirmPassword.error}</ErrorText>
+          )}
+
+          {userType === 'seller' && (
+            <>
+              <Input
+                name="company"
+                type="text"
+                placeholder="스토어 이름"
+                value={company.company}
+                onChange={onChangeHandler('company')}
+                required
+              />
+              {company.error && <ErrorText>{company.error}</ErrorText>}
+
+              <Input
+                name="companyNumber"
+                type="text"
+                placeholder="사업자등록번호 (예: 1234567890)"
+                value={companyNumber.companyNumber}
+                onChange={onChangeHandler('companyNumber')}
+                required
+              />
+              {companyNumber.error && (
+                <ErrorText>{companyNumber.error}</ErrorText>
+              )}
+            </>
           )}
 
           <CheckWrapper>

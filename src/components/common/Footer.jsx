@@ -28,7 +28,7 @@ const Container = styled.footer`
 `;
 
 const Content = styled.div`
-  max-width: 960px;
+  max-width: 1200px;
   margin: 0 auto;
   text-align: left;
 `;

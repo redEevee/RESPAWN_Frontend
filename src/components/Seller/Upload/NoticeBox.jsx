@@ -19,8 +19,8 @@ export default NoticeBox;
 
 const Wrapper = styled.div`
   width: 240px;
-  background-color: #fff8f0;
-  border: 1px solid #ffd8b2;
+  background-color: rgba(105, 111, 148, 0.2);
+  border: 1px solid rgba(85, 90, 130, 0.2);
   padding: 20px;
   border-radius: 8px;
   font-size: 14px;
@@ -31,10 +31,14 @@ const Wrapper = styled.div`
 const Title = styled.h4`
   font-weight: bold;
   color: #c0392b;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 `;
 
 const List = styled.ul`
   padding-left: 20px;
   list-style: disc;
+
+  li {
+    margin-bottom: 8px;
+  }
 `;

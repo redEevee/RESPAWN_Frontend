@@ -116,9 +116,12 @@ const Header = () => {
               <span>로그인</span>
             </a>
           )}
-          <a href="/mypage">
-            <UserIcon src={userIcon} alt="User Icon" />
-          </a>
+
+          {role === '[ROLE_USER]' && (
+            <a href="/mypage">
+              <UserIcon src={userIcon} alt="User Icon" />
+            </a>
+          )}
 
           {role === '[ROLE_USER]' && (
             <a href="/cart">
@@ -128,7 +131,7 @@ const Header = () => {
 
           {role === '[ROLE_SELLER]' && (
             <a
-              href="/seller-center"
+              href="/sellerCenter"
               style={{ textDecoration: 'none', color: '#666' }}
             >
               <span>판매자센터</span>

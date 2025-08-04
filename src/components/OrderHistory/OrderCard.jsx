@@ -15,7 +15,12 @@ const OrderCard = ({ order }) => {
       </Header>
       <ItemList>
         {order.items.map((item) => (
-          <OrderItemCard key={item.itemId} item={item} />
+          <OrderItemCard
+            key={item.itemId}
+            item={item}
+            orderId={order.orderId}
+            orderStatus={order.status}
+          />
         ))}
       </ItemList>
       <OrderPrice>
