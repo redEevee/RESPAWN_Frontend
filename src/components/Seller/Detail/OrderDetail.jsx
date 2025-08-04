@@ -138,13 +138,13 @@ const Wrapper = styled.div`
   margin: 70px auto 100px;
   padding: 0 30px;
   font-family: 'Noto Sans KR', sans-serif;
-  color: #333;
+  color: #000;
 `;
 
 const Title = styled.h1`
   font-size: 32px;
   font-weight: 800;
-  color: #222;
+  color: #000;
   margin-bottom: 40px;
   letter-spacing: -0.02em;
 `;
@@ -162,8 +162,8 @@ const SectionTitle = styled.h2`
   font-size: 26px;
   font-weight: 700;
   margin-bottom: 28px;
-  color: #4a507a;
-  border-bottom: 3px solid #6b74cc;
+  color: #000;
+  border-bottom: 3px solid #696f94;
   padding-bottom: 10px;
 `;
 
@@ -182,9 +182,9 @@ const Table = styled.table`
   th {
     width: 160px;
     font-weight: 700;
-    color: #5a6180;
+    color: #555a82;
     text-align: left;
-    background: #f5f6fa;
+    background: rgba(105, 111, 148, 0.1);
     border-radius: 8px 0 0 8px;
   }
 
@@ -192,7 +192,7 @@ const Table = styled.table`
     background: #f9fafc;
     border-radius: 0 8px 8px 0;
     font-weight: 600;
-    color: #3c3f65;
+    color: #000;
   }
 
   tr {
@@ -202,7 +202,7 @@ const Table = styled.table`
   .highlight {
     font-weight: 900;
     font-size: 20px;
-    color: #1a237e;
+    color: #000;
   }
 `;
 
@@ -216,7 +216,7 @@ const FlexContainer = styled.div`
 const BackButton = styled.button`
   background: none;
   border: none;
-  color: #3b4cca;
+  color: #696f94;
   font-size: 18px;
   font-weight: 700;
   cursor: pointer;
@@ -251,7 +251,7 @@ const StatusBadge = styled.span`
       case 'REFUNDED':
         return '#9c27b0';
       default:
-        return '#607d8b';
+        return '#696f94';
     }
   }};
 `;

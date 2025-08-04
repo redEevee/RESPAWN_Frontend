@@ -212,12 +212,11 @@ const OrderList = () => {
     axios
       .post(`/api/orders/${orderId}/complete`, {
         addressId: selectedAddressId,
-        cartItemIds: selectedCartItemIds,
         paymentInfo: paymentResult,
       })
       .then((res) => {
         alert(res.data.message || '주문이 완료되었습니다!');
-        navigate('/mypage');
+        navigate(`/order/${orderId}/complete`);
       })
       .catch((err) => {
         alert(err.response?.data?.error || '주문 처리 중 오류가 발생했습니다.');
