@@ -73,7 +73,7 @@ const ReviewPage = () => {
         review
       );
       alert('리뷰가 작성되었습니다.');
-      navigate('/mypage/orders', { state: { refresh: true } });
+      navigate('/mypage', { state: { refresh: true } });
     } catch (err) {
       console.error('리뷰 작성 오류:', err);
       if (err.response) {
