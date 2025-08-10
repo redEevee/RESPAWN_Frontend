@@ -2,18 +2,39 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import axios from '../../../api/axios';
 import { useNavigate } from 'react-router-dom';
+import ItemSelector from './ItemSelector';
 
 const ReviewList = () => {
   const [reviews, setReviews] = useState([]);
+  const [items, setItems] = useState([]);
+  const [selectedItem, setSelectedItem] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchReviews();
+    fetchItems();
   }, []);
 
-  const fetchReviews = async () => {
+  useEffect(() => {
+    fetchReviews(selectedItem);
+  }, [selectedItem]);
+
+  // 상품 목록 불러오기
+  const fetchItems = async () => {
     try {
-      const res = await axios.get('/api/reviews/seller/my-reviews');
+      const res = await axios.get('/api/items/my-items');
+      setItems(res.data);
+    } catch (err) {
+      console.error('상품 목록 불러오기 실패:', err);
+    }
+  };
+
+  const fetchReviews = async (itemId) => {
+    try {
+      let url = '/api/reviews/seller/my-reviews';
+      if (itemId) {
+        url += `?itemId=${itemId}`;
+      }
+      const res = await axios.get(url);
       setReviews(res.data);
     } catch (err) {
       console.error('리뷰 불러오기 실패:', err);
@@ -39,7 +60,14 @@ const ReviewList = () => {
 
   return (
     <Container>
-      <Title>상품 리뷰 목록</Title>
+      <Header>
+        <Title>상품 리뷰 목록</Title>
+        <ItemSelector
+          value={selectedItem}
+          onChange={setSelectedItem}
+          productList={items}
+        />
+      </Header>
       <Table>
         <thead>
           <tr>
@@ -86,6 +114,13 @@ const Container = styled.div`
   max-width: 1600px;
   margin: 60px auto;
   padding: 0 20px;
+`;
+
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  align-items: center;
 `;
 
 const Title = styled.h2`

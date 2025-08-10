@@ -18,6 +18,13 @@ function OrderDetail() {
     REFUNDED: '환불',
   };
 
+  const deliveryStatusMap = {
+    PROCESSING: '상품준비중',
+    READY: '배송준비중',
+    SHIPPING: '배송중',
+    DELIVERED: '배송완료',
+  };
+
   useEffect(() => {
     const fetchOrderDetail = async () => {
       try {
@@ -121,7 +128,9 @@ function OrderDetail() {
               </tr>
               <tr>
                 <th>배송상태</th>
-                <td>{order.deliveryStatus || '정보 없음'}</td>
+                <td>
+                  {deliveryStatusMap[order.deliveryStatus] || '정보 없음'}
+                </td>
               </tr>
             </tbody>
           </Table>
@@ -209,7 +218,7 @@ const Table = styled.table`
 const FlexContainer = styled.div`
   display: flex;
   gap: 48px;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   justify-content: space-between;
 `;
 
