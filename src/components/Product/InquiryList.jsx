@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import styled from 'styled-components';
 import Pagination from '../Pagination';
 import axios from '../../api/axios';
@@ -13,7 +13,7 @@ const InquiryList = ({ itemId }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
 
-  const [activeTab, setActiveTab] = useState('waiting');
+  const [activeTab, setActiveTab] = useState('all');
 
   // 클릭한 항목 ID 저장
   const [expandedId, setExpandedId] = useState(null);
@@ -55,11 +55,14 @@ const InquiryList = ({ itemId }) => {
 
   // 탭 + 비밀글 제외 필터링
   const filtered = inquiries
-    .filter((item) =>
-      activeTab === 'waiting'
+    .filter((item) => {
+      if (activeTab === 'all') {
+        return true; // '전체' 탭에서는 모든 항목을 통과
+      }
+      return activeTab === 'waiting'
         ? item.status === 'WAITING'
-        : item.status === 'ANSWERED'
-    )
+        : item.status === 'ANSWERED';
+    })
     .filter((item) => (showSecret ? item.openToPublic : true));
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
@@ -67,7 +70,7 @@ const InquiryList = ({ itemId }) => {
   const indexOfFirst = indexOfLast - ITEMS_PER_PAGE;
   const currentInquiries = filtered.slice(indexOfFirst, indexOfLast);
 
-  const fetchInquiries = async () => {
+  const fetchInquiries = useCallback(async () => {
     try {
       const response = await axios.get(`/api/inquiries/${itemId}/titles`);
       setInquiries(response.data); // 전체 문의 리스트 (간략 정보만)
@@ -75,11 +78,11 @@ const InquiryList = ({ itemId }) => {
       console.error('Failed to fetch inquiries:', error);
       setInquiries([]);
     }
-  };
+  }, [itemId]);
 
   useEffect(() => {
     fetchInquiries(); // 컴포넌트 로딩 시 실행
-  }, [itemId]);
+  }, [fetchInquiries]);
 
   // 비밀글 제외 체크 후 페이지 제한
   useEffect(() => {
@@ -111,6 +114,12 @@ const InquiryList = ({ itemId }) => {
 
       {/* 탭 메뉴 추가 */}
       <TabMenu>
+        <TabButton
+          active={activeTab === 'all'}
+          onClick={() => handleTabChange('all')}
+        >
+          전체
+        </TabButton>
         <TabButton
           active={activeTab === 'waiting'}
           onClick={() => handleTabChange('waiting')}
@@ -287,6 +296,7 @@ const Th = styled.th`
   font-weight: 500;
   padding: 12px 4px;
   border-bottom: 2px solid #eee;
+  text-align: center;
 `;
 
 const TdTitle = styled.td`
@@ -295,6 +305,11 @@ const TdTitle = styled.td`
   vertical-align: middle;
   color: #444;
   cursor: pointer;
+  max-width: 300px; 
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
   }
 `;
 
@@ -303,6 +318,7 @@ const Td = styled.td`
   font-size: 15px;
   vertical-align: middle;
   color: #444;
+  text-align: center;
   ${(props) => props.finish && `color: #2e7d32;`}
 `;
 
@@ -324,6 +340,7 @@ const ContentBox = styled.div`
   background: #f4f5f8;
   font-size: 14px;
   color: #333;
+  text-align: left;
 
   p {
     margin: 6px 0;
