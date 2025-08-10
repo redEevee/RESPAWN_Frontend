@@ -49,11 +49,23 @@ const LoginPage = (e) => {
 
       navigate('/');
     } catch (error) {
-      if (error.response) {
-        alert(
-          '아이디 또는 비밀번호가 올바르지 않습니다.'
-          // '로그인 실패: ' + (error.response.data.message || '알 수 없는 오류')
-        );
+      if (error.response && error.response.data) {
+        const { error: errorCode } = error.response.data;
+
+        if (errorCode === 'expired') {
+          // 계정 잠김 안내
+          alert('계정이 만료되었습니다. 관리자에게 문의하세요.');
+        } else if (errorCode === 'locked') {
+          // 계정 잠김 안내
+          alert(
+            '비밀번호 5회 불일치로 계정이 잠겼습니다. 관리자에게 문의하세요.'
+          );
+        } else if (errorCode === 'invalid_credentials') {
+          // 비밀번호/아이디 불일치 안내
+          alert('아이디 또는 비밀번호가 올바르지 않습니다.');
+        } else {
+          alert('로그인 실패: ' + JSON.stringify(error.response.data));
+        }
       } else {
         alert('서버와 통신 중 오류가 발생했습니다.');
       }
