@@ -8,6 +8,7 @@ import google_icon from '../assets/login_google.png';
 import kakao_icon from '../assets/login_kakao.png';
 
 const LoginPage = (e) => {
+  const [failCount, setFailCount] = useState(0);
   const [user, setUser] = useState({
     username: '',
     password: '',
@@ -46,11 +47,16 @@ const LoginPage = (e) => {
       console.log('로그인 성공', response.data);
 
       localStorage.setItem('userData', JSON.stringify(response.data));
+      setFailCount(0);
 
       navigate('/');
     } catch (error) {
       if (error.response && error.response.data) {
-        const { error: errorCode } = error.response.data;
+        const { error: errorCode, failedLoginAttempts } = error.response.data;
+
+        if (failedLoginAttempts !== undefined) {
+          setFailCount(failedLoginAttempts);
+        }
 
         if (errorCode === 'expired') {
           // 계정 잠김 안내
@@ -58,11 +64,15 @@ const LoginPage = (e) => {
         } else if (errorCode === 'locked') {
           // 계정 잠김 안내
           alert(
-            '비밀번호 5회 불일치로 계정이 잠겼습니다. 관리자에게 문의하세요.'
+            '비밀번호 5회 불일치로 계정이 잠겼습니다. 관리자에게 문의하세요. '
           );
         } else if (errorCode === 'invalid_credentials') {
           // 비밀번호/아이디 불일치 안내
-          alert('아이디 또는 비밀번호가 올바르지 않습니다.');
+          alert(
+            `아이디 또는 비밀번호가 올바르지 않습니다.(${
+              failedLoginAttempts || 0
+            }회 실패)`
+          );
         } else {
           alert('로그인 실패: ' + JSON.stringify(error.response.data));
         }
@@ -149,6 +159,11 @@ const LoginPage = (e) => {
             required
           />
           {msg && <Message>{msg}</Message>}
+          {failCount > 0 && (
+            <FailCountMessage>
+              로그인 실패 횟수: {failCount}회 (5회 실패 시 계정이 잠깁니다)
+            </FailCountMessage>
+          )}
           <Button type="submit">로그인</Button>
         </form>
         <LWrap>
@@ -295,4 +310,12 @@ const SocialButton = styled.button`
     transform: scale(1.03);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
+`;
+
+const FailCountMessage = styled.p`
+  color: #d93025; /* 빨간색 */
+  font-size: 14px;
+  margin-top: 4px;
+  text-align: center;
+  font-weight: 600;
 `;
