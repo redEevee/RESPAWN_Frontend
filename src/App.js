@@ -25,6 +25,9 @@ import EditProduct from './components/Seller/Detail/EditProduct';
 import OrderDetail from './components/Seller/Detail/OrderDetail';
 import OrderCompletePage from './pages/OrderCompletePage';
 import InquiryList from './components/Seller/List/InquiryList';
+import FindIdPage from './pages/FindIdPage';
+import FindPwPage from './pages/FindPwPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 function App() {
   return (
@@ -69,6 +72,9 @@ function App() {
         />
         <Route path="/loginOk" element={<LoginOkPage />} />
         <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/findid" element={<FindIdPage />} />
+        <Route path="/findPw" element={<FindPwPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/order/:orderId" element={<OrderPage />} />
         <Route
           path="/order/:orderId/complete"
