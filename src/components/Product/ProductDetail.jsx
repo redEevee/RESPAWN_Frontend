@@ -4,6 +4,7 @@ import axios from '../../api/axios';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import ReviewList from './ReviewList';
+import InquiryList from './InquiryList';
 
 function ProductDetail() {
   const { id } = useParams();
@@ -130,6 +131,13 @@ function ProductDetail() {
           >
             상품평
           </TabItem>
+
+          <TabItem
+            $active={activeTab === 'inquiry'}
+            onClick={() => setActiveTab('inquiry')}
+          >
+            문의
+          </TabItem>
         </TabMenu>
 
         {activeTab === 'description' && (
@@ -148,6 +156,12 @@ function ProductDetail() {
         {activeTab === 'reviews' && (
           <DescriptionBox>
             <ReviewList itemId={id} />
+          </DescriptionBox>
+        )}
+
+        {activeTab === 'inquiry' && (
+          <DescriptionBox>
+            <InquiryList itemId={id} />
           </DescriptionBox>
         )}
       </PageLayout>

@@ -23,7 +23,8 @@ import ReviewList from './components/Seller/List/ReviewList';
 import ReviewDetail from './components/Seller/Detail/ReviewDetail';
 import EditProduct from './components/Seller/Detail/EditProduct';
 import OrderDetail from './components/Seller/Detail/OrderDetail';
-import OrderComplete from './components/Order/OrderComplete';
+import OrderCompletePage from './pages/OrderCompletePage';
+import InquiryList from './components/Seller/List/InquiryList';
 
 function App() {
   return (
@@ -69,7 +70,10 @@ function App() {
         <Route path="/loginOk" element={<LoginOkPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/order/:orderId" element={<OrderPage />} />
-        <Route path="/order/:orderId/complete" element={<OrderComplete />} />
+        <Route
+          path="/order/:orderId/complete"
+          element={<OrderCompletePage />}
+        />
         <Route path="/sellerCenter" element={<SellerCenterPage />}>
           <Route index element={<Navigate to="productList" replace />} />
           <Route path="productList" element={<ProductList />} />
@@ -77,6 +81,7 @@ function App() {
           <Route path="refundList" element={<RefundList />} />
           <Route path="orderList" element={<OrderList />} />
           <Route path="reviewList" element={<ReviewList />} />
+          <Route path="inquiryList" element={<InquiryList />} />
           <Route path="refundList/:orderItemId" element={<RefundDetail />} />
           <Route path="reviewList/:reviewId" element={<ReviewDetail />} />
           <Route path="productList/:id" element={<EditProduct />} />
