@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import styled from 'styled-components';
 import axios from '../../api/axios';
 import AddressListModal from '../AddressListModal';
+import ResetPasswordModal from './ResetPasswordModal';
 
 function ProfilePage() {
   const [password, setPassword] = useState('');
@@ -34,16 +35,16 @@ function ProfilePage() {
   // 주소지입력
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
 
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] =
+    useState(false);
+
   const handlePasswordCheck = async () => {
     if (!password) {
       alert('비밀번호를 입력해주세요.');
       return;
     }
     try {
-      const response = await axios.post(
-        'http://localhost:8080/myPage/checkPassword',
-        { password }
-      );
+      const response = await axios.post('/myPage/checkPassword', { password });
       if (response.data === true) {
         setIsAuthenticated(true);
       } else {
@@ -58,9 +59,7 @@ function ProfilePage() {
   useEffect(() => {
     const fetchUserDetails = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/user`, {
-          withCredentials: true,
-        });
+        const response = await axios.get(`/user`);
         setUser(response.data);
       } catch (error) {
         console.error('회원 정보 조회 실패', error);
@@ -117,11 +116,7 @@ function ProfilePage() {
     }
     try {
       setLoading(true);
-      await axios.post(
-        'http://localhost:8080/verify-phone-number',
-        { phoneNumber: newPhoneNumber },
-        { withCredentials: true }
-      );
+      await axios.post('/verify-phone-number', { phoneNumber: newPhoneNumber });
       setIsCodeSent(true);
       setTimer(300); // 5분
       alert('인증번호가 발송되었습니다. 메시지를 확인해주세요.');
@@ -145,11 +140,9 @@ function ProfilePage() {
     }
     try {
       setLoading(true);
-      await axios.post(
-        'http://localhost:8080/phone-number/verification-code',
-        { code: verificationCode },
-        { withCredentials: true }
-      );
+      await axios.post('/phone-number/verification-code', {
+        code: verificationCode,
+      });
       alert('전화번호가 성공적으로 인증되었습니다.');
       setIsVerified(true);
       resetTimer();
@@ -169,15 +162,11 @@ function ProfilePage() {
     }
     try {
       setLoading(true);
-      await axios.put(
-        'http://localhost:8080/myPage/setPhoneNumber',
-        { phoneNumber: newPhoneNumber },
-        { withCredentials: true }
-      );
-      alert('전화번호가 추가되었습니다.');
-      const response = await axios.get('http://localhost:8080/user', {
-        withCredentials: true,
+      await axios.put('/myPage/setPhoneNumber', {
+        phoneNumber: newPhoneNumber,
       });
+      alert('전화번호가 추가되었습니다.');
+      const response = await axios.get('/user');
       setUser(response.data);
       setIsAddingPhone(false);
       setNewPhoneNumber('');
@@ -219,6 +208,14 @@ function ProfilePage() {
     setIsAddressModalOpen(false);
   };
 
+  const handleOpenResetPasswordModal = () => {
+    setIsResetPasswordModalOpen(true);
+  };
+
+  const handleCloseResetPasswordModal = () => {
+    setIsResetPasswordModalOpen(false);
+  };
+
   if (user.provider === 'local' && !isAuthenticated) {
     return (
       <Wrapper>
@@ -253,6 +250,15 @@ function ProfilePage() {
         <UserDetail>
           <Label>유저네임</Label> <Value>{user.username || '-'}</Value>
         </UserDetail>
+        <UserDetail>
+          <Label>비밀번호</Label>
+          <Button onClick={handleOpenResetPasswordModal}>재설정</Button>
+        </UserDetail>
+
+        {isResetPasswordModalOpen && (
+          <ResetPasswordModal onClose={handleCloseResetPasswordModal} />
+        )}
+
         <UserDetail>
           <Label>이메일</Label> <Value>{user.email || '-'}</Value>
         </UserDetail>
@@ -337,8 +343,6 @@ function ProfilePage() {
 
 export default ProfilePage;
 
-// --- styled-components ---
-
 const Wrapper = styled.div`
   max-width: 860px;
   font-family: 'Noto Sans KR', sans-serif;
@@ -388,13 +392,12 @@ const Value = styled.div`
 const Button = styled.button`
   background-color: #222;
   color: #fff;
-  padding: 8px 18px;
+  padding: 8px 16px;
   border: none;
   border-radius: 4px;
   font-weight: 600;
   cursor: pointer;
-  margin-top: 16px;
-  transition: background-color 0.3s;
+  margin-left: 5px;
   min-width: 100px;
   &:hover:enabled {
     background-color: #555;
