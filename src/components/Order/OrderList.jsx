@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import axios from '../../api/axios';
 import AddressListModal from '../AddressListModal';
+import DeliveryModal from '../DeliveryModal';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import StepProgress from '../common/StepProgress';
@@ -164,10 +165,23 @@ const OrderList = () => {
 
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [selectedCartItemIds, setSelectedCartItemIds] = useState([]);
+  const [addressForm, setAddressForm] = useState({
+    zoneCode: '',
+    baseAddress: '',
+    detailAddress: '',
+    recipient: '',
+    phone: '',
+  });
+  const [showAddressForm, setShowAddressForm] = useState(true);
+  const [selectedAddressType, setSelectedAddressType] = useState('basic'); // basic, select, new
+  const [defaultAddress, setDefaultAddress] = useState(null);
 
-  const [showAddressForm, setShowAddressForm] = useState(false);
-  const [selectedAddressType, setSelectedAddressType] = useState('recent');
-  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
+  const [isAddressListModalOpen, setIsAddressListModalOpen] = useState(false);
+  const [deliveryModalInitialData, setDeliveryModalInitialData] =
+    useState(null);
+  const [preSelectedAddressId, setPreSelectedAddressId] = useState(null);
+
   const [selectedPayment, setSelectedPayment] = useState('신용카드');
 
   // PaymentComponent 실행을 위한 상태
@@ -183,9 +197,59 @@ const OrderList = () => {
     삼성페이: '삼성페이 앱으로 결제창이 전환됩니다.',
   };
 
-  const handleAddressConfirm = (addressId) => {
-    setSelectedAddressId(addressId);
-    setIsAddressModalOpen(false);
+  // 배송지 타입 변경 시
+  const handleAddressTypeChange = (type) => {
+    setSelectedAddressType(type);
+
+    if (type === 'basic') {
+      if (defaultAddress) {
+        setAddressForm(defaultAddress);
+        setSelectedAddressId(defaultAddress.id || null);
+      }
+      setIsDeliveryModalOpen(false);
+      setIsAddressListModalOpen(false);
+    } else if (type === 'select') {
+      // 배송지 목록 모달 열기
+      setIsAddressListModalOpen(true);
+      setIsDeliveryModalOpen(false);
+    } else if (type === 'new') {
+      // 새로운 배송지 입력 모달 열기
+      setIsDeliveryModalOpen(true);
+      setIsAddressListModalOpen(false);
+    }
+  };
+
+  // DeliveryModal 저장 완료 콜백
+  const handleDeliveryModalSaveComplete = (newAddress) => {
+    // newAddress = 서버에 저장 후 받은 새 주소 객체 (id 포함)
+    setIsDeliveryModalOpen(false);
+
+    if (newAddress) {
+      setSelectedAddressType('new');
+      setSelectedAddressId(newAddress.id);
+      setAddressForm({
+        zoneCode: newAddress.zoneCode || '',
+        baseAddress: newAddress.baseAddress || '',
+        detailAddress: newAddress.detailAddress || '',
+        recipient: newAddress.recipient || '',
+        phone: newAddress.phone || '',
+      });
+      setSelectedAddressType('new');
+    }
+  };
+
+  // 배송지 목록 모달에서 주소 선택 시 처리
+  const handleAddressListConfirm = (address) => {
+    setSelectedAddressId(address.id);
+    setAddressForm({
+      zoneCode: address.zoneCode || '',
+      baseAddress: address.baseAddress || '',
+      detailAddress: address.detailAddress || '',
+      recipient: address.recipient || '',
+      phone: address.phone || '',
+    });
+    setSelectedAddressType('select');
+    setIsAddressListModalOpen(false);
   };
 
   // 결제하기 버튼 클릭 시 바로 PaymentComponent 실행 (모달 없이)
@@ -293,21 +357,33 @@ const OrderList = () => {
           phone: data.phoneNumber || '',
           email: data.email || '',
         });
-        setSelectedAddressId(1);
+        console.log(res.data);
         setSelectedCartItemIds(
           res.data.orderItems.map((item) => item.cartItemId)
         );
         setTotalAmount(data.totalAmount || 0);
+        setSelectedAddressId(data.addressId || null);
+        const defaultAddr = {
+          id: data.addressId || null,
+          zoneCode: data.zoneCode || '',
+          baseAddress: data.baseAddress || '',
+          detailAddress: data.detailAddress || '',
+          recipient: data.recipient || '',
+          phone: data.addressPhone || '',
+        };
+        setDefaultAddress(defaultAddr);
+        if (selectedAddressType === 'basic') {
+          setAddressForm(defaultAddr);
+          setSelectedAddressId(defaultAddr.id);
+        } else {
+        }
       })
       .catch((err) => console.error('주문 내역 불러오기 실패', err));
   }, [orderId]);
 
   const handleOpenAddressModal = () => {
-    setIsAddressModalOpen(true);
-  };
-
-  const handleCloseAddressModal = () => {
-    setIsAddressModalOpen(false);
+    setSelectedAddressType('select');
+    setIsAddressListModalOpen(true);
   };
 
   return (
@@ -357,7 +433,7 @@ const OrderList = () => {
                   type="radio"
                   name="addressType"
                   checked={selectedAddressType === 'basic'}
-                  onChange={() => setSelectedAddressType('basic')}
+                  onChange={() => handleAddressTypeChange('basic')}
                 />{' '}
                 기본 배송지
               </label>
@@ -366,40 +442,123 @@ const OrderList = () => {
                 <input
                   type="radio"
                   name="addressType"
-                  checked={selectedAddressType === 'new'}
-                  onChange={() => setSelectedAddressType('new')}
+                  checked={selectedAddressType === 'select'}
+                  onChange={() => handleAddressTypeChange('select')}
                 />{' '}
-                새로운 주소
+                선택 배송지
               </label>
-              <AddressListButton onClick={handleOpenAddressModal}>
-                배송지 목록
+
+              <AddressListButton
+                type="button"
+                onClick={() => {
+                  handleAddressTypeChange('new'); // 모달 열기
+                }}
+              >
+                새로운 배송지 추가
               </AddressListButton>
             </AddressRadioGroup>
 
-            {isAddressModalOpen && (
+            {isDeliveryModalOpen && (
+              <DeliveryModal
+                onClose={() => {
+                  setIsDeliveryModalOpen(false);
+                }}
+                initialData={deliveryModalInitialData}
+                onSaveComplete={(savedAddress) => {
+                  // 배송지 모달 닫기
+                  setIsDeliveryModalOpen(false);
+                  // 방금 저장한 주소 ID 저장
+                  setPreSelectedAddressId(savedAddress.id);
+                  // 목록 모달 켜기
+                  setIsAddressListModalOpen(true);
+                }}
+              />
+            )}
+
+            {isAddressListModalOpen && (
               <AddressListModal
-                onClose={handleCloseAddressModal}
-                onConfirm={handleAddressConfirm}
+                onClose={() => setIsAddressListModalOpen(false)}
+                preSelectedId={preSelectedAddressId} // 목록에서 기본 선택
+                onConfirm={handleAddressListConfirm}
               />
             )}
 
             {showAddressForm && (
               <AddressForm>
-                <div>
-                  <input type="text" placeholder="우편번호" />{' '}
-                  <button>주소 찾기</button>
-                </div>
-                <input type="text" placeholder="기본주소" />
-                <input type="text" placeholder="상세주소" />
-                <input type="text" placeholder="받는사람 이름" />
-                <PhoneGroup>
-                  <select>
-                    <option value="010">010</option>
-                  </select>
-                  -
-                  <input type="text" maxLength={4} /> -{' '}
-                  <input type="text" maxLength={4} />
-                </PhoneGroup>
+                <FormGroup>
+                  <label>우편번호</label>
+                  <Input
+                    type="text"
+                    value={addressForm.zoneCode}
+                    readOnly
+                    onChange={(e) =>
+                      setAddressForm({
+                        ...addressForm,
+                        zoneCode: e.target.value,
+                      })
+                    }
+                  />
+                </FormGroup>
+
+                <FormGroup>
+                  <label>기본주소</label>
+                  <Input
+                    type="text"
+                    value={addressForm.baseAddress}
+                    readOnly
+                    onChange={(e) =>
+                      setAddressForm({
+                        ...addressForm,
+                        baseAddress: e.target.value,
+                      })
+                    }
+                  />
+                </FormGroup>
+
+                <FormGroup>
+                  <label>상세주소</label>
+                  <Input
+                    type="text"
+                    value={addressForm.detailAddress}
+                    readOnly
+                    onChange={(e) =>
+                      setAddressForm({
+                        ...addressForm,
+                        detailAddress: e.target.value,
+                      })
+                    }
+                  />
+                </FormGroup>
+
+                <FormGroup>
+                  <label>받는 사람</label>
+                  <Input
+                    type="text"
+                    value={addressForm.recipient}
+                    readOnly
+                    onChange={(e) =>
+                      setAddressForm({
+                        ...addressForm,
+                        recipient: e.target.value,
+                      })
+                    }
+                  />
+                </FormGroup>
+
+                <FormGroup>
+                  <label>전화번호</label>
+                  <Input
+                    type="text"
+                    value={addressForm.phone}
+                    readOnly
+                    onChange={(e) =>
+                      setAddressForm({
+                        ...addressForm,
+                        phone: e.target.value,
+                      })
+                    }
+                  />
+                </FormGroup>
               </AddressForm>
             )}
 
@@ -500,7 +659,6 @@ const OrderList = () => {
 
 export default OrderList;
 
-// 기존 스타일드 컴포넌트들 (모달 관련 스타일 제거)
 const Container = styled.div`
   padding: 40px;
   max-width: 1200px;
@@ -594,24 +752,56 @@ const AddressRadioGroup = styled.div`
 const AddressForm = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+`;
 
-  input,
-  select,
-  button {
-    padding: 8px;
-    font-size: 14px;
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #333;
+  }
+
+  input {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.95rem;
   }
 
   button {
-    margin-left: 10px;
+    background: #222;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    &:hover {
+      background: #444;
+    }
   }
 `;
 
-const PhoneGroup = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
+const Input = styled.input`
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: ${({ readOnly }) => (readOnly ? '#f5f5f5' : 'white')};
+  cursor: ${({ readOnly }) => (readOnly ? 'default' : 'text')};
+  font-size: 16px;
+
+  &:focus {
+    border-color: ${({ readOnly }) => (readOnly ? '#ccc' : '#0056ff')};
+    outline: none;
+  }
 `;
 
 const PaymentSection = styled.div`
