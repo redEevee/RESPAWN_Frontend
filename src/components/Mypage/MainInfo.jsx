@@ -7,6 +7,7 @@ import OrderCard from '../OrderHistory/OrderCard';
 function MainInfo() {
   const [user, setUser] = useState({});
   const [latestOrder, setLatestOrder] = useState(null);
+  const [points, setPoints] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -15,6 +16,13 @@ function MainInfo() {
         const orderRes = await axios.get(
           'http://localhost:8080/api/orders/latest'
         );
+        const pointsRes = await axios.get(
+          'http://localhost:8080/api/points/total/active',
+          {
+            withCredentials: true, // 세션/쿠키 인증 시 필요
+          }
+        );
+        setPoints(pointsRes.data);
         setUser(userRes.data);
         setLatestOrder(orderRes.data);
       } catch (error) {
@@ -39,7 +47,7 @@ function MainInfo() {
           </InfoItem>
           <InfoItem>
             <label>적립금</label>
-            <span>0 P</span>
+            <span>{points.toLocaleString()} P</span>
           </InfoItem>
         </TopInfoBox>
 
