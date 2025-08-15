@@ -28,6 +28,8 @@ import InquiryList from './components/Seller/List/InquiryList';
 import FindIdPage from './pages/FindIdPage';
 import FindPwPage from './pages/FindPwPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import UserInfo from './components/Seller/Detail/UserInfo';
+import CustomerCenterPage from './pages/CustomerCenterPage';
 
 function App() {
   return (
@@ -38,6 +40,7 @@ function App() {
         <Route path="/uploadproduct" element={<UploadProduct />} />
         <Route path="/productdetail/:id" element={<ProductDetailPage />} />
         <Route path="/productlist" element={<ProductListPage />} />
+        <Route path="/customerCenter" element={<CustomerCenterPage />} />
         <Route
           path="/cart"
           element={
@@ -92,6 +95,7 @@ function App() {
           <Route path="reviewList/:reviewId" element={<ReviewDetail />} />
           <Route path="productList/:id" element={<EditProduct />} />
           <Route path="orderList/:orderItemId" element={<OrderDetail />} />
+          <Route path="profile" element={<UserInfo />} />
         </Route>
         <Route path="/*" element={<NotFoundPage />} />
       </Routes>
