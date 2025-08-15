@@ -7,6 +7,14 @@ import StepProgress from '../common/StepProgress';
 const CartList = () => {
   const [cartItems, setCartItems] = useState([]);
   const navigate = useNavigate();
+  const [allChecked, setAllChecked] = useState(false);
+
+  const handleCheckAll = () => {
+    setAllChecked((prev) => !prev);
+    setCartItems((prev) =>
+      prev.map((item) => ({ ...item, checked: !allChecked }))
+    );
+  };
 
   useEffect(() => {
     axios
@@ -90,11 +98,13 @@ const CartList = () => {
   };
 
   const handleCheck = (id) => {
-    setCartItems((prev) =>
-      prev.map((item) =>
+    setCartItems((prev) => {
+      const updated = prev.map((item) =>
         item.cartItemId === id ? { ...item, checked: !item.checked } : item
-      )
-    );
+      );
+      setAllChecked(updated.every((item) => item.checked));
+      return updated;
+    });
   };
 
   const getTotalPrice = () => {
@@ -128,7 +138,13 @@ const CartList = () => {
       <Table>
         <thead>
           <tr>
-            <th></th>
+            <th>
+              <Checkbox
+                type="checkbox"
+                checked={allChecked}
+                onChange={handleCheckAll}
+              />
+            </th>
             <th>상품정보</th>
             <th>수량</th>
             <th>상품금액</th>
@@ -138,7 +154,7 @@ const CartList = () => {
           {cartItems.map((item) => (
             <ItemRow key={item.cartItemId}>
               <td>
-                <input
+                <Checkbox
                   type="checkbox"
                   checked={item.checked}
                   onChange={() => handleCheck(item.cartItemId)}
@@ -188,7 +204,8 @@ export default CartList;
 
 const Container = styled.div`
   padding: 40px;
-  max-width: 1000px;
+  max-width: 1200px;
+  width: 1200px;
   margin: 0 auto;
 `;
 
@@ -213,6 +230,12 @@ const Table = styled.table`
   td {
     padding: 20px;
     border-bottom: 1px solid #eee;
+    word-break: break-word; /* 긴 단어 줄바꿈 */
+  }
+
+  th:first-child,
+  td:first-child {
+    text-align: center; // 체크박스 컬럼 중앙 정렬
   }
 
   th {
@@ -223,6 +246,7 @@ const Table = styled.table`
 const ItemRow = styled.tr`
   td {
     vertical-align: middle;
+    text-align: center;
   }
 `;
 
@@ -240,6 +264,7 @@ const ProductInfo = styled.div`
 
   span {
     font-size: 16px;
+    word-break: break-word;
   }
 `;
 
@@ -305,5 +330,11 @@ const DeleteButton = styled.button`
   border: none;
   padding: 6px 12px;
   border-radius: 4px;
+  cursor: pointer;
+`;
+
+const Checkbox = styled.input`
+  width: 18px;
+  height: 18px;
   cursor: pointer;
 `;
