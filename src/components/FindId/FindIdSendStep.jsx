@@ -11,8 +11,8 @@ const FindIdSendStep = ({ userInfo, onNext, onPrev }) => {
     setLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem('token');
-      const userId = localStorage.getItem('userId');
+      const token = sessionStorage.getItem('token');
+      const userId = sessionStorage.getItem('userId');
       const type = 'email';
       const res = await axios.post('/find-id/send', {
         userId: userId,
@@ -32,8 +32,8 @@ const FindIdSendStep = ({ userInfo, onNext, onPrev }) => {
     setLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem('token');
-      const userId = localStorage.getItem('userId');
+      const token = sessionStorage.getItem('token');
+      const userId = sessionStorage.getItem('userId');
       const type = 'phone';
       const res = await axios.post('/find-id/send', {
         token: token,

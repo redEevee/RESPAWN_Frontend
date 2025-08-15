@@ -4,9 +4,9 @@ import Logo from '../../components/common/Logo';
 
 const FindIdDoneStep = ({ onPrev }) => {
   useEffect(() => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('type');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('userId');
+    sessionStorage.removeItem('type');
   }, []);
 
   return (

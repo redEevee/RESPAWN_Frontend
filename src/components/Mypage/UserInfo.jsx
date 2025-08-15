@@ -2,13 +2,13 @@ import React, { useEffect, useState, useRef } from 'react';
 import styled from 'styled-components';
 import axios from '../../api/axios';
 import AddressListModal from '../AddressListModal';
-import ResetPasswordModal from './ResetPasswordModal';
+import ResetPasswordModal from '../ResetPasswordModal';
 
 function ProfilePage() {
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const userData = JSON.parse(localStorage.getItem('userData'));
+  const userData = JSON.parse(sessionStorage.getItem('userData'));
   const username = userData?.username;
 
   const [user, setUser] = useState({

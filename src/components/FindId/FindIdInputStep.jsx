@@ -44,8 +44,8 @@ const FindIdInputStep = ({ onComplete }) => {
         const receivedPhoneNumber = res.data.phoneNumber;
         const receivedEmail = res.data.email;
 
-        localStorage.setItem('token', res.data.token);
-        localStorage.setItem('userId', res.data.userId);
+        sessionStorage.setItem('token', res.data.token);
+        sessionStorage.setItem('userId', res.data.userId);
 
         onComplete(
           { name, phoneNumber: receivedPhoneNumber, email: receivedEmail },

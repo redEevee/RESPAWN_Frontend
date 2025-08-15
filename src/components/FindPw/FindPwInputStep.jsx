@@ -46,7 +46,7 @@ const FindPwInputStep = ({ onComplete }) => {
       if (res.data) {
         const receivedPhoneNumber = res.data.phoneNumber;
         const receivedEmail = res.data.email;
-        localStorage.setItem('userId', res.data.userId);
+        sessionStorage.setItem('userId', res.data.userId);
         onComplete({
           name,
           phoneNumber: receivedPhoneNumber,

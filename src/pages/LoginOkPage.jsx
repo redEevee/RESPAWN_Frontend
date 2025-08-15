@@ -10,7 +10,7 @@ function LoginOkPage() {
       .then((response) => {
         // 유저 정보 상태 저장 또는 페이지 이동 처리
         console.log(response.data);
-        localStorage.setItem('userData', JSON.stringify(response.data));
+        sessionStorage.setItem('userData', JSON.stringify(response.data));
 
         if (window.opener && !window.opener.closed) {
           window.opener.postMessage({ type: 'LOGIN_SUCCESS' }, '*');

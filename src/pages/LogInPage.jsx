@@ -46,7 +46,7 @@ const LoginPage = (e) => {
       });
       console.log('로그인 성공', response.data);
 
-      localStorage.setItem('userData', JSON.stringify(response.data));
+      sessionStorage.setItem('userData', JSON.stringify(response.data));
       setFailCount(0);
 
       navigate('/');

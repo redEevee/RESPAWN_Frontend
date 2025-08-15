@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 
 const PublicRoute = ({ children }) => {
   // localStorage의 userData가 있으면 로그인 상태로 간주
-  const userData = localStorage.getItem('userData');
+  const userData = sessionStorage.getItem('userData');
 
   if (userData) {
     // 이미 로그인 상태면 /home으로 리다이렉트

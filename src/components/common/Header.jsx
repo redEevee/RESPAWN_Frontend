@@ -84,7 +84,7 @@ const Header = () => {
     '이벤트',
   ];
 
-  const userData = JSON.parse(localStorage.getItem('userData'));
+  const userData = JSON.parse(sessionStorage.getItem('userData'));
   const name = userData?.name;
   const role = userData?.authorities;
   console.log(userData);
@@ -92,7 +92,7 @@ const Header = () => {
   const handleLogout = async () => {
     try {
       await axios.post('/logout');
-      localStorage.removeItem('userData');
+      sessionStorage.removeItem('userData');
       alert('로그아웃 완료');
       navigate('/');
     } catch (error) {

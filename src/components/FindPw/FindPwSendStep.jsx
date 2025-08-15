@@ -11,7 +11,7 @@ const FindPwSendStep = ({ userInfo, onNext, onPrev }) => {
     setLoading(true);
     setError(null);
     try {
-      const userId = localStorage.getItem('userId');
+      const userId = sessionStorage.getItem('userId');
       const type = 'email';
       const res = await axios.post('/find-password/send', {
         userId: userId,
@@ -30,7 +30,7 @@ const FindPwSendStep = ({ userInfo, onNext, onPrev }) => {
     setLoading(true);
     setError(null);
     try {
-      const userId = localStorage.getItem('userId');
+      const userId = sessionStorage.getItem('userId');
       const type = 'phone';
       const res = await axios.post('/find-password/send', {
         userId: userId,
