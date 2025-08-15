@@ -152,6 +152,7 @@ const PaymentComponent = ({ orderInfo, onPaymentComplete, onClose }) => {
 };
 
 const OrderList = () => {
+  const POINT_UNIT = 10;
   const navigate = useNavigate();
   const { orderId } = useParams();
   const [orderData, setOrderData] = useState(null);
@@ -340,6 +341,7 @@ const OrderList = () => {
       .get(`/api/orders/${orderId}`)
       .then((res) => {
         const data = res.data;
+        console.log(data);
         setOrderData(data);
         setOrders(data.orderItems || []);
         setBuyerInfo({
@@ -347,7 +349,6 @@ const OrderList = () => {
           phone: data.phoneNumber || '',
           email: data.email || '',
         });
-        console.log(res.data);
         setSelectedCartItemIds(
           res.data.orderItems.map((item) => item.cartItemId)
         );
@@ -551,12 +552,43 @@ const OrderList = () => {
               <span>{orderData?.itemTotalAmount.toLocaleString()}원</span>
             </PriceRow>
             <PriceRow>
-              <span>즉시 적립금 할인</span>
-              <span>-0원</span>
-            </PriceRow>
-            <PriceRow>
-              <span>적립금 사용</span>
-              <span>-0원</span>
+              <PointsBox>
+                <PointsRow>
+                  <span>보유 적립금</span>
+                  <PointsStrong>
+                    {orderData.availablePoints.toLocaleString()}원
+                  </PointsStrong>
+                </PointsRow>
+
+                <PointsControl>
+                  <input
+                    type="text"
+                    // value={usedPoint}
+                    // onChange={handlePointChange}
+                    placeholder="사용할 적립금 입력"
+                    inputMode="numeric"
+                    disabled={!orderData}
+                  />
+                  <button
+                    type="button"
+                    // onClick={handleUseMaxPoint}
+                    disabled={!orderData}
+                  >
+                    최대사용
+                  </button>
+                  {/* {usedPoint > 0 && (
+                    <button type="button" onClick={handleClearPoint}>
+                      초기화
+                    </button>
+                  )} */}
+                </PointsControl>
+
+                <PointsHelp>
+                  {POINT_UNIT > 1
+                    ? `적립금은 ${POINT_UNIT.toLocaleString()}원 단위로 사용 가능합니다.`
+                    : '적립금은 1원 단위로 사용 가능합니다.'}
+                </PointsHelp>
+              </PointsBox>
             </PriceRow>
             <PriceRow>
               <span>쿠폰할인</span>
@@ -864,4 +896,71 @@ const SelectedAddressDisplay = styled.div`
   margin-top: 10px;
   font-size: 14px;
   color: #555;
+`;
+
+const PointsBox = styled.div`
+  margin: 12px 0;
+  padding: 16px;
+  background: #fafafa; /* Summary와 톤 통일 */
+  border-radius: 8px;
+  border: 1px solid #ddd; /* 기존 보더 컬러와 일치 */
+`;
+
+const PointsRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: ${({ gapless }) => (gapless ? '0' : '10px')};
+`;
+
+const PointsStrong = styled.strong`
+  font-weight: 600; /* 지나치게 튀지 않게 600 */
+  color: #222; /* Summary 텍스트 톤과 유사 */
+  font-size: 14px;
+`;
+
+const PointsControl = styled.div`
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+
+  input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    background: #fff;
+  }
+
+  button {
+    padding: 10px 12px;
+    min-width: 90px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: #f5f7ff; /* 기존 버튼 hover와 톤 맞춤 */
+      border-color: rgb(85, 90, 130);
+      color: rgb(85, 90, 130);
+    }
+
+    &:disabled {
+      background: #f2f2f2;
+      color: #999;
+      border-color: #ddd;
+      cursor: not-allowed;
+    }
+  }
+`;
+
+const PointsHelp = styled.div`
+  margin-top: 8px;
+  font-size: 12px;
+  color: #777; /* NoticeBox보다 톤을 낮춰 부드럽게 */
 `;

@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../../api/axios';
-import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 const InquiryList = () => {
-  const navigate = useNavigate();
   const [inquiries, setInquiries] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
   const [expandedDetail, setExpandedDetail] = useState({});
@@ -134,13 +132,13 @@ const InquiryList = () => {
 export default InquiryList;
 
 const Container = styled.div`
-  max-width: 1200px;
+  max-width: 1600px;
   margin: 60px auto;
   padding: 0 20px;
 `;
 
 const Title = styled.h2`
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   margin-bottom: 20px;
   color: #555a82;
