@@ -3,8 +3,7 @@ import styled from 'styled-components';
 import axios from '../../api/axios';
 import AddressListModal from '../AddressListModal';
 import DeliveryModal from '../DeliveryModal';
-import { useParams } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import StepProgress from '../common/StepProgress';
 
 // PaymentComponent를 모달 없이 바로 결제 실행하도록 수정
@@ -155,8 +154,8 @@ const PaymentComponent = ({ orderInfo, onPaymentComplete, onClose }) => {
 const OrderList = () => {
   const navigate = useNavigate();
   const { orderId } = useParams();
+  const [orderData, setOrderData] = useState(null);
   const [orders, setOrders] = useState([]);
-  const [totalAmount, setTotalAmount] = useState(0);
   const [buyerInfo, setBuyerInfo] = useState({
     name: '',
     phone: '',
@@ -173,7 +172,7 @@ const OrderList = () => {
     phone: '',
   });
   const [showAddressForm, setShowAddressForm] = useState(true);
-  const [selectedAddressType, setSelectedAddressType] = useState('basic'); // basic, select, new
+  const [selectedAddressType, setSelectedAddressType] = useState('basic');
   const [defaultAddress, setDefaultAddress] = useState(null);
 
   const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
@@ -181,6 +180,7 @@ const OrderList = () => {
   const [deliveryModalInitialData, setDeliveryModalInitialData] =
     useState(null);
   const [preSelectedAddressId, setPreSelectedAddressId] = useState(null);
+  const [prevAddressType, setPrevAddressType] = useState(selectedAddressType);
 
   const [selectedPayment, setSelectedPayment] = useState('신용카드');
 
@@ -199,12 +199,13 @@ const OrderList = () => {
 
   // 배송지 타입 변경 시
   const handleAddressTypeChange = (type) => {
-    setSelectedAddressType(type);
+    setPrevAddressType(selectedAddressType);
 
     if (type === 'basic') {
       if (defaultAddress) {
         setAddressForm(defaultAddress);
         setSelectedAddressId(defaultAddress.id || null);
+        setSelectedAddressType('basic');
       }
       setIsDeliveryModalOpen(false);
       setIsAddressListModalOpen(false);
@@ -212,28 +213,11 @@ const OrderList = () => {
       // 배송지 목록 모달 열기
       setIsAddressListModalOpen(true);
       setIsDeliveryModalOpen(false);
+      setSelectedAddressType('select');
     } else if (type === 'new') {
       // 새로운 배송지 입력 모달 열기
       setIsDeliveryModalOpen(true);
       setIsAddressListModalOpen(false);
-    }
-  };
-
-  // DeliveryModal 저장 완료 콜백
-  const handleDeliveryModalSaveComplete = (newAddress) => {
-    // newAddress = 서버에 저장 후 받은 새 주소 객체 (id 포함)
-    setIsDeliveryModalOpen(false);
-
-    if (newAddress) {
-      setSelectedAddressType('new');
-      setSelectedAddressId(newAddress.id);
-      setAddressForm({
-        zoneCode: newAddress.zoneCode || '',
-        baseAddress: newAddress.baseAddress || '',
-        detailAddress: newAddress.detailAddress || '',
-        recipient: newAddress.recipient || '',
-        phone: newAddress.phone || '',
-      });
       setSelectedAddressType('new');
     }
   };
@@ -254,6 +238,11 @@ const OrderList = () => {
 
   // 결제하기 버튼 클릭 시 바로 PaymentComponent 실행 (모달 없이)
   const handlePaymentClick = () => {
+    if (!orderData) {
+      alert('주문정보를 불러오는 중입니다. 잠시 후 시도해주세요.');
+      return;
+    }
+
     if (selectedCartItemIds.length === 0) {
       alert('주소와 상품을 선택해주세요.');
       return;
@@ -351,7 +340,8 @@ const OrderList = () => {
       .get(`/api/orders/${orderId}`)
       .then((res) => {
         const data = res.data;
-        setOrders(res.data.orderItems || []);
+        setOrderData(data);
+        setOrders(data.orderItems || []);
         setBuyerInfo({
           name: data.name || '',
           phone: data.phoneNumber || '',
@@ -361,8 +351,6 @@ const OrderList = () => {
         setSelectedCartItemIds(
           res.data.orderItems.map((item) => item.cartItemId)
         );
-        setTotalAmount(data.totalAmount || 0);
-        setSelectedAddressId(data.addressId || null);
         const defaultAddr = {
           id: data.addressId || null,
           zoneCode: data.zoneCode || '',
@@ -372,19 +360,16 @@ const OrderList = () => {
           phone: data.addressPhone || '',
         };
         setDefaultAddress(defaultAddr);
-        if (selectedAddressType === 'basic') {
+
+        // 선택된 주소가 없을 때만 기본주소로 설정
+        if (!selectedAddressId) {
           setAddressForm(defaultAddr);
           setSelectedAddressId(defaultAddr.id);
-        } else {
+          setSelectedAddressType('basic');
         }
       })
       .catch((err) => console.error('주문 내역 불러오기 실패', err));
   }, [orderId]);
-
-  const handleOpenAddressModal = () => {
-    setSelectedAddressType('select');
-    setIsAddressListModalOpen(true);
-  };
 
   return (
     <Container>
@@ -462,6 +447,7 @@ const OrderList = () => {
               <DeliveryModal
                 onClose={() => {
                   setIsDeliveryModalOpen(false);
+                  setSelectedAddressType(prevAddressType);
                 }}
                 initialData={deliveryModalInitialData}
                 onSaveComplete={(savedAddress) => {
@@ -487,32 +473,12 @@ const OrderList = () => {
               <AddressForm>
                 <FormGroup>
                   <label>우편번호</label>
-                  <Input
-                    type="text"
-                    value={addressForm.zoneCode}
-                    readOnly
-                    onChange={(e) =>
-                      setAddressForm({
-                        ...addressForm,
-                        zoneCode: e.target.value,
-                      })
-                    }
-                  />
+                  <Input type="text" value={addressForm.zoneCode} readOnly />
                 </FormGroup>
 
                 <FormGroup>
                   <label>기본주소</label>
-                  <Input
-                    type="text"
-                    value={addressForm.baseAddress}
-                    readOnly
-                    onChange={(e) =>
-                      setAddressForm({
-                        ...addressForm,
-                        baseAddress: e.target.value,
-                      })
-                    }
-                  />
+                  <Input type="text" value={addressForm.baseAddress} readOnly />
                 </FormGroup>
 
                 <FormGroup>
@@ -521,43 +487,17 @@ const OrderList = () => {
                     type="text"
                     value={addressForm.detailAddress}
                     readOnly
-                    onChange={(e) =>
-                      setAddressForm({
-                        ...addressForm,
-                        detailAddress: e.target.value,
-                      })
-                    }
                   />
                 </FormGroup>
 
                 <FormGroup>
                   <label>받는 사람</label>
-                  <Input
-                    type="text"
-                    value={addressForm.recipient}
-                    readOnly
-                    onChange={(e) =>
-                      setAddressForm({
-                        ...addressForm,
-                        recipient: e.target.value,
-                      })
-                    }
-                  />
+                  <Input type="text" value={addressForm.recipient} readOnly />
                 </FormGroup>
 
                 <FormGroup>
                   <label>전화번호</label>
-                  <Input
-                    type="text"
-                    value={addressForm.phone}
-                    readOnly
-                    onChange={(e) =>
-                      setAddressForm({
-                        ...addressForm,
-                        phone: e.target.value,
-                      })
-                    }
-                  />
+                  <Input type="text" value={addressForm.phone} readOnly />
                 </FormGroup>
               </AddressForm>
             )}
@@ -608,7 +548,7 @@ const OrderList = () => {
             <h3>최종 결제 정보</h3>
             <PriceRow>
               <span>주문금액</span>
-              <span>{totalAmount.toLocaleString()}원</span>
+              <span>{orderData?.itemTotalAmount.toLocaleString()}원</span>
             </PriceRow>
             <PriceRow>
               <span>즉시 적립금 할인</span>
@@ -624,25 +564,25 @@ const OrderList = () => {
             </PriceRow>
             <PriceRow>
               <span>배송비</span>
-              <span>0원</span>
+              <span>{orderData?.totalDeliveryFee}원</span>
             </PriceRow>
             <PriceRow total>
               <span>최종 결제금액</span>
-              <span>{totalAmount.toLocaleString()}원</span>
+              <span>{orderData?.totalAmount.toLocaleString()}원</span>
             </PriceRow>
             <PayButton onClick={handlePaymentClick}>
-              {totalAmount.toLocaleString()}원 결제하기
+              {orderData?.totalAmount.toLocaleString()}원 결제하기
             </PayButton>
           </Summary>
         </RightPanel>
       </CheckoutLayout>
 
       {/* PaymentComponent - 모달 없이 바로 결제 실행 */}
-      {showPaymentComponent && (
+      {showPaymentComponent && orderData && (
         <PaymentComponent
           orderInfo={{
             orderId,
-            totalAmount,
+            totalAmount: orderData.totalAmount,
             buyerInfo,
             orders,
             selectedPayment,
