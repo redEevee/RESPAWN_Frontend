@@ -30,6 +30,8 @@ import FindPwPage from './pages/FindPwPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import UserInfo from './components/Seller/Detail/UserInfo';
 import CustomerCenterPage from './pages/CustomerCenterPage';
+import PasswordUpdateRequiredPage from './pages/PasswordUpdateRequiredPage';
+import Dashboard from './components/Admin/Dashboard';
 
 function App() {
   return (
@@ -37,6 +39,7 @@ function App() {
       <GlobalStyle />
       <Routes>
         <Route path="/" element={<MainPage />} />
+        <Route path="/admin" element={<Dashboard />} />
         <Route path="/uploadproduct" element={<UploadProduct />} />
         <Route path="/productdetail/:id" element={<ProductDetailPage />} />
         <Route path="/productlist" element={<ProductListPage />} />
@@ -78,6 +81,10 @@ function App() {
         <Route path="/findid" element={<FindIdPage />} />
         <Route path="/findPw" element={<FindPwPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route
+          path="/update-password"
+          element={<PasswordUpdateRequiredPage />}
+        />
         <Route path="/order/:orderId" element={<OrderPage />} />
         <Route
           path="/order/:orderId/complete"
