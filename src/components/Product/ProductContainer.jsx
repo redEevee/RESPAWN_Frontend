@@ -23,8 +23,12 @@ const ProductContainer = ({ limit, showMoreButton }) => {
         itemId: product.id,
         count: 1,
       })
-      .then(() => {
-        alert(`${product.name}이(가) 장바구니에 담겼습니다.`);
+      .then((response) => {
+        if (response.status === 200 && response.data?.success) {
+          alert(`${product.name}이(가) 장바구니에 담겼습니다.`);
+        } else {
+          alert('장바구니 담기에 실패했습니다.');
+        }
       })
       .catch((err) => {
         console.error('장바구니 담기 실패:', err);

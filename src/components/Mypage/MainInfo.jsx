@@ -38,8 +38,8 @@ function MainInfo() {
       <MainContent>
         <TopInfoBox>
           <InfoItem>
-            <label>정기구독</label>
-            <span>구독내역 없음</span>
+            <label>쿠폰</label>
+            <span>0 개</span>
           </InfoItem>
           <InfoItem>
             <label>회원등급</label>
