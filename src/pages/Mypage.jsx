@@ -11,6 +11,7 @@ import MyReviewList from '../components/Mypage/MyReviewList';
 import RefundPage from '../components/ReturnExchange/RefundPage';
 import ReviewPage from '../components/Review/ReviewPage';
 import RefundDetail from '../components/ReturnExchange/RefundDetail';
+import MyPoint from '../components/Mypage/MyPoint';
 
 function Mypage() {
   return (
@@ -23,6 +24,7 @@ function Mypage() {
           <Route path="profile" element={<UserInfo />} />
           <Route path="refund" element={<RefundDetail />} />
           <Route path="review" element={<MyReviewList />} />
+          <Route path="point" element={<MyPoint />} />
           <Route path="inquiry_history" element={<MyInquiryList />} />
           <Route
             path="orders/:orderId/items/:itemId/registerRefund"
