@@ -6,6 +6,7 @@ import Logo from '../components/common/Logo';
 import naver_icon from '../assets/login_naver.png';
 import google_icon from '../assets/login_google.png';
 import kakao_icon from '../assets/login_kakao.png';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const LoginPage = (e) => {
   const [failCount, setFailCount] = useState(0);
@@ -16,6 +17,12 @@ const LoginPage = (e) => {
   const [popup, setPopup] = useState(null);
   const [msg, setMsg] = useState('');
   const navigate = useNavigate();
+
+  const [seePassword, setSeePassword] = useState(false);
+
+  const seePasswordHandler = () => {
+    setSeePassword(!seePassword);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -49,7 +56,14 @@ const LoginPage = (e) => {
       sessionStorage.setItem('userData', JSON.stringify(response.data));
       setFailCount(0);
 
-      navigate('/');
+      if (
+        response.data.passwordChangeDue === 'true' &&
+        response.data.passwordChangeSnoozed === 'false'
+      ) {
+        navigate('/update-password');
+      } else {
+        navigate('/');
+      }
     } catch (error) {
       if (error.response && error.response.data) {
         const { error: errorCode, failedLoginAttempts } = error.response.data;
@@ -73,6 +87,8 @@ const LoginPage = (e) => {
               failedLoginAttempts || 0
             }회 실패)`
           );
+        } else if (errorCode === 'disabled') {
+          alert(`정지된 계정입니다. 관리자에게 문의하세요.`);
         } else {
           alert('로그인 실패: ' + JSON.stringify(error.response.data));
         }
@@ -142,22 +158,36 @@ const LoginPage = (e) => {
       </LogoWrapper>
       <LogInBox>
         <form onSubmit={handleLogIn}>
-          <Input
-            type="text"
-            name="username"
-            placeholder="아이디"
-            value={user.username}
-            onChange={handleChange}
-            required
-          />
-          <Input
-            type="password"
-            name="password"
-            placeholder="비밀번호"
-            value={user.password}
-            onChange={handleChange}
-            required
-          />
+          <Field>
+            <Input
+              type="text"
+              name="username"
+              placeholder="아이디"
+              value={user.username}
+              onChange={handleChange}
+              required
+            />
+          </Field>
+
+          <Field>
+            <Input
+              type={seePassword ? 'text' : 'password'}
+              name="password"
+              placeholder="비밀번호"
+              value={user.password}
+              onChange={handleChange}
+              required
+            />
+            <IconButton
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={seePasswordHandler}
+              aria-label="비밀번호 보기 전환"
+            >
+              {seePassword ? <FaEyeSlash /> : <FaEye />}
+            </IconButton>
+          </Field>
+
           {msg && <Message>{msg}</Message>}
           {failCount > 0 && (
             <FailCountMessage>
@@ -224,10 +254,15 @@ const LogInBox = styled.div`
   align-items: center;
 `;
 
+const Field = styled.div`
+  position: relative;
+  width: 300px;
+  margin-bottom: 16px;
+`;
+
 const Input = styled.input`
   width: 100%;
-  padding: 12px;
-  margin-bottom: 16px;
+  padding: 12px 40px 12px 12px;
   border: none;
   border-bottom: 1px solid #ccc;
   font-size: 16px;
@@ -236,6 +271,22 @@ const Input = styled.input`
   &:focus {
     outline: none;
     border-bottom: 2px solid rgb(105, 111, 148);
+  }
+`;
+
+const IconButton = styled.button`
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  font-size: 1.1rem;
+
+  &:hover {
+    color: rgb(105, 111, 148);
   }
 `;
 

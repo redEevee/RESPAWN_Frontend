@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import axios from '../api/axios';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const PASSWORD_REGEX = /^(?=.*[a-zA-Z])(?=.*[!@#$%^*+=-])(?=.*[0-9]).{8,25}$/;
 
@@ -23,6 +24,22 @@ function ResetPasswordModal({ onClose }) {
     initialConfirmPasswordState
   );
   const [loading, setLoading] = useState(false);
+
+  const [seeCurrentPassword, setSeeCurrentPassword] = useState(false);
+  const [seePassword, setSeePassword] = useState(false);
+  const [seeConfirmPassword, setSeeConfirmPassword] = useState(false);
+
+  const seeCurrentPasswordHandler = () => {
+    setSeeCurrentPassword(!seeCurrentPassword);
+  };
+
+  const seePasswordHandler = () => {
+    setSeePassword(!seePassword);
+  };
+
+  const seeConfirmPasswordHandler = () => {
+    setSeeConfirmPassword(!seeConfirmPassword);
+  };
 
   // 입력 핸들러
   const onChangeHandler = (name) => (e) => {
@@ -101,30 +118,66 @@ function ResetPasswordModal({ onClose }) {
 
         <FormGroup>
           <label>현재 비밀번호</label>
-          <input
-            type="password"
-            value={currentPassword}
-            onChange={onChangeHandler('currentPassword')}
-          />
+          <Field>
+            <Input
+              type={seeCurrentPassword ? 'text' : 'password'}
+              value={currentPassword}
+              onChange={onChangeHandler('currentPassword')}
+              placeholder="현재 비밀번호"
+              autoComplete="current-password"
+            />
+            <IconButton
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={seeCurrentPasswordHandler}
+              aria-label="비밀번호 보기 전환"
+            >
+              {seeCurrentPassword ? <FaEyeSlash /> : <FaEye />}
+            </IconButton>
+          </Field>
         </FormGroup>
 
         <FormGroup>
           <label>새 비밀번호</label>
-          <input
-            type="password"
-            value={password.password}
-            onChange={onChangeHandler('password')}
-          />
+          <Field>
+            <Input
+              type={seePassword ? 'text' : 'password'}
+              value={password.password}
+              onChange={onChangeHandler('password')}
+              placeholder="새 비밀번호"
+              autoComplete="current-password"
+            />
+            <IconButton
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={seePasswordHandler}
+              aria-label="비밀번호 보기 전환"
+            >
+              {seePassword ? <FaEyeSlash /> : <FaEye />}
+            </IconButton>
+          </Field>
           {password.error && <ErrorMsg>{password.error}</ErrorMsg>}
         </FormGroup>
 
         <FormGroup>
           <label>비밀번호 확인</label>
-          <input
-            type="password"
-            value={confirmPassword.confirmPassword}
-            onChange={onChangeHandler('confirmPassword')}
-          />
+          <Field>
+            <Input
+              type={seeConfirmPassword ? 'text' : 'password'}
+              value={confirmPassword.confirmPassword}
+              onChange={onChangeHandler('confirmPassword')}
+              placeholder="비밀번호 확인"
+              autoComplete="current-password"
+            />
+            <IconButton
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={seeConfirmPasswordHandler}
+              aria-label="비밀번호 보기 전환"
+            >
+              {seeConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+            </IconButton>
+          </Field>
           {confirmPassword.error && (
             <ErrorMsg>{confirmPassword.error}</ErrorMsg>
           )}
@@ -162,7 +215,7 @@ const Overlay = styled.div`
 const ModalBox = styled.div`
   position: relative;
   background: #fff;
-  width: 500px;
+  width: 460px;
   padding: 32px;
   border-radius: 10px;
   box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
@@ -197,10 +250,44 @@ const FormGroup = styled.div`
   }
 `;
 
+const Field = styled.div`
+  position: relative;
+  width: 400px;
+  margin-bottom: 16px;
+`;
+
+const Input = styled.input`
+  width: 100%;
+  padding: 12px 40px 12px 12px;
+  border: none;
+  border-bottom: 1px solid #ccc;
+  font-size: 16px;
+  background: transparent;
+
+  &:focus {
+    outline: none;
+  }
+`;
+
+const IconButton = styled.button`
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  font-size: 1.1rem;
+
+  &:hover {
+    color: rgb(105, 111, 148);
+  }
+`;
+
 const ErrorMsg = styled.span`
   font-size: 12px;
   color: red;
-  margin-top: 4px;
 `;
 
 const ButtonWrapper = styled.div`

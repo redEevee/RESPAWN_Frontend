@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import axios from '../../../api/axios';
 import ResetPasswordModal from '../../ResetPasswordModal';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 function UserInfo() {
   const [password, setPassword] = useState('');
@@ -12,6 +13,12 @@ function UserInfo() {
 
   const userData = JSON.parse(sessionStorage.getItem('userData'));
   const username = userData?.username;
+
+  const [seePassword, setSeePassword] = useState(false);
+
+  const seePasswordHandler = () => {
+    setSeePassword(!seePassword);
+  };
 
   const [user, setUser] = useState({
     name: '',
@@ -73,12 +80,27 @@ function UserInfo() {
           </UserDetail>
           <UserDetail>
             <Label>비밀번호</Label>
-            <Input
-              type="password"
-              placeholder="비밀번호 입력"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <Field>
+              <Input
+                type={seePassword ? 'text' : 'password'}
+                placeholder="비밀번호 입력"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handlePasswordCheck();
+                  }
+                }}
+              />
+              <IconButton
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={seePasswordHandler}
+                aria-label="비밀번호 보기 전환"
+              >
+                {seePassword ? <FaEyeSlash /> : <FaEye />}
+              </IconButton>
+            </Field>
           </UserDetail>
           <Button onClick={handlePasswordCheck}>확인</Button>
         </Section>
@@ -204,15 +226,53 @@ const Button = styled.button`
   }
 `;
 
+const Field = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+`;
+
 const Input = styled.input`
-  flex-grow: 1;
+  flex: 1;
   min-width: 200px;
-  padding: 8px 12px;
+  padding: 8px 40px 8px 12px; /* 오른쪽 아이콘 공간 확보 */
   font-size: 1rem;
   border: 1px solid #ccc;
-  border-radius: 5px;
+  border-radius: 4px;
+
   &:focus {
     outline: none;
-    border-color: #555a82;
+    border-color: #222;
+  }
+`;
+
+const IconButton = styled.button`
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: #666;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  cursor: pointer;
+
+  /* 포커스 및 호버 상태 접근성/시각 피드백 */
+  &:hover {
+    color: #222;
+  }
+  &:focus {
+    outline: 2px solid #999;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* 아이콘 크기 조절 */
+  svg {
+    width: 18px;
+    height: 18px;
   }
 `;
