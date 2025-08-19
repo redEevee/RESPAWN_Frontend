@@ -185,6 +185,10 @@ const OrderList = () => {
 
   const [selectedPayment, setSelectedPayment] = useState('신용카드');
 
+  const [availablePoints, setAvailablePoints] = useState(''); // 보유/가용 포인트
+  const [usedPointInput, setUsedPointInput] = useState(''); // 입력창 바인딩
+  const [usedPoint, setUsedPoint] = useState(0); // 계산에 쓰는 값
+
   // PaymentComponent 실행을 위한 상태
   const [showPaymentComponent, setShowPaymentComponent] = useState(false);
 
@@ -197,6 +201,13 @@ const OrderList = () => {
     페이코: '페이코 앱으로 결제창이 전환됩니다.',
     삼성페이: '삼성페이 앱으로 결제창이 전환됩니다.',
   };
+
+  const finalAmount = Math.max(
+    0,
+    (orderData?.itemTotalAmount || 0) +
+      (orderData?.totalDeliveryFee || 0) -
+      usedPoint
+  );
 
   // 배송지 타입 변경 시
   const handleAddressTypeChange = (type) => {
@@ -266,6 +277,7 @@ const OrderList = () => {
     axios
       .post(`/api/orders/${orderId}/complete`, {
         addressId: selectedAddressId,
+        usePointAmount: usedPoint,
         paymentInfo: paymentResult,
       })
       .then((res) => {
@@ -300,6 +312,61 @@ const OrderList = () => {
     }
 
     return null;
+  };
+
+  const toNumber = (v) => {
+    const n = Number(String(v).replace(/[^\d]/g, ''));
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const getPayableMaxPoint = () => {
+    const orderAmount = orderData?.itemTotalAmount || 0; // 상품합계
+    const deliveryFee = orderData?.totalDeliveryFee || 0;
+    const coupon = 0; // 현재 -0원 고정
+    const total = orderAmount + deliveryFee - coupon;
+    return Math.max(0, total);
+  };
+
+  const clampUsedPoint = (val) => {
+    const raw = toNumber(val);
+    // 단위 절삭
+    const unitAdjusted = Math.floor(raw / POINT_UNIT) * POINT_UNIT;
+    // 가용포인트/결제최대포인트 제한
+    const maxByBalance = availablePoints;
+    const maxByPayable = getPayableMaxPoint();
+    return Math.max(0, Math.min(unitAdjusted, maxByBalance, maxByPayable));
+  };
+
+  const handlePointChange = (e) => {
+    const raw = e.target.value.replace(/[^\d]/g, '');
+    setUsedPointInput(raw);
+  };
+
+  const applyClampUsedPoint = (rawStr) => {
+    const rawNum = Number(rawStr || 0);
+    const unitAdjusted = Math.floor(rawNum / POINT_UNIT) * POINT_UNIT;
+    const maxByBalance = availablePoints;
+    const maxByPayable = getPayableMaxPoint();
+    const clamped = Math.max(
+      0,
+      Math.min(unitAdjusted, maxByBalance, maxByPayable)
+    );
+    setUsedPoint(clamped);
+    setUsedPointInput(clamped === 0 ? '' : String(clamped)); // 입력창도 정규화
+  };
+
+  const handlePointBlur = () => {
+    applyClampUsedPoint(usedPointInput);
+  };
+
+  const handleUseMaxPoint = () => {
+    const max = getPayableMaxPoint();
+    applyClampUsedPoint(String(max));
+  };
+
+  const handleClearPoint = () => {
+    setUsedPoint(0);
+    setUsedPointInput('');
   };
 
   useEffect(() => {
@@ -371,6 +438,23 @@ const OrderList = () => {
       })
       .catch((err) => console.error('주문 내역 불러오기 실패', err));
   }, [orderId]);
+
+  useEffect(() => {
+    axios
+      .get('/api/points/total/active') // 환경에 따라 '/total/active' 로 변경
+      .then((res) => {
+        // 응답이 number(long) 단일 값이면 res.data 자체가 숫자일 수도 있고,
+        // { value: number } 같은 래핑일 수도 있으니 서버 응답 형태에 맞추세요.
+        console.log(res.data);
+        const total =
+          typeof res.data === 'number' ? res.data : Number(res.data);
+        setAvailablePoints(Number(total) || 0);
+      })
+      .catch((err) => {
+        console.error('포인트 조회 실패', err);
+        setAvailablePoints(0);
+      });
+  }, []);
 
   return (
     <Container>
@@ -556,31 +640,32 @@ const OrderList = () => {
                 <PointsRow>
                   <span>보유 적립금</span>
                   <PointsStrong>
-                    {orderData.availablePoints.toLocaleString()}원
+                    {availablePoints.toLocaleString()}원
                   </PointsStrong>
                 </PointsRow>
 
                 <PointsControl>
                   <input
                     type="text"
-                    // value={usedPoint}
-                    // onChange={handlePointChange}
+                    value={usedPointInput.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} // 보기만 콤마 포맷
+                    onChange={handlePointChange}
+                    onBlur={handlePointBlur}
                     placeholder="사용할 적립금 입력"
                     inputMode="numeric"
                     disabled={!orderData}
                   />
                   <button
                     type="button"
-                    // onClick={handleUseMaxPoint}
+                    onClick={handleUseMaxPoint}
                     disabled={!orderData}
                   >
                     최대사용
                   </button>
-                  {/* {usedPoint > 0 && (
+                  {usedPoint > 0 && (
                     <button type="button" onClick={handleClearPoint}>
                       초기화
                     </button>
-                  )} */}
+                  )}
                 </PointsControl>
 
                 <PointsHelp>
@@ -600,10 +685,10 @@ const OrderList = () => {
             </PriceRow>
             <PriceRow total>
               <span>최종 결제금액</span>
-              <span>{orderData?.totalAmount.toLocaleString()}원</span>
+              <span>{finalAmount.toLocaleString()}원</span>
             </PriceRow>
             <PayButton onClick={handlePaymentClick}>
-              {orderData?.totalAmount.toLocaleString()}원 결제하기
+              {finalAmount.toLocaleString()}원 결제하기
             </PayButton>
           </Summary>
         </RightPanel>
@@ -614,7 +699,7 @@ const OrderList = () => {
         <PaymentComponent
           orderInfo={{
             orderId,
-            totalAmount: orderData.totalAmount,
+            totalAmount: finalAmount,
             buyerInfo,
             orders,
             selectedPayment,
