@@ -44,12 +44,9 @@ function PointsPage() {
         const usesRes = await axios.get(`/api/points/uses`, {
           params: { year, month: m },
         });
-        const expireRes = await axios.get(
-          `/api/points/expire/this-month/list`,
-          {
-            params: { year, month: m },
-          }
-        );
+        const expireRes = await axios.get(`/api/points/expire/list`, {
+          params: { year, month: m },
+        });
 
         setTotalPoints(totalRes.data);
         setExpiringPoints(expiringPointsRes.data.totalExpiringThisMonth || 0);

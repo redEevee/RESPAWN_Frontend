@@ -12,6 +12,26 @@ function OrderComplete() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const formatCurrency = (v) => {
+    const n = typeof v === 'number' ? v : Number(v);
+    return Number.isFinite(n) ? n.toLocaleString() : '0';
+  };
+
+  const paymentMethodLabel = (code) => {
+    switch (code) {
+      case 'card':
+        return '신용/체크카드';
+      case 'trans':
+        return '계좌이체';
+      case 'vbank':
+        return '가상계좌';
+      case 'phone':
+        return '휴대폰 결제';
+      default:
+        return code ?? '-';
+    }
+  };
+
   useEffect(() => {
     if (!orderId) return;
     const fetchOrderInfo = async () => {
@@ -19,6 +39,7 @@ function OrderComplete() {
         const response = await axios.get(
           `/api/orders/${orderId}/complete-info`
         );
+        console.log(response.data);
         setOrderInfo(response.data);
       } catch {
         setError('주문 정보를 불러오는 데 실패했습니다.');
@@ -48,7 +69,11 @@ function OrderComplete() {
             <Info>
               <span>
                 주문일시{' '}
-                <b>{new Date(orderInfo.orderDate).toLocaleString('ko-KR')}</b>
+                <b>
+                  {orderInfo?.orderDate
+                    ? new Date(orderInfo.orderDate).toLocaleString('ko-KR')
+                    : '-'}
+                </b>
               </span>
               <span>
                 주문번호 <OrderNum>{orderInfo.orderId}</OrderNum>
@@ -69,21 +94,27 @@ function OrderComplete() {
             </tr>
           </thead>
           <tbody>
-            {orderInfo.orderItems.map((item) => (
-              <tr key={item.orderItemId}>
-                <td style={{ textAlign: 'center' }}>
-                  <img src={item.imageUrl} alt="" width={64} />
-                </td>
-                <td>{item.itemName}</td>
-                <td style={{ textAlign: 'center' }}>{item.count}</td>
-                <td style={{ textAlign: 'center' }}>
-                  {item.itemPrice.toLocaleString()}원
-                </td>
-                <td style={{ textAlign: 'center' }}>
-                  {item.totalPrice.toLocaleString()}원
-                </td>
-              </tr>
-            ))}
+            {orderInfo?.orderItems?.map((item) => {
+              const unit = item?.orderPrice;
+              const qty = item?.count;
+              const lineTotal = (Number(unit) || 0) * (Number(qty) || 0);
+
+              return (
+                <tr key={item.orderItemId}>
+                  <td style={{ textAlign: 'center' }}>
+                    <img src={item.imageUrl} alt="" width={64} />
+                  </td>
+                  <td>{item.itemName ?? '-'}</td>
+                  <td style={{ textAlign: 'center' }}>{qty ?? 0}</td>
+                  <td style={{ textAlign: 'center' }}>
+                    {formatCurrency(unit)}원
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    {formatCurrency(lineTotal)}원
+                  </td>
+                </tr>
+              );
+            }) ?? null}
           </tbody>
         </Table>
 
@@ -117,11 +148,13 @@ function OrderComplete() {
               <tbody>
                 <tr>
                   <InfoTh>결제수단</InfoTh>
-                  <td>{orderInfo.paymentMethod}</td>
+                  <td>
+                    {paymentMethodLabel(orderInfo?.paymentInfo?.paymentMethod)}
+                  </td>
                 </tr>
                 <tr>
                   <InfoTh>PG사</InfoTh>
-                  <td>{orderInfo.pgProvider || '정보 없음'}</td>
+                  <td>{orderInfo?.paymentInfo?.pgProvider ?? '정보 없음'}</td>
                 </tr>
                 <tr>
                   <InfoTh>총 결제금액</InfoTh>

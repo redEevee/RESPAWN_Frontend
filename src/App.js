@@ -31,7 +31,14 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import UserInfo from './components/Seller/Detail/UserInfo';
 import CustomerCenterPage from './pages/CustomerCenterPage';
 import PasswordUpdateRequiredPage from './pages/PasswordUpdateRequiredPage';
+import AdminLayout from './components/Admin/AdminLayout';
 import Dashboard from './components/Admin/Dashboard';
+import Members from './components/Admin/Members';
+import MemberDetail from './components/Admin/MemberDetail';
+import Notices from './components/Admin/Notices';
+import Inquiries from './components/Admin/Inquiries';
+import Settings from './components/Admin/Settings';
+import Login from './components/Admin/Login';
 
 function App() {
   return (
@@ -39,7 +46,19 @@ function App() {
       <GlobalStyle />
       <Routes>
         <Route path="/" element={<MainPage />} />
-        <Route path="/admin" element={<Dashboard />} />
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="members" element={<Members />} />
+          <Route
+            path="/admin/members/:userType/:userId"
+            element={<MemberDetail />}
+          />
+          <Route path="notices" element={<Notices />} />
+          <Route path="inquiries" element={<Inquiries />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
+        <Route path="/adminlogin" element={<Login />} />
+
         <Route path="/uploadproduct" element={<UploadProduct />} />
         <Route path="/productdetail/:id" element={<ProductDetailPage />} />
         <Route path="/productlist" element={<ProductListPage />} />
