@@ -22,12 +22,13 @@ const MemberDetail = () => {
     companyNumber: '', // 판매자용
     memo: '',
     enabled: true,
-    accountNonExpired: true, // 계정 만료
+    accountNonExpired: true, // 계정 만료 휴면계정
     accountNonLocked: true, // 계정 잠김
     accountExpiryDate: null,
     failedLoginAttempts: 0,
     lastPasswordChangedAt: '',
     role: '',
+    createdAt: '',
   });
 
   // 원본 비교용
@@ -58,6 +59,7 @@ const MemberDetail = () => {
     failedLoginAttempts: data.failedLoginAttempts ?? 0,
     lastPasswordChangedAt: data.lastPasswordChangedAt || '',
     role: data.role || '',
+    createdAt: data.createdAt || '',
   });
 
   useEffect(() => {
@@ -293,18 +295,6 @@ const MemberDetail = () => {
       <Header>
         <h2>{isBuyer ? '구매자 관리' : '판매자 관리'}</h2>
         <HeaderActions>
-          <StatusBadge data-status={form.enabled ? 'ACTIVE' : 'INACTIVE'}>
-            {form.enabled ? '활성' : '비활성'}
-          </StatusBadge>
-
-          {/* 상태 토글: 트윈 버튼 스타일 */}
-          <StatusToggle
-            onClick={onToggleStatus}
-            data-next={form.enabled ? 'INACTIVE' : 'ACTIVE'}
-          >
-            {form.enabled ? '비활성화' : '활성화'}
-          </StatusToggle>
-
           {!form.accountNonLocked && (
             <GhostBtn onClick={onUnlock} disabled={loading}>
               잠금 해제
@@ -313,7 +303,7 @@ const MemberDetail = () => {
 
           {!form.accountNonExpired && (
             <GhostBtn onClick={onUnexpire} disabled={loading}>
-              만료 해제
+              휴면계정 해제
             </GhostBtn>
           )}
 
@@ -366,12 +356,19 @@ const MemberDetail = () => {
           <CardTitle>계정 상태·보안</CardTitle>
 
           <KeyStats>
-            <Stat>
+            <ClickableStat
+              role="button"
+              tabIndex={0}
+              aria-pressed={!!form.enabled}
+              aria-label={form.enabled ? '비활성화' : '활성화'}
+              onClick={onToggleStatus}
+              data-clickable={!loading}
+            >
               <StatLabel>사용여부</StatLabel>
               <StatValue data-ok={form.enabled}>
                 {form.enabled ? '사용' : '중지'}
               </StatValue>
-            </Stat>
+            </ClickableStat>
 
             <Stat>
               <StatLabel>잠금여부</StatLabel>
@@ -392,6 +389,13 @@ const MemberDetail = () => {
               <StatValue mono>{form.failedLoginAttempts ?? 0}</StatValue>
             </Stat>
           </KeyStats>
+
+          <CompactRow>
+            <Label>가입일</Label>
+            <Value mono>
+              {form.createdAt ? String(form.createdAt).slice(0, 10) : '-'}
+            </Value>
+          </CompactRow>
 
           <CompactRow>
             <Label>만료 예정일</Label>
@@ -496,39 +500,6 @@ const HeaderActions = styled.div`
   align-items: center;
 `;
 
-const StatusBadge = styled.span`
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-  color: ${(p) => (p['data-status'] === 'ACTIVE' ? '#22c55e' : '#ef4444')};
-  background: ${(p) => (p['data-status'] === 'ACTIVE' ? '#dcfce7' : '#fee2e2')};
-`;
-
-const StatusToggle = styled.button`
-  all: unset;
-  padding: 10px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  color: #fff;
-  background: ${(p) => (p['data-next'] === 'ACTIVE' ? '#22c55e' : '#ef4444')};
-  transition: background 0.12s ease, transform 0.06s ease;
-  box-shadow: 0 4px 10px
-    ${(p) =>
-      p['data-next'] === 'ACTIVE'
-        ? 'rgba(34,197,94,0.25)'
-        : 'rgba(239,68,68,0.25)'};
-
-  &:hover {
-    transform: translateY(-1px);
-  }
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
 const GhostBtn = styled.button`
   all: unset;
   padding: 10px 14px;
@@ -618,17 +589,55 @@ const Stat = styled.div`
   text-align: center;
 `;
 
+const ClickableStat = styled(Stat)`
+  position: relative;
+  cursor: ${(p) => (p['data-clickable'] ? 'pointer' : 'default')};
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+
+  ${(p) =>
+    p['data-clickable'] &&
+    `
+    &:hover { background: #8794b1ff; box-shadow: inset 0 0 0 1px rgba(15,23,42,0.08); }
+  `}
+
+  &:focus-visible {
+    outline: 2px solid rgba(37, 50, 77, 0.35);
+    outline-offset: 2px;
+  }
+  ${(p) => !p['data-clickable'] && `opacity: 0.6;`}
+`;
+
+const StatValue = styled.div`
+  position: relative;
+  font-weight: 700;
+  color: ${(p) => (p['data-ok'] ? '#111827' : '#ef4444')};
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  ${ClickableStat}:hover &,
+  ${ClickableStat}:focus-visible & {
+    color: transparent;
+  }
+
+  ${ClickableStat}:hover &::after,
+  ${ClickableStat}:focus-visible &::after {
+    content: ${(p) => (p['data-ok'] ? '"비활성화"' : '"활성화"')};
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+`;
+
 const StatLabel = styled.div`
   font-size: 12px;
   color: #6b7280;
   margin-bottom: 6px;
-`;
-
-const StatValue = styled.div`
-  font-weight: 700;
-  color: ${(p) => (p['data-ok'] === false ? '#ef4444' : '#111827')};
-  font-family: ${(p) =>
-    p.mono ? 'ui-monospace,SFMono-Regular,Menlo,monospace' : 'inherit'};
 `;
 
 const Label = styled.label`

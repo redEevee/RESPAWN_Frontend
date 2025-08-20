@@ -37,9 +37,13 @@ const Members = () => {
     field: 'name',
   });
 
-  const [data, setData] = useState([]);
+  // const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const [rawData, setRawData] = useState([]); // 서버 원본 페이지 content
+  const [data, setData] = useState([]); // 정렬 적용 후 화면용
+  const [sort, setSort] = useState({ field: 'username', dir: 'asc' });
 
   const formatDate = (s) => {
     if (!s) return '-';
@@ -91,9 +95,9 @@ const Members = () => {
         username: u.username ?? '',
         name: u.name ?? '',
         email: u.email ?? '',
-        phone: u.phoneNumber ?? '',
-        // 서버에는 joinedAt 추가 예정
-        joinedAt: u.joinedAt ?? u.createdAt ?? u.lastPasswordChangedAt ?? '',
+        phone: roleTab === 'buyer' ? u.phoneNumber ?? '' : '',
+        company: roleTab === 'seller' ? u.company ?? '' : '',
+        joinedAt: u.createdAt ?? '',
         userType: u.userType ?? roleTab,
       }));
       setData(normalized);
@@ -103,6 +107,7 @@ const Members = () => {
         totalPages: res.data.totalPages,
         totalElements: res.data.totalElements,
       });
+      setRawData(normalized);
     } catch (e) {
       console.error(e);
       setError('회원 데이터를 불러오는 중 오류가 발생했습니다.');
@@ -136,6 +141,76 @@ const Members = () => {
   const onClickManage = (member) => {
     const type = roleTab === 'buyer' ? 'buyer' : 'seller';
     navigate(`/admin/members/${type}/${member.userId}`);
+  };
+
+  const getValue = (item, field) => {
+    const v = item?.[field];
+    return v ?? ''; // null/undefined 보호
+  };
+
+  const compare = (a, b, field) => {
+    const va = getValue(a, field);
+    const vb = getValue(b, field);
+
+    // 날짜 필드 처리(ISO 또는 yyyy-MM-dd 형태)
+    if (field === 'joinedAt') {
+      const ta = va ? new Date(va).getTime() : 0;
+      const tb = vb ? new Date(vb).getTime() : 0;
+      return ta - tb;
+    }
+
+    // 숫자 필드가 있다면 여기서 추가 처리
+    // if (field === 'someNumber') return Number(va) - Number(vb);
+
+    // 기본: 문자열 비교
+    return String(va).localeCompare(String(vb), 'ko', {
+      sensitivity: 'base',
+      numeric: true,
+    });
+  };
+
+  useEffect(() => {
+    const sorted = [...rawData].sort((a, b) => {
+      const c = compare(a, b, sort.field);
+      return sort.dir === 'asc' ? c : -c;
+    });
+    setData(sorted);
+  }, [rawData, sort]);
+
+  const onSort = (field) => {
+    setSort((prev) => {
+      const dir =
+        prev.field === field ? (prev.dir === 'asc' ? 'desc' : 'asc') : 'asc';
+      return { field, dir };
+    });
+  };
+
+  useEffect(() => {
+    setSort({ field: 'username', dir: 'asc' });
+  }, [roleTab]);
+
+  const SortableTh = ({ field, label, onClick, activeField, dir }) => {
+    const isActive = activeField === field;
+    const arrow = isActive ? (dir === 'asc' ? '▲' : '▼') : '↕';
+    return (
+      <th
+        aria-sort={
+          isActive ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'
+        }
+      >
+        <SortBtn
+          type="button"
+          onClick={() => onClick(field)}
+          data-active={isActive}
+          aria-label={`${label} 정렬`}
+        >
+          <span>{label}</span>
+          <i aria-hidden="true" className="arrow">
+            {arrow}
+          </i>
+        </SortBtn>
+      </th>
+    );
   };
 
   return (
@@ -213,11 +288,51 @@ const Members = () => {
           <thead>
             <tr>
               <th>번호</th>
-              <th>이름</th>
-              <th>아이디</th>
-              <th>전화번호</th>
-              <th>이메일</th>
-              <th>가입일</th>
+              <SortableTh
+                field="name"
+                label="이름"
+                onClick={onSort}
+                activeField={sort.field}
+                dir={sort.dir}
+              />
+              <SortableTh
+                field="username"
+                label="아이디"
+                onClick={onSort}
+                activeField={sort.field}
+                dir={sort.dir}
+              />
+              {roleTab === 'buyer' ? (
+                <SortableTh
+                  field="phone"
+                  label="전화번호"
+                  onClick={onSort}
+                  activeField={sort.field}
+                  dir={sort.dir}
+                />
+              ) : (
+                <SortableTh
+                  field="company"
+                  label="회사명"
+                  onClick={onSort}
+                  activeField={sort.field}
+                  dir={sort.dir}
+                />
+              )}
+              <SortableTh
+                field="email"
+                label="이메일"
+                onClick={onSort}
+                activeField={sort.field}
+                dir={sort.dir}
+              />
+              <SortableTh
+                field="joinedAt"
+                label="가입일"
+                onClick={onSort}
+                activeField={sort.field}
+                dir={sort.dir}
+              />
               <th>관리</th>
             </tr>
           </thead>
@@ -249,7 +364,11 @@ const Members = () => {
                   <td>{idx + 1}</td>
                   <td>{m.name}</td>
                   <td>{m.username}</td>
-                  <td>{m.phone}</td>
+                  {roleTab === 'buyer' ? (
+                    <td>{m.phone}</td>
+                  ) : (
+                    <td>{m.company}</td>
+                  )}
                   <td>{m.email}</td>
                   <td>{formatDate(m.joinedAt)}</td>
                   <td>
@@ -391,6 +510,7 @@ const ButtonBase = styled.button`
 const SearchBtn = styled(ButtonBase)`
   background: #25324d;
   color: #fff;
+  border: 1px solid transparent;
 
   &:hover {
     background: #1d2741;
@@ -505,4 +625,35 @@ const PaginationBar = styled.div`
   justify-content: center; /* 테이블 폭 기준 중앙 */
   padding: 12px 12px 16px; /* 테이블과의 간격 */
   border-top: 1px solid rgba(15, 23, 42, 0.06);
+`;
+
+const SortBtn = styled.button`
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: #374151;
+  padding: 0 4px; /* 클릭 영역 확보 */
+
+  &:hover {
+    color: #111827;
+  }
+
+  &[data-active='true'] {
+    font-weight: 700;
+  }
+
+  .arrow {
+    font-style: normal; /* i 태그 기울임 제거 */
+    font-size: 11px;
+    color: #25324d;
+    opacity: 0.9;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(37, 50, 77, 0.35);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 `;
