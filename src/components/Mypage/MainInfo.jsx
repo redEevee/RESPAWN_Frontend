@@ -22,6 +22,10 @@ function MainInfo() {
             withCredentials: true, // 세션/쿠키 인증 시 필요
           }
         );
+
+        console.log(pointsRes.data);
+        console.log(userRes.data);
+        console.log(orderRes.data);
         setPoints(pointsRes.data);
         setUser(userRes.data);
         setLatestOrder(orderRes.data);
@@ -43,7 +47,7 @@ function MainInfo() {
           </InfoItem>
           <InfoItem>
             <label>회원등급</label>
-            <span>{user.role === 'ROLE_USER' ? '구매자' : '관리자'}</span>
+            <span>{user.membershipTier}</span>
           </InfoItem>
           <InfoItem>
             <label>적립금</label>

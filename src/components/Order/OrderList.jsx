@@ -265,6 +265,11 @@ const OrderList = () => {
       return;
     }
 
+    if (usedPoint === 0 && usedPointInput) {
+      alert('적립금 적용 버튼을 눌러주세요.');
+      return;
+    }
+
     // PaymentComponent 실행 (모달 없이 바로 결제창 팝업)
     setShowPaymentComponent(true);
   };
@@ -277,7 +282,6 @@ const OrderList = () => {
     axios
       .post(`/api/orders/${orderId}/complete`, {
         addressId: selectedAddressId,
-        usePointAmount: usedPoint,
         paymentInfo: paymentResult,
       })
       .then((res) => {
@@ -356,17 +360,59 @@ const OrderList = () => {
   };
 
   const handlePointBlur = () => {
-    applyClampUsedPoint(usedPointInput);
+    // 이전에는 applyClampUsedPoint로 usedPoint까지 변경했음
+    // 이제는 입력값만 보정(표시 정규화)하고 usedPoint는 유지
+    const rawNum = Number(usedPointInput || 0);
+    const unitAdjusted = Math.floor(rawNum / POINT_UNIT) * POINT_UNIT;
+    const maxByBalance = availablePoints;
+    const maxByPayable = getPayableMaxPoint();
+    const clamped = Math.max(
+      0,
+      Math.min(unitAdjusted, maxByBalance, maxByPayable)
+    );
+    setUsedPointInput(clamped === 0 ? '' : String(clamped));
   };
 
   const handleUseMaxPoint = () => {
     const max = getPayableMaxPoint();
-    applyClampUsedPoint(String(max));
+    // 입력창만 채우고, 적용은 사용자가 별도 '적용' 버튼을 눌러 진행
+    const clampedByMax = Math.floor(max / POINT_UNIT) * POINT_UNIT;
+    const finalCandidate = Math.max(0, Math.min(clampedByMax, availablePoints));
+    setUsedPointInput(finalCandidate === 0 ? '' : String(finalCandidate));
   };
 
-  const handleClearPoint = () => {
-    setUsedPoint(0);
-    setUsedPointInput('');
+  const handleApplyPoint = async () => {
+    if (!orderData) {
+      alert('주문정보를 불러오는 중입니다.');
+      return;
+    }
+
+    const clampedClient = clampUsedPoint(usedPointInput);
+
+    try {
+      const formData = new URLSearchParams();
+      formData.append('orderId', orderId);
+      formData.append('buyerId', orderData.buyerId);
+      formData.append('usePointAmount', String(clampedClient));
+
+      // 서버가 문자열을 반환하므로, 응답 본문은 사용하지 않음
+      await axios.post('/api/points/apply', formData, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          Accept: 'application/json',
+        },
+      });
+
+      setUsedPoint(clampedClient);
+      setUsedPointInput(clampedClient > 0 ? String(clampedClient) : '');
+    } catch (e) {
+      console.error(e);
+      const msg =
+        e?.response?.data?.message ||
+        e?.response?.data ||
+        '포인트 적용 중 오류가 발생했습니다.';
+      alert(msg);
+    }
   };
 
   useEffect(() => {
@@ -635,45 +681,62 @@ const OrderList = () => {
               <span>주문금액</span>
               <span>{orderData?.itemTotalAmount.toLocaleString()}원</span>
             </PriceRow>
-            <PriceRow>
-              <PointsBox>
-                <PointsRow>
+            <PointsBox>
+              <PointsInlineRow>
+                <InlineItem>
+                  <span>사용가능</span>
+                  <PointsStrong>
+                    {Math.max(
+                      0,
+                      (availablePoints || 0) - (usedPoint || 0)
+                    ).toLocaleString()}
+                    원
+                  </PointsStrong>
+                </InlineItem>
+
+                <InlineItem>
                   <span>보유 적립금</span>
                   <PointsStrong>
-                    {availablePoints.toLocaleString()}원
+                    {Number(availablePoints || 0).toLocaleString()}원
                   </PointsStrong>
-                </PointsRow>
+                </InlineItem>
+              </PointsInlineRow>
 
-                <PointsControl>
-                  <input
-                    type="text"
-                    value={usedPointInput.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} // 보기만 콤마 포맷
-                    onChange={handlePointChange}
-                    onBlur={handlePointBlur}
-                    placeholder="사용할 적립금 입력"
-                    inputMode="numeric"
-                    disabled={!orderData}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleUseMaxPoint}
-                    disabled={!orderData}
-                  >
-                    최대사용
-                  </button>
-                  {usedPoint > 0 && (
-                    <button type="button" onClick={handleClearPoint}>
-                      초기화
-                    </button>
-                  )}
-                </PointsControl>
+              <PointsControl>
+                <input
+                  type="text"
+                  value={usedPointInput.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} // 보기만 콤마 포맷
+                  onChange={handlePointChange}
+                  onBlur={handlePointBlur}
+                  placeholder="사용할 적립금 입력"
+                  inputMode="numeric"
+                  disabled={!orderData}
+                />
+                <button
+                  type="button"
+                  onClick={handleUseMaxPoint}
+                  disabled={!orderData}
+                >
+                  모두사용
+                </button>
+                <button
+                  type="button"
+                  onClick={handleApplyPoint}
+                  disabled={!orderData}
+                >
+                  적용
+                </button>
+              </PointsControl>
 
-                <PointsHelp>
-                  {POINT_UNIT > 1
-                    ? `적립금은 ${POINT_UNIT.toLocaleString()}원 단위로 사용 가능합니다.`
-                    : '적립금은 1원 단위로 사용 가능합니다.'}
-                </PointsHelp>
-              </PointsBox>
+              <PointsHelp>
+                {POINT_UNIT > 1
+                  ? `적립금은 ${POINT_UNIT.toLocaleString()}원 단위로 사용 가능합니다.`
+                  : '적립금은 1원 단위로 사용 가능합니다.'}
+              </PointsHelp>
+            </PointsBox>
+            <PriceRow>
+              <span>적립금 사용</span>
+              <span>-{usedPoint.toLocaleString()}원</span>
             </PriceRow>
             <PriceRow>
               <span>쿠폰할인</span>
@@ -984,20 +1047,34 @@ const SelectedAddressDisplay = styled.div`
 `;
 
 const PointsBox = styled.div`
+  width: 100%; /* 너비를 100%로 설정 */
+  box-sizing: border-box; /* 패딩과 보더를 너비에 포함 */
   margin: 12px 0;
   padding: 16px;
-  background: #fafafa; /* Summary와 톤 통일 */
+  background: #fafafa;
   border-radius: 8px;
-  border: 1px solid #ddd; /* 기존 보더 컬러와 일치 */
+  border: 1px solid #ddd;
 `;
 
-const PointsRow = styled.div`
+const PointsInlineRow = styled.div`
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-  margin-bottom: ${({ gapless }) => (gapless ? '0' : '10px')};
+  gap: 10px; /* 구분자와의 간격 */
+  margin: 6px 0;
+  flex-wrap: wrap; /* 모바일에서 줄바꿈 허용 */
 `;
 
+const InlineItem = styled.div`
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+
+  span {
+    font-size: 12px;
+    color: #666;
+  }
+`;
 const PointsStrong = styled.strong`
   font-weight: 600; /* 지나치게 튀지 않게 600 */
   color: #222; /* Summary 텍스트 톤과 유사 */
@@ -1011,7 +1088,7 @@ const PointsControl = styled.div`
   margin-top: 8px;
 
   input {
-    flex: 1;
+    min-width: 90px;
     padding: 10px 12px;
     border: 1px solid #ccc;
     border-radius: 6px;
