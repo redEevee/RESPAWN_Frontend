@@ -7,63 +7,69 @@ import axios from '../api/axios';
 const SignupPage = () => {
   const navigate = useNavigate('');
 
+  // isRequired => 정규식
+  // duPlicate => 중복
+  // Check => 일치 확인 (비번)
+  // checked => 인증 확인 여부
+  // isVaild => 인증 성공 여부
+  // Available => 사용가능 여부
+
   const initialUsernameState = {
     username: '',
-    isRequiredUsername: false,
-    isUsernameAvailable: false,
+    isRequiredUsername: false, // 정규식
+    isUsernameAvailable: false, // 사용 가능 (중복)
     success: '',
     error: '',
   };
 
   const initialPasswordState = {
     password: '',
-    isRequiredPassword: false,
+    isRequiredPassword: false, // 정규식
     error: '',
   };
 
   const initialConfirmPasswordState = {
     confirmPassword: '',
-    isCheckPassword: false,
+    isCheckPassword: false, // 비밀번호 일치
     error: '',
   };
 
   const initialPhoneNumberState = {
     phoneNumber: '',
-    isRequiredPhoneNumber: false,
-    isPhoneNumberAvailable: false,
-    isValidPhoneNumber: false,
-    isCheckedPhoneNumber: false,
+    isRequiredPhoneNumber: false, // 정규식
+    isPhoneNumberAvailable: false, // 사용 가능 (중복)
+    isValidPhoneNumber: false, // 인증 성공
+    isCheckedPhoneNumber: false, // 인증 완료
     error: '',
   };
 
   const initialConfirmPhoneState = {
     confirmPhone: '',
-    isValidConfirmPhone: false,
+    isValidConfirmPhone: false, // 인증 성공(인증번호 )
   };
 
   const initialEmailState = {
     email: '',
-    isRequiredEmail: false,
-    isEmailAvailable: false,
-    isValidEmail: false,
-    isCheckedEmail: false,
+    isRequiredEmail: false, // 정규식
+    isEmailAvailable: false, // 사용가능 (중복)
+    isValidEmail: false, // 인증 성공
+    isCheckedEmail: false, // 인증 완료
     error: '',
   };
 
   const initialConfirmEmailState = {
     confirmEmail: '',
-    isValidConfirmEmail: false,
+    isValidConfirmEmail: false, // 인증 성공(인증번호 )
   };
 
   const initialCompanyState = {
     company: '',
-    isRequiredCompany: false,
     error: '',
   };
 
   const initialCompanyNumberState = {
     companyNumber: '',
-    isRequiredCompanyNumber: false,
+    isRequiredCompanyNumber: false, // 정규식
     error: '',
   };
 
@@ -86,9 +92,10 @@ const SignupPage = () => {
   const [emailDomain, setEmailDomain] = useState(''); // 선택한 도메인
 
   //이메일 도메인 직접 입력
-  const [isCustomDomain, setIsCustomDomain] = useState(false);
-  const [customDomain, setCustomDomain] = useState('');
+  const [isCustomDomain, setIsCustomDomain] = useState(false); // 도메인 직접입력 선택 여부
+  const [customDomain, setCustomDomain] = useState(''); // 도메인 직접 입력
 
+  // 인증번호 UI
   const [showPhoneConfirm, setShowPhoneConfirm] = useState(false);
   const [showEmailConfirm, setShowEmailConfirm] = useState(false);
 
@@ -100,63 +107,13 @@ const SignupPage = () => {
   const [emailCountdown, setEmailCountdown] = useState(0);
   const [emailTimerActive, setEmailTimerActive] = useState(false);
 
-  // 전화번호 인증 타이머 useEffect
-  useEffect(() => {
-    let timer = null;
-    if (timerActive && countdown > 0) {
-      timer = setInterval(() => {
-        setCountdown((prev) => prev - 1);
-      }, 1000);
-    } else if (countdown === 0 && timerActive) {
-      setTimerActive(false);
-      setShowPhoneConfirm(false);
-      alert('인증 시간이 만료되었습니다. 다시 요청해주세요.');
-    }
-    return () => clearInterval(timer);
-  }, [timerActive, countdown]);
-
-  // 이메일 인증 타이머 useEffect
-  useEffect(() => {
-    let emailTimer = null;
-    if (emailTimerActive && emailCountdown > 0) {
-      emailTimer = setInterval(() => {
-        setEmailCountdown((prev) => prev - 1);
-      }, 1000);
-    } else if (emailCountdown === 0 && emailTimerActive) {
-      setEmailTimerActive(false);
-      setShowEmailConfirm(false);
-      alert('이메일 인증 시간이 만료되었습니다. 다시 시도해주세요.');
-    }
-    return () => clearInterval(emailTimer);
-  }, [emailTimerActive, emailCountdown]);
-
-  //이메일 도메인 선택 코드
-  useEffect(() => {
-    let selectedDomain = emailDomain;
-    if (isCustomDomain) selectedDomain = customDomain;
-
-    if (emailId && selectedDomain) {
-      const fullEmail = `${emailId}@${selectedDomain}`;
-      const requiredEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fullEmail);
-      setEmail((prev) => ({
-        ...prev,
-        email: fullEmail,
-        isRequiredEmail: requiredEmail,
-        isEmailAvailable: false,
-        isCheckedEmail: false,
-        isValidEmail: false,
-        error: requiredEmail ? '' : '유효한 이메일을 입력해주세요.',
-      }));
-    }
-  }, [emailId, emailDomain, isCustomDomain, customDomain]);
-
-  // 아이디 중복 검사
+  // 아이디 중복 검사 (응답값 false -> 중복X)
   const checkId = async () => {
     try {
-      const response = await axios.get(
-        `http://localhost:8080/signup/username/${username.username}`
+      const duplicateCheck = await axios.get(
+        `/signup/username/${username.username}`
       );
-      if (response.data === false) {
+      if (duplicateCheck.data === false) {
         setUsername({
           ...username,
           isUsernameAvailable: true,
@@ -176,26 +133,11 @@ const SignupPage = () => {
     }
   };
 
-  const formatCompanyNumber = (value) => {
-    const digits = value.replace(/\D/g, '').slice(0, 10); // 최대 10자리
-    const len = digits.length;
-    if (len < 4) return digits;
-    if (len < 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-    return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
-  };
-
+  // 전화번호 인증 요청 (응답값 false -> 중복X)
   const verifyPhoneNumber = async () => {
-    if (!/^\d{11}$/.test(phoneNumber.phoneNumber)) {
-      setPhoneNumber((prev) => ({
-        ...prev,
-        error: '유효한 전화번호를 입력해주세요.',
-      }));
-      return;
-    }
-
     try {
       const duplicateCheck = await axios.get(
-        `http://localhost:8080/signup/phoneNumber/${phoneNumber.phoneNumber}`
+        `/signup/phoneNumber/${phoneNumber.phoneNumber}`
       );
 
       if (duplicateCheck.data === true) {
@@ -203,23 +145,21 @@ const SignupPage = () => {
           ...prev,
           error: '이미 등록된 전화번호입니다. 다른 번호를 입력해주세요.',
         }));
-        return;
+      } else {
+        // 중복이 아님 -> 인증 요청 시작
+        await axios.post('/verify-phone-number', {
+          phoneNumber: phoneNumber.phoneNumber,
+        });
+        setPhoneNumber((prev) => ({
+          ...prev,
+          isPhoneNumberAvailable: true,
+          error: '',
+        }));
+        alert('인증번호가 입력하신 전화번호로 전송되었습니다.');
+        setCountdown(300); // 5분
+        setTimerActive(true);
+        setShowPhoneConfirm(true);
       }
-
-      // 중복이 아니면 인증 요청 시작
-      await axios.post('/verify-phone-number', {
-        phoneNumber: phoneNumber.phoneNumber,
-      });
-
-      setPhoneNumber((prev) => ({
-        ...prev,
-        isPhoneNumberAvailable: true,
-        error: '',
-      }));
-      alert('인증번호가 입력하신 전화번호로 전송되었습니다.');
-      setCountdown(300); // 5분
-      setTimerActive(true);
-      setShowPhoneConfirm(true);
     } catch (err) {
       console.error(err);
       setPhoneNumber((prev) => ({
@@ -230,41 +170,57 @@ const SignupPage = () => {
     }
   };
 
+  // 전화번호 인증 확인
   const confirmPhoneVerificationCode = async () => {
     try {
-      await axios.post('/phone-number/verification-code', {
+      const response = await axios.post('/phone-number/verification-code', {
         code: confirmPhone.confirmPhone,
       });
-      setConfirmPhone({ ...confirmPhone, isValidConfirmPhone: true });
-      setPhoneNumber({
-        ...phoneNumber,
-        isValidPhoneNumber: true,
-        isCheckedPhoneNumber: true,
-        error: '',
-      });
-      setShowPhoneConfirm(false);
-      setTimerActive(false);
-      alert('전화번호 인증이 완료되었습니다.');
+      if (response.data.isSuccess) {
+        setConfirmPhone({ ...confirmPhone, isValidConfirmPhone: true });
+        setPhoneNumber({
+          ...phoneNumber,
+          isValidPhoneNumber: true,
+          isCheckedPhoneNumber: true,
+          error: '',
+        });
+        setShowPhoneConfirm(false);
+        setTimerActive(false);
+        alert('전화번호 인증이 완료되었습니다.');
+      }
     } catch (error) {
-      console.error(error);
       alert('인증번호가 올바르지 않거나, 인증에 실패했습니다.');
       setConfirmPhone({ ...confirmPhone, isValidConfirmPhone: false });
     }
   };
 
-  // 이메일 인증코드 전송
+  // 이메일 인증 요청
   const verifyEmail = async () => {
-    const requiredEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.email);
-    if (!requiredEmail) {
-      alert('유효한 이메일 주소를 입력해주세요.');
+    if (!isCustomDomain && !emailDomain) {
+      setEmail((prev) => ({ ...prev, error: '이메일 도메인을 선택해주세요.' }));
+      return;
+    }
+    if (isCustomDomain && !customDomain.trim()) {
+      setEmail((prev) => ({
+        ...prev,
+        error: '직접 입력 도메인을 입력해주세요.',
+      }));
+      return;
+    }
+
+    // 2) 형식 검증
+    if (!email.isRequiredEmail) {
+      setEmail((prev) => ({
+        ...prev,
+        error: '유효한 이메일 주소를 입력해주세요.',
+      }));
       return;
     }
 
     try {
-      const duplicateCheck = await axios.get(
-        `http://localhost:8080/signup/email/${email.email}`
-      );
+      const duplicateCheck = await axios.get(`/signup/email/${email.email}`);
 
+      console.log(duplicateCheck.data);
       if (duplicateCheck.data === true) {
         setEmail((prev) => ({
           ...prev,
@@ -316,7 +272,6 @@ const SignupPage = () => {
       });
 
       if (response.data.success) {
-        alert('이메일 인증이 완료되었습니다.');
         setConfirmEmail({ ...confirmEmail, isValidConfirmEmail: true });
         setEmail({
           ...email,
@@ -326,8 +281,9 @@ const SignupPage = () => {
         });
         setShowEmailConfirm(false);
         setEmailTimerActive(false); // 타이머 종료
+        alert('이메일 인증이 완료되었습니다.');
       } else {
-        alert(response.data.message || '인증번호가 올바르지 않습니다.');
+        alert('인증번호가 올바르지 않거나, 인증에 실패했습니다.');
         setConfirmEmail({ ...confirmEmail, isValidConfirmEmail: false });
       }
     } catch (err) {
@@ -335,6 +291,78 @@ const SignupPage = () => {
       alert('이메일 인증 확인 중 오류가 발생했습니다.');
     }
   };
+
+  // 사업자등록번호 포맷
+  const formatCompanyNumber = (value) => {
+    const digits = value.replace(/\D/g, '').slice(0, 10); // 최대 10자리
+    const len = digits.length;
+    if (len < 4) return digits;
+    if (len < 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+    return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
+  };
+
+  // 비밀번호 , 비밀번호 재확인 일치
+  useEffect(() => {
+    const pwd = password.password || '';
+    const confirm = confirmPassword.confirmPassword || '';
+    const match = confirm === pwd;
+
+    setConfirmPassword((prev) => ({
+      ...prev,
+      isCheckPassword: match,
+      error: match ? '' : '비밀번호가 일치하지 않습니다.',
+    }));
+  }, [password.password, confirmPassword.confirmPassword]);
+
+  //이메일 도메인 선택 코드
+  useEffect(() => {
+    let selectedDomain = emailDomain;
+    if (isCustomDomain) selectedDomain = customDomain;
+
+    if (emailId && selectedDomain) {
+      const fullEmail = `${emailId}@${selectedDomain}`;
+      const requiredEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fullEmail);
+      setEmail((prev) => ({
+        ...prev,
+        email: fullEmail,
+        isRequiredEmail: requiredEmail,
+        isEmailAvailable: false,
+        isCheckedEmail: false,
+        isValidEmail: false,
+        error: requiredEmail ? '' : '유효한 이메일 주소를 입력해주세요.',
+      }));
+    }
+  }, [emailId, emailDomain, isCustomDomain, customDomain]);
+
+  // 전화번호 인증 타이머 useEffect
+  useEffect(() => {
+    let timer = null;
+    if (timerActive && countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    } else if (countdown === 0 && timerActive) {
+      setTimerActive(false);
+      setShowPhoneConfirm(false);
+      alert('인증 시간이 만료되었습니다. 다시 요청해주세요.');
+    }
+    return () => clearInterval(timer);
+  }, [timerActive, countdown]);
+
+  // 이메일 인증 타이머 useEffect
+  useEffect(() => {
+    let emailTimer = null;
+    if (emailTimerActive && emailCountdown > 0) {
+      emailTimer = setInterval(() => {
+        setEmailCountdown((prev) => prev - 1);
+      }, 1000);
+    } else if (emailCountdown === 0 && emailTimerActive) {
+      setEmailTimerActive(false);
+      setShowEmailConfirm(false);
+      alert('이메일 인증 시간이 만료되었습니다. 다시 시도해주세요.');
+    }
+    return () => clearInterval(emailTimer);
+  }, [emailTimerActive, emailCountdown]);
 
   // 유효성 검사
   const onChangeHandler = (name) => (e) => {
@@ -365,7 +393,10 @@ const SignupPage = () => {
           isRequiredPassword: requiredPassword,
           error: requiredPassword
             ? ''
-            : '8자 이상의 영문자, 숫자, 특수문자를 사용해야합니다.',
+            : '8~25자의 영문자, 숫자, 특수문자를 사용해야합니다.',
+        });
+        setConfirmPassword({
+          isCheckPassword: false,
         });
         break;
       case 'confirmPassword':
@@ -381,7 +412,6 @@ const SignupPage = () => {
         setCompany({
           ...company,
           company: value,
-          isRequiredCompany: value.trim().length > 0,
           error: value.trim() ? '' : '스토어 이름을 입력해주세요.',
         });
         break;
@@ -392,9 +422,7 @@ const SignupPage = () => {
           ...companyNumber,
           companyNumber: formatted,
           isRequiredCompanyNumber: isValid,
-          error: isValid
-            ? ''
-            : '사업자등록번호 형식(예: 123-45-67890)에 맞게 입력해주세요.',
+          error: isValid ? '' : '사업자등록번호 10자리를 입력해주세요.',
         });
         break;
       }
@@ -407,7 +435,7 @@ const SignupPage = () => {
           isPhoneNumberAvailable: false,
           isCheckedPhoneNumber: false,
           isValidPhoneNumber: false,
-          error: requiredPhoneNumber ? '' : '유효한 전화번호를 입력해주세요.',
+          error: requiredPhoneNumber ? '' : '유효한 전화번호를 입력하세요.',
         });
         setShowPhoneConfirm(false);
         break;
@@ -427,7 +455,7 @@ const SignupPage = () => {
           isEmailAvailable: false,
           isCheckedEmail: false,
           isValidEmail: false,
-          error: requiredEmail ? '' : '유효한 이메일을 입력해주세요.',
+          error: requiredEmail ? '' : '유효한 이메일 주소를 입력해주세요.',
         });
         break;
       case 'confirmEmail':
@@ -444,6 +472,103 @@ const SignupPage = () => {
 
   const handleSignup = async (e) => {
     e.preventDefault();
+
+    const trimmedName = name?.trim() || '';
+    const trimmedCompany = company?.company?.trim() || '';
+
+    // 1) 기본 필수값
+    if (!trimmedName) {
+      alert('이름을 입력해주세요.');
+      return;
+    }
+    if (!username.username) {
+      alert('아이디를 입력해주세요.');
+      return;
+    }
+    if (!password.password) {
+      alert('비밀번호를 입력해주세요.');
+      return;
+    }
+    if (!email.email) {
+      alert('이메일을 입력해주세요.');
+      return;
+    }
+    if (!phoneNumber.phoneNumber) {
+      alert('전화번호를 입력해주세요.');
+      return;
+    }
+
+    // 2) 형식 유효성
+    if (!username.isRequiredUsername) {
+      alert('아이디 형식을 확인해주세요. (5~15자의 영문자/숫자)');
+      return;
+    }
+    if (!password.isRequiredPassword) {
+      alert('비밀번호 형식을 확인해주세요. (영문/숫자/특수문자 포함 8~25자)');
+      return;
+    }
+    if (!confirmPassword.isCheckPassword) {
+      alert('비밀번호 확인이 일치하지 않습니다.');
+      return;
+    }
+    if (!phoneNumber.isRequiredPhoneNumber) {
+      alert('전화번호 형식을 확인해주세요. (숫자 11자리)');
+      return;
+    }
+    if (!email.isRequiredEmail) {
+      alert('유효한 이메일 주소를 입력해주세요.');
+      return;
+    }
+
+    // 3) 중복 검사 완료 여부 && 인증 완료 여부(코드 검증까지 끝났는지)
+    if (!username.isUsernameAvailable) {
+      alert('아이디 중복확인을 완료해주세요.');
+      return;
+    }
+
+    if (!phoneNumber.isPhoneNumberAvailable) {
+      alert('전화번호 인증 요청을 진행해주세요.');
+      return;
+    }
+    if (
+      !phoneNumber.isValidPhoneNumber ||
+      !confirmPhone.isValidConfirmPhone ||
+      !phoneNumber.isCheckedPhoneNumber
+    ) {
+      alert('전화번호 인증을 완료해주세요.');
+      return;
+    }
+
+    if (!email.isEmailAvailable) {
+      alert('이메일 인증 요청을 진행해주세요.');
+      return;
+    }
+    if (
+      !email.isValidEmail ||
+      !confirmEmail.isValidConfirmEmail ||
+      !email.isCheckedEmail
+    ) {
+      alert('이메일 인증을 완료해주세요.');
+      return;
+    }
+
+    // 5) 판매회원 전용
+    if (userType === 'seller') {
+      if (!trimmedCompany) {
+        setCompany((p) => ({ ...p, error: '스토어 이름을 입력해주세요.' }));
+        alert('스토어 이름을 입력해주세요.');
+        return;
+      }
+      if (!companyNumber.isRequiredCompanyNumber) {
+        setCompanyNumber((p) => ({
+          ...p,
+          error: '사업자등록번호 형식(예: 123-45-67890)에 맞게 입력해주세요.',
+        }));
+        alert('사업자등록번호 형식을 확인해주세요.');
+        return;
+      }
+    }
+
     const signupData = {
       userType,
       name,
@@ -459,10 +584,7 @@ const SignupPage = () => {
       );
     }
     try {
-      const response = await axios.post(
-        `http://localhost:8080/join/${userType}`,
-        signupData
-      );
+      const response = await axios.post(`/join/${userType}`, signupData);
       console.log('회원가입 성공', response.data);
       navigate('/login');
     } catch (error) {
@@ -662,18 +784,19 @@ const SignupPage = () => {
             </DomainSelect>
 
             {/* 인증 버튼 또는 완료 메시지 */}
-            {!email.isValidEmail ? (
+            {email.isValidEmail ? (
+              <SuccessText>이메일 인증 완료</SuccessText>
+            ) : (
               <CheckButton
                 type="button"
                 onClick={verifyEmail}
-                disabled={!emailId || (!emailDomain && !customDomain)}
+                disabled={!emailId}
               >
                 인증하기
               </CheckButton>
-            ) : (
-              <SuccessText>이메일 인증 완료</SuccessText>
             )}
           </CheckWrapper>
+          {email.error && <ErrorText>{email.error}</ErrorText>}
 
           {/* 직접입력란 추가 표시 (선택된 경우만!) */}
           {isCustomDomain && (
@@ -771,21 +894,6 @@ const Tab = styled.button`
   cursor: pointer;
 `;
 
-// const Input = styled.input`
-//   width: 100%;
-//   padding: 12px;
-//   margin-bottom: 16px;
-//   border: none;
-//   border-bottom: 1px solid #ccc;
-//   font-size: 16px;
-//   background: transparent;
-
-//   &:focus {
-//     outline: none;
-//     border-bottom: 2px solid rgb(105, 111, 148);
-//   }
-// `;
-
 const Input = styled.input`
   width: 100%;
   min-width: 0;
@@ -803,33 +911,6 @@ const Input = styled.input`
     border-bottom: 2px solid rgb(105, 111, 148);
   }
 `;
-
-// const CheckWrapper = styled.div`
-//   width: 100%;
-//   display: flex;
-//   align-items: center;
-//   margin-bottom: 16px;
-// `;
-
-// const CheckInput = styled(Input)`
-//   margin-bottom: 0;
-// `;
-
-// const CheckButton = styled.button`
-//   margin-left: 12px;
-//   height: 44px;
-//   background: rgb(105, 111, 148);
-//   color: white;
-//   padding: 0 16px;
-//   font-size: 14px;
-//   border: none;
-//   border-radius: 6px;
-//   cursor: pointer;
-
-//   &:hover {
-//     background: rgb(85, 90, 130);
-//   }
-// `;
 
 const CheckWrapper = styled.div`
   width: 100%;
@@ -902,27 +983,6 @@ const JoinButton = styled.button`
     background: rgb(85, 90, 130);
   }
 `;
-
-// const ErrorText = styled.p`
-//   color: red;
-//   font-size: 12px;
-//   margin-top: -12px;
-//   margin-bottom: 12px;
-// `;
-
-// const SuccessText = styled.p`
-//   color: green;
-//   font-size: 12px;
-//   margin-top: -12px;
-//   margin-bottom: 12px;
-// `;
-
-// const TimerText = styled.p`
-//   font-size: 12px;
-//   text-align: right;
-//   color: #888;
-//   margin-bottom: 8px;
-// `;
 
 const ErrorText = styled.p`
   color: red;
