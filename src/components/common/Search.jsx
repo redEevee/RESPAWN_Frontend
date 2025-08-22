@@ -1,12 +1,33 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom';
 import searchIcon from '../../assets/search_icon.png';
 
 const Search = () => {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState('');
+
+  const handleSearch = () => {
+    if (query.trim() === '') return;
+    const params = new URLSearchParams({ query });
+    navigate(`/search?query=${encodeURIComponent(params)}`);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
   return (
     <SearchContainer>
-      <SearchInput placeholder="상품을 검색해보세요!" />
-      <SearchIcon src={searchIcon} alt="search" />
+      <SearchInput
+        placeholder="상품을 검색해보세요!"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={handleKeyPress}
+      />
+      <SearchIcon src={searchIcon} alt="search" onClick={handleSearch} />
     </SearchContainer>
   );
 };
