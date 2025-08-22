@@ -41,8 +41,8 @@ const FindIdInputStep = ({ onComplete }) => {
 
       if (res.data && res.data.maskedUsername) {
         const maskedUsername = res.data.maskedUsername;
-        const receivedPhoneNumber = res.data.phoneNumber;
-        const receivedEmail = res.data.email;
+        const receivedPhoneNumber = res.data.maskedPhoneNumber;
+        const receivedEmail = res.data.maskedEmail;
 
         sessionStorage.setItem('token', res.data.token);
         sessionStorage.setItem('userId', res.data.userId);

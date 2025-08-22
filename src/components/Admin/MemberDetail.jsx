@@ -29,6 +29,7 @@ const MemberDetail = () => {
     lastPasswordChangedAt: '',
     role: '',
     createdAt: '',
+    grade: '', // 구매자용
   });
 
   // 원본 비교용
@@ -60,6 +61,7 @@ const MemberDetail = () => {
     lastPasswordChangedAt: data.lastPasswordChangedAt || '',
     role: data.role || '',
     createdAt: data.createdAt || '',
+    grade: data.grade || '',
   });
 
   useEffect(() => {
@@ -347,6 +349,16 @@ const MemberDetail = () => {
               <CompactRow>
                 <Label>사업자번호</Label>
                 <Value mono>{form.companyNumber || '-'}</Value>
+              </CompactRow>
+            </>
+          )}
+
+          {isBuyer && (
+            <>
+              <Divider />
+              <CompactRow>
+                <Label>등급</Label>
+                <Value>{form.grade || '-'}</Value>
               </CompactRow>
             </>
           )}

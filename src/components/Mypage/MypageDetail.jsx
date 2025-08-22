@@ -5,7 +5,10 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 const menuItems = [
   {
     title: 'MY 쇼핑',
-    items: [{ key: 'orders', label: '주문목록/배송조회' }],
+    items: [
+      { key: 'coupon', label: '쿠폰' },
+      { key: 'orders', label: '주문목록/배송조회' },
+    ],
   },
   {
     title: 'MY 활동',

@@ -98,6 +98,7 @@ const Members = () => {
         phone: roleTab === 'buyer' ? u.phoneNumber ?? '' : '',
         company: roleTab === 'seller' ? u.company ?? '' : '',
         joinedAt: u.createdAt ?? '',
+        grade: u.grade ?? '',
         userType: u.userType ?? roleTab,
       }));
       setData(normalized);
@@ -158,9 +159,6 @@ const Members = () => {
       const tb = vb ? new Date(vb).getTime() : 0;
       return ta - tb;
     }
-
-    // 숫자 필드가 있다면 여기서 추가 처리
-    // if (field === 'someNumber') return Number(va) - Number(vb);
 
     // 기본: 문자열 비교
     return String(va).localeCompare(String(vb), 'ko', {
@@ -294,6 +292,7 @@ const Members = () => {
                 onClick={onSort}
                 activeField={sort.field}
                 dir={sort.dir}
+                className="col-name"
               />
               <SortableTh
                 field="username"
@@ -301,6 +300,7 @@ const Members = () => {
                 onClick={onSort}
                 activeField={sort.field}
                 dir={sort.dir}
+                className="col-username"
               />
               {roleTab === 'buyer' ? (
                 <SortableTh
@@ -309,6 +309,7 @@ const Members = () => {
                   onClick={onSort}
                   activeField={sort.field}
                   dir={sort.dir}
+                  className="col-phone"
                 />
               ) : (
                 <SortableTh
@@ -317,6 +318,7 @@ const Members = () => {
                   onClick={onSort}
                   activeField={sort.field}
                   dir={sort.dir}
+                  className="col-company"
                 />
               )}
               <SortableTh
@@ -325,13 +327,25 @@ const Members = () => {
                 onClick={onSort}
                 activeField={sort.field}
                 dir={sort.dir}
+                className="col-email"
               />
+              {roleTab === 'buyer' && (
+                <SortableTh
+                  field="grade"
+                  label="등급"
+                  onClick={onSort}
+                  activeField={sort.field}
+                  dir={sort.dir}
+                  className="col-grade"
+                />
+              )}
               <SortableTh
                 field="joinedAt"
                 label="가입일"
                 onClick={onSort}
                 activeField={sort.field}
                 dir={sort.dir}
+                className="col-joined"
               />
               <th>관리</th>
             </tr>
@@ -339,14 +353,14 @@ const Members = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: 24 }}>
+                <td colSpan={8} style={{ textAlign: 'center', padding: 24 }}>
                   로딩중...
                 </td>
               </tr>
             ) : error ? (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={8}
                   style={{ textAlign: 'center', padding: 24, color: 'red' }}
                 >
                   {error}
@@ -354,24 +368,27 @@ const Members = () => {
               </tr>
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: 24 }}>
+                <td colSpan={8} style={{ textAlign: 'center', padding: 24 }}>
                   조건에 맞는 회원이 없습니다.
                 </td>
               </tr>
             ) : (
               data.map((m, idx) => (
                 <tr key={m.userId}>
-                  <td>{idx + 1}</td>
-                  <td>{m.name}</td>
-                  <td>{m.username}</td>
+                  <td className="col-no">{idx + 1}</td>
+                  <td className="col-name">{m.name}</td>
+                  <td className="col-username">{m.username}</td>
                   {roleTab === 'buyer' ? (
-                    <td>{m.phone}</td>
+                    <td className="col-phone">{m.phone}</td>
                   ) : (
-                    <td>{m.company}</td>
+                    <td className="col-company">{m.company}</td>
                   )}
-                  <td>{m.email}</td>
-                  <td>{formatDate(m.joinedAt)}</td>
-                  <td>
+                  <td className="col-email">{m.email}</td>
+                  {roleTab === 'buyer' && (
+                    <td className="col-grade">{m.grade || '-'}</td>
+                  )}
+                  <td className="col-joined">{formatDate(m.joinedAt)}</td>
+                  <td className="col-actions">
                     <ManageBtn onClick={() => onClickManage(m)}>관리</ManageBtn>
                   </td>
                 </tr>
@@ -562,35 +579,31 @@ const TableWrap = styled.div`
     color: #374151;
   }
 
-  /* 컬럼 폭 */
-  th:nth-child(1),
-  td:nth-child(1) {
+  .col-no {
     width: 100px;
-  } /* 번호 */
-  th:nth-child(2),
-  td:nth-child(2) {
+  }
+  .col-name {
     width: 160px;
-  } /* 이름 */
-  th:nth-child(3),
-  td:nth-child(3) {
+  }
+  .col-username {
     width: 160px;
-  } /* 아이디 */
-  th:nth-child(4),
-  td:nth-child(4) {
+  }
+  .col-phone,
+  .col-company {
     width: 180px;
-  } /* 전화번호 */
-  th:nth-child(5),
-  td:nth-child(5) {
+  }
+  .col-email {
     width: auto;
-  } /* 이메일 */
-  th:nth-child(6),
-  td:nth-child(6) {
+  }
+  .col-grade {
+    width: 120px;
+  } /* 신규 */
+  .col-joined {
     width: 160px;
-  } /* 가입일 */
-  th:nth-child(7),
-  td:nth-child(7) {
+  }
+  .col-actions {
     width: 160px;
-  } /* 관리 */
+  }
 
   tbody tr:hover {
     background: #f6f7fb;
