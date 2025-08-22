@@ -5,6 +5,7 @@ import AddressListModal from '../AddressListModal';
 import DeliveryModal from '../DeliveryModal';
 import { useParams, useNavigate } from 'react-router-dom';
 import StepProgress from '../common/StepProgress';
+import CouponModal from '../CouponModal';
 
 // PaymentComponent를 모달 없이 바로 결제 실행하도록 수정
 const PaymentComponent = ({ orderInfo, onPaymentComplete, onClose }) => {
@@ -106,6 +107,8 @@ const PaymentComponent = ({ orderInfo, onPaymentComplete, onClose }) => {
                   orderId,
                   selectedAddressId,
                   selectedCartItemIds,
+                  // selectedCouponId: orderInfo.selectedCoupon?.id || null,
+                  // couponDiscount: orderInfo.couponDiscount || 0,
                 }),
               });
 
@@ -189,6 +192,10 @@ const OrderList = () => {
   const [usedPointInput, setUsedPointInput] = useState(''); // 입력창 바인딩
   const [usedPoint, setUsedPoint] = useState(0); // 계산에 쓰는 값
 
+  const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
+  const [selectedCoupon, setSelectedCoupon] = useState(null); // { id, name, discountAmount } 형태 가정
+  const [couponDiscount, setCouponDiscount] = useState(0);
+
   // PaymentComponent 실행을 위한 상태
   const [showPaymentComponent, setShowPaymentComponent] = useState(false);
 
@@ -207,6 +214,7 @@ const OrderList = () => {
     (orderData?.itemTotalAmount || 0) +
       (orderData?.totalDeliveryFee || 0) -
       usedPoint
+    // - couponDiscount
   );
 
   // 배송지 타입 변경 시
@@ -331,6 +339,14 @@ const OrderList = () => {
     return Math.max(0, total);
   };
 
+  //  const getPayableMaxPoint = () => {
+  //    const orderAmount = orderData?.itemTotalAmount || 0; // 상품합계
+  //    const deliveryFee = orderData?.totalDeliveryFee || 0;
+  //    const totalBeforeDiscount = orderAmount + deliveryFee;
+  //    const totalAfterCoupon = Math.max(0, totalBeforeDiscount - couponDiscount);
+  //    return totalAfterCoupon; // 쿠폰 적용 후 금액을 상한으로
+  //  };
+
   const clampUsedPoint = (val) => {
     const raw = toNumber(val);
     // 단위 절삭
@@ -454,7 +470,7 @@ const OrderList = () => {
       .get(`/api/orders/${orderId}`)
       .then((res) => {
         const data = res.data;
-        console.log(data);
+        console.log('orderList', data);
         setOrderData(data);
         setOrders(data.orderItems || []);
         setBuyerInfo({
@@ -465,21 +481,46 @@ const OrderList = () => {
         setSelectedCartItemIds(
           res.data.orderItems.map((item) => item.cartItemId)
         );
-        const defaultAddr = {
-          id: data.addressId || null,
-          zoneCode: data.zoneCode || '',
-          baseAddress: data.baseAddress || '',
-          detailAddress: data.detailAddress || '',
-          recipient: data.recipient || '',
-          phone: data.addressPhone || '',
-        };
+
+        const hasAddress =
+          !!data.addressId ||
+          !!data.zoneCode ||
+          !!data.baseAddress ||
+          !!data.detailAddress ||
+          !!data.recipient ||
+          !!data.addressPhone;
+
+        const defaultAddr = hasAddress
+          ? {
+              id: data.addressId ?? null,
+              zoneCode: data.zoneCode ?? '',
+              baseAddress: data.baseAddress ?? '',
+              detailAddress: data.detailAddress ?? '',
+              recipient: data.recipient ?? '',
+              phone: data.addressPhone ?? '',
+            }
+          : null;
         setDefaultAddress(defaultAddr);
 
-        // 선택된 주소가 없을 때만 기본주소로 설정
+        // 선택된 주소가 없을 때만 기본 주소 적용
         if (!selectedAddressId) {
-          setAddressForm(defaultAddr);
-          setSelectedAddressId(defaultAddr.id);
-          setSelectedAddressType('basic');
+          if (defaultAddr) {
+            setAddressForm(defaultAddr);
+            setSelectedAddressId(defaultAddr.id); // null일 수도 있음
+            setSelectedAddressType('basic');
+          } else {
+            // 주소가 전혀 없을 때는 선택 상태를 초기화
+            setAddressForm({
+              id: null,
+              zoneCode: '',
+              baseAddress: '',
+              detailAddress: '',
+              recipient: '',
+              phone: '',
+            });
+            setSelectedAddressId(null);
+            setSelectedAddressType(null); // 또는 'none'
+          }
         }
       })
       .catch((err) => console.error('주문 내역 불러오기 실패', err));
@@ -740,7 +781,59 @@ const OrderList = () => {
             </PriceRow>
             <PriceRow>
               <span>쿠폰할인</span>
-              <span>-0원</span>
+              <span>
+                {selectedCoupon ? (
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    <strong>
+                      -{Number(couponDiscount ?? 0).toLocaleString()}원
+                    </strong>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // 쿠폰 취소
+                        setSelectedCoupon(null);
+                        setCouponDiscount(0);
+                        // 쿠폰 취소 시, 포인트 상한 재적용 (넘치지 않도록)
+                        // const clamped = clampUsedPoint(usedPoint);
+                        // setUsedPoint(clamped);
+                        // setUsedPointInput(clamped === 0 ? '' : String(clamped));
+                      }}
+                      style={{
+                        padding: '6px 10px',
+                        fontSize: '12px',
+                        border: '1px solid #ccc',
+                        borderRadius: '6px',
+                        background: '#fff',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      취소
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsCouponModalOpen(true)}
+                    style={{
+                      padding: '8px 12px',
+                      fontSize: '14px',
+                      border: '1px solid #ccc',
+                      borderRadius: '6px',
+                      background: '#fff',
+                      cursor: 'pointer',
+                    }}
+                    disabled={!orderData}
+                  >
+                    쿠폰 선택
+                  </button>
+                )}
+              </span>
             </PriceRow>
             <PriceRow>
               <span>배송비</span>
@@ -757,6 +850,29 @@ const OrderList = () => {
         </RightPanel>
       </CheckoutLayout>
 
+      {isCouponModalOpen && orderData && (
+        <CouponModal
+          onClose={() => setIsCouponModalOpen(false)}
+          orderSummary={
+            {
+              // itemTotalAmount: orderData?.itemTotalAmount || 0,
+              // totalDeliveryFee: orderData?.totalDeliveryFee || 0,
+              // usedPoint, // 필요 시 참고
+            }
+          }
+          onApply={({ coupon, discountAmount }) => {
+            setSelectedCoupon(coupon);
+            setCouponDiscount(discountAmount);
+            setIsCouponModalOpen(false);
+
+            // 쿠폰 적용 후 포인트가 초과되지 않도록 재클램프
+            // const clamped = clampUsedPoint(usedPoint);
+            // setUsedPoint(clamped);
+            // setUsedPointInput(clamped === 0 ? '' : String(clamped));
+          }}
+        />
+      )}
+
       {/* PaymentComponent - 모달 없이 바로 결제 실행 */}
       {showPaymentComponent && orderData && (
         <PaymentComponent
@@ -768,6 +884,8 @@ const OrderList = () => {
             selectedPayment,
             selectedAddressId,
             selectedCartItemIds,
+            // selectedCoupon,
+            // couponDiscount,
           }}
           onPaymentComplete={handlePaymentComplete}
           onClose={handlePaymentClose}
@@ -1013,9 +1131,9 @@ const PriceRow = styled.div`
   display: flex;
   justify-content: space-between;
   margin: 8px 0;
-  font-size: ${(props) => (props.total ? '18px' : '16px')};
-  font-weight: ${(props) => (props.total ? 'bold' : 'normal')};
-  color: ${(props) => (props.total ? '#e60023' : '#000')};
+  font-size: ${({ $total }) => ($total ? '18px' : '16px')};
+  font-weight: ${({ $total }) => ($total ? 'bold' : 'normal')};
+  color: ${({ $total }) => ($total ? '#e60023' : '#000')};
 `;
 
 const PayButton = styled.button`
