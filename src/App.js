@@ -1,4 +1,5 @@
 import React from 'react';
+import axios from './api/axios';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import GlobalStyle from './styles/GlobalStyle';
 import MainPage from './pages/MainPage';
@@ -10,8 +11,6 @@ import LoginOkPage from './pages/LoginOkPage';
 import UploadProduct from './components/Seller/Upload/UploadProduct';
 import ProductDetailPage from './pages/ProductDetailPage';
 import ProductListPage from './pages/ProductListPage';
-import PublicRoute from './routes/PublicRoute';
-import PrivateRoute from './routes/PrivateRoute';
 import CartPage from './pages/CartPage';
 import OrderPage from './pages/OrderPage';
 import SellerCenterPage from './pages/SellerCenterPage';
@@ -39,92 +38,69 @@ import Notices from './components/Admin/Notices';
 import Inquiries from './components/Admin/Inquiries';
 import Settings from './components/Admin/Settings';
 import Login from './components/Admin/Login';
+import SearchResultListPage from './pages/SearchResultListPage';
+import AuthGate from './AuthGate';
 
 function App() {
   return (
     <>
       <GlobalStyle />
-      <Routes>
-        <Route path="/" element={<MainPage />} />
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="members" element={<Members />} />
-          <Route
-            path="/admin/members/:userType/:userId"
-            element={<MemberDetail />}
-          />
-          <Route path="notices" element={<Notices />} />
-          <Route path="inquiries" element={<Inquiries />} />
-          <Route path="settings" element={<Settings />} />
-        </Route>
-        <Route path="/adminlogin" element={<Login />} />
+      <AuthGate>
+        <Routes>
+          <Route path="/" element={<MainPage />} />
+          <Route path="/search" element={<SearchResultListPage />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="members" element={<Members />} />
+            <Route
+              path="/admin/members/:userType/:userId"
+              element={<MemberDetail />}
+            />
+            <Route path="notices" element={<Notices />} />
+            <Route path="inquiries" element={<Inquiries />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
+          <Route path="/adminlogin" element={<Login />} />
 
-        <Route path="/uploadproduct" element={<UploadProduct />} />
-        <Route path="/productdetail/:id" element={<ProductDetailPage />} />
-        <Route path="/productlist" element={<ProductListPage />} />
-        <Route path="/customerCenter" element={<CustomerCenterPage />} />
-        <Route
-          path="/cart"
-          element={
-            <PrivateRoute>
-              <CartPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/order"
-          element={
-            <PrivateRoute>
-              <OrderPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/login"
-          element={
-            <PublicRoute>
-              <LogInPage />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/mypage/*"
-          element={
-            <PrivateRoute>
-              <Mypage />
-            </PrivateRoute>
-          }
-        />
-        <Route path="/loginOk" element={<LoginOkPage />} />
-        <Route path="/signup" element={<SignUpPage />} />
-        <Route path="/findid" element={<FindIdPage />} />
-        <Route path="/findPw" element={<FindPwPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route
-          path="/update-password"
-          element={<PasswordUpdateRequiredPage />}
-        />
-        <Route path="/order/:orderId" element={<OrderPage />} />
-        <Route
-          path="/order/:orderId/complete"
-          element={<OrderCompletePage />}
-        />
-        <Route path="/sellerCenter" element={<SellerCenterPage />}>
-          <Route index element={<Navigate to="productList" replace />} />
-          <Route path="productList" element={<ProductList />} />
-          <Route path="uploadProduct" element={<UploadProduct />} />
-          <Route path="refundList" element={<RefundList />} />
-          <Route path="orderList" element={<OrderList />} />
-          <Route path="reviewList" element={<ReviewList />} />
-          <Route path="inquiryList" element={<InquiryList />} />
-          <Route path="refundList/:orderItemId" element={<RefundDetail />} />
-          <Route path="reviewList/:reviewId" element={<ReviewDetail />} />
-          <Route path="productList/:id" element={<EditProduct />} />
-          <Route path="orderList/:orderItemId" element={<OrderDetail />} />
-          <Route path="profile" element={<UserInfo />} />
-        </Route>
-        <Route path="/*" element={<NotFoundPage />} />
-      </Routes>
+          <Route path="/uploadproduct" element={<UploadProduct />} />
+          <Route path="/productdetail/:id" element={<ProductDetailPage />} />
+          <Route path="/productlist" element={<ProductListPage />} />
+          <Route path="/customerCenter" element={<CustomerCenterPage />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/order" element={<OrderPage />} />
+          <Route path="/login" element={<LogInPage />} />
+          <Route path="/mypage/*" element={<Mypage />} />
+          <Route path="/loginOk" element={<LoginOkPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/findid" element={<FindIdPage />} />
+          <Route path="/findPw" element={<FindPwPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route
+            path="/update-password"
+            element={<PasswordUpdateRequiredPage />}
+          />
+          <Route path="/order/:orderId" element={<OrderPage />} />
+          <Route
+            path="/order/:orderId/complete"
+            element={<OrderCompletePage />}
+          />
+          <Route path="/sellerCenter" element={<SellerCenterPage />}>
+            <Route index element={<Navigate to="productList" replace />} />
+            <Route path="productList" element={<ProductList />} />
+            <Route path="uploadProduct" element={<UploadProduct />} />
+            <Route path="refundList" element={<RefundList />} />
+            <Route path="orderList" element={<OrderList />} />
+            <Route path="reviewList" element={<ReviewList />} />
+            <Route path="inquiryList" element={<InquiryList />} />
+            <Route path="refundList/:orderItemId" element={<RefundDetail />} />
+            <Route path="reviewList/:reviewId" element={<ReviewDetail />} />
+            <Route path="productList/:id" element={<EditProduct />} />
+            <Route path="orderList/:orderItemId" element={<OrderDetail />} />
+            <Route path="profile" element={<UserInfo />} />
+          </Route>
+          <Route path="/*" element={<NotFoundPage />} />
+        </Routes>
+      </AuthGate>
     </>
   );
 }

@@ -87,12 +87,11 @@ const Header = () => {
   const userData = JSON.parse(sessionStorage.getItem('userData'));
   const name = userData?.name;
   const role = userData?.authorities;
-  console.log(userData);
-
   const handleLogout = async () => {
     try {
       await axios.post('/logout');
       sessionStorage.removeItem('userData');
+      localStorage.setItem('auth:updated', String(Date.now()));
       alert('로그아웃 완료');
       navigate('/');
     } catch (error) {

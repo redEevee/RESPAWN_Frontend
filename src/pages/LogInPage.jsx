@@ -45,15 +45,11 @@ const LoginPage = (e) => {
       formData.append('username', user.username);
       formData.append('password', user.password);
 
-      const response = await axios({
-        url: 'http://localhost:8080/loginProc',
-        method: 'POST',
-        data: formData,
-        withCredentials: true,
-      });
-      console.log('로그인 성공', response.data);
-
+      const response = await axios.post('/loginProc', formData);
       sessionStorage.setItem('userData', JSON.stringify(response.data));
+      localStorage.setItem('auth:updated', String(Date.now())); // 브로드캐스트
+      console.log('일반 로그인 성공', response.data);
+
       setFailCount(0);
 
       if (
@@ -101,25 +97,44 @@ const LoginPage = (e) => {
 
   useEffect(() => {
     // 팝업창에서 보내준 메시지 처리
-    function handleMessage(event) {
+    const handleMessage = async (event) => {
       if (event.data?.type === 'LOGIN_SUCCESS') {
-        // 로그인 성공 시 홈으로 이동
-        console.log('로그인 성공');
-        navigate('/');
-        // 팝업 변수 초기화
-        setPopup(null);
-      }
-    }
-    window.addEventListener('message', handleMessage);
+        try {
+          const res = await axios.get('/loginOk');
+          sessionStorage.setItem('userData', JSON.stringify(res.data));
+          // 전역 동기화 신호
+          localStorage.setItem('auth:updated', String(Date.now()));
 
+          console.log('소셜 로그인 성공');
+          navigate('/');
+        } catch (err) {
+          console.error('로그인 세션 확인 실패:', err);
+          alert('로그인 상태 확인에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        } finally {
+          setPopup(null);
+        }
+      }
+    };
+
+    // 다른 탭에서 로그인/로그아웃이 일어났을 때
+    const onStorage = async (e) => {
+      if (e.key === 'auth:updated') {
+        try {
+          const res = await axios.get('/loginOk');
+          sessionStorage.setItem('userData', JSON.stringify(res.data));
+        } catch {
+          sessionStorage.removeItem('userData');
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    window.addEventListener('storage', onStorage);
     return () => {
       window.removeEventListener('message', handleMessage);
+      window.removeEventListener('storage', onStorage);
     };
   }, [navigate]);
-
-  // const handleSocialLogin = (provider) => {
-  //   window.location.href = `http://localhost:8080/oauth2/authorization/${provider}`;
-  // };
 
   // 팝업창 닫힘 감지용 effect
   useEffect(() => {

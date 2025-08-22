@@ -6,16 +6,17 @@ function LoginOkPage() {
   const navigate = useNavigate();
   useEffect(() => {
     axios
-      .get('http://localhost:8080/loginOk', { withCredentials: true })
+      .get('/loginOk')
       .then((response) => {
         // 유저 정보 상태 저장 또는 페이지 이동 처리
-        console.log(response.data);
-        sessionStorage.setItem('userData', JSON.stringify(response.data));
+        const data = response.data;
+        sessionStorage.setItem('userData', JSON.stringify(data));
 
         if (window.opener && !window.opener.closed) {
           window.opener.postMessage({ type: 'LOGIN_SUCCESS' }, '*');
         }
 
+        localStorage.setItem('auth:updated', String(Date.now()));
         window.close();
         // 창이 닫히지 않으면 0.5초 후 홈으로 강제 이동
         setTimeout(() => {
