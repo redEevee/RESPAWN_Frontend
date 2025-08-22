@@ -23,9 +23,9 @@ function MainInfo() {
           }
         );
 
-        console.log(pointsRes.data);
-        console.log(userRes.data);
-        console.log(orderRes.data);
+        console.log('pointsRes', pointsRes.data);
+        console.log('userRes', userRes.data);
+        console.log('orderRes', orderRes.data);
         setPoints(pointsRes.data);
         setUser(userRes.data);
         setLatestOrder(orderRes.data);
@@ -47,7 +47,7 @@ function MainInfo() {
           </InfoItem>
           <InfoItem>
             <label>회원등급</label>
-            <span>{user.membershipTier}</span>
+            <span>{user.grade}</span>
           </InfoItem>
           <InfoItem>
             <label>적립금</label>

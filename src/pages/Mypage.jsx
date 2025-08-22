@@ -12,6 +12,7 @@ import RefundPage from '../components/ReturnExchange/RefundPage';
 import ReviewPage from '../components/Review/ReviewPage';
 import RefundDetail from '../components/ReturnExchange/RefundDetail';
 import MyPoint from '../components/Mypage/MyPoint';
+import Coupon from '../components/Mypage/Coupon';
 
 function Mypage() {
   return (
@@ -20,6 +21,7 @@ function Mypage() {
       <Routes>
         <Route path="/*" element={<MypageDetail />}>
           <Route index element={<MainInfo />} />
+          <Route path="coupon" element={<Coupon />} />
           <Route path="orders" element={<OrderHistory />} />
           <Route path="profile" element={<UserInfo />} />
           <Route path="refund" element={<RefundDetail />} />
