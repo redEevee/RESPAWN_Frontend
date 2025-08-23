@@ -35,7 +35,6 @@ const FindIdResultStep = ({ idList, onNext, onPrev }) => {
                 onChange={() => setSelectedId(user.id)}
               />
               <IdText title={user.username}>{user.username}</IdText>
-              {/* 필요하면 가입일 등 추가 가능 */}
             </IdRow>
           ))}
         </ListWrapper>
