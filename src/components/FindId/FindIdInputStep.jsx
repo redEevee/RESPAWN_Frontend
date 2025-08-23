@@ -1,285 +1,208 @@
-import React, { useState } from 'react';
-import styled from 'styled-components';
+import React, { useState, useEffect } from 'react';
 import Logo from '../../components/common/Logo';
-import axios from '../../api/axios';
 import { useNavigate } from 'react-router-dom';
+
+import {
+  Container,
+  TopBar,
+  BackButton,
+  LogoWrapper,
+  Box,
+  Title,
+  TabWrapper,
+  Tab,
+  RadioGroup,
+  RadioLabel,
+  InputGroup,
+  Label,
+  Input,
+  SubmitButton,
+  Message,
+} from '../../styles/FindInputStyles';
+
+import {
+  useFindInputForm,
+  MODE_PHONE,
+  MODE_EMAIL,
+  USER_BUYER,
+  USER_SELLER,
+  FIELD_NAME,
+  FIELD_PHONE,
+  FIELD_EMAIL,
+} from '../../hooks/useFindInputForm';
+
+import { validateFindId } from '../../utils/validators';
+import { findIdApi } from '../../utils/FindInputApi';
 
 const FindIdInputStep = ({ onComplete }) => {
   const navigate = useNavigate();
-  const [mode, setMode] = useState('phone');
-  const [name, setName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
 
-  const handleSubmit = async () => {
-    setError('');
+  // mode에 따라 필요한 필드 구성을 계산
+  const [modeState, setModeState] = useState(MODE_PHONE);
+  const fieldConfig =
+    modeState === MODE_PHONE
+      ? [FIELD_NAME, FIELD_PHONE]
+      : [FIELD_NAME, FIELD_EMAIL];
 
-    if (!name.trim()) {
-      setError('이름을 입력해주세요.');
-      return;
-    }
+  // 반환값, 공통 훅 사용
+  const {
+    mode,
+    setMode,
+    userType,
+    setUserType,
+    values,
+    onChange,
+    loading,
+    error,
+    setError,
+    refs,
+    handleEnterKey,
+    submit,
+  } = useFindInputForm({
+    fields: fieldConfig,
+    validate: validateFindId,
+    buildRequestData: (v, mode, userType) => {
+      const base = { name: v.name, userType };
+      return mode === MODE_PHONE
+        ? { ...base, phoneNumber: v.phone }
+        : { ...base, email: v.email };
+    },
+    // endpoint, axiosInstance 제거
+    sendApi: async (requestData) => {
+      const data = await findIdApi(requestData);
+      // 여기서 token/userId 같은 후속 저장이 필요한 경우 onSuccess에서 처리하므로 반환만
+      return data;
+    },
+    onSuccess: (data, v) => {
+      if (data?.maskedUsername) {
+        const maskedUsername = data.maskedUsername;
+        const receivedPhoneNumber = data.maskedPhoneNumber;
+        const receivedEmail = data.maskedEmail;
 
-    try {
-      let requestData = { name };
-
-      if (mode === 'phone') {
-        if (!/^\d{11}$/.test(phoneNumber)) {
-          setError('올바른 전화번호를 입력해주세요.');
-          return;
-        }
-        requestData.phoneNumber = phoneNumber;
-      } else {
-        if (!/\S+@\S+\.\S+/.test(email)) {
-          setError('올바른 이메일을 입력해주세요.');
-          return;
-        }
-        requestData.email = email;
-      }
-
-      const res = await axios.post('/find-id', requestData);
-
-      if (res.data && res.data.maskedUsername) {
-        const maskedUsername = res.data.maskedUsername;
-        const receivedPhoneNumber = res.data.maskedPhoneNumber;
-        const receivedEmail = res.data.maskedEmail;
-
-        sessionStorage.setItem('token', res.data.token);
-        sessionStorage.setItem('userId', res.data.userId);
+        if (data.token) sessionStorage.setItem('token', data.token);
+        if (data.userId) sessionStorage.setItem('userId', data.userId);
 
         onComplete(
-          { name, phoneNumber: receivedPhoneNumber, email: receivedEmail },
-          [
-            {
-              id: 1,
-              username: maskedUsername,
-            },
-          ]
+          {
+            name: v.name,
+            phoneNumber: receivedPhoneNumber,
+            email: receivedEmail,
+          },
+          [{ id: 1, username: maskedUsername }]
         );
       } else {
-        setError(res.data?.message || '조회 실패');
+        setError(data?.message || '조회 실패');
       }
-    } catch (err) {
-      setError('서버 오류가 발생했습니다.');
-    }
-  };
+    },
+  });
+
+  useEffect(() => {
+    setMode(modeState);
+  }, [modeState, setMode]);
 
   return (
     <Container>
       <TopBar>
         <BackButton onClick={() => navigate(-1)}>← 뒤로가기</BackButton>
       </TopBar>
+
       <LogoWrapper>
         <Logo />
       </LogoWrapper>
-      <Box>
+
+      <Box
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!loading) submit();
+        }}
+        ref={refs.form}
+      >
         <Title>아이디 찾기</Title>
 
         <TabWrapper>
-          <Tab isActive={mode === 'phone'} onClick={() => setMode('phone')}>
+          <Tab
+            isActive={mode === MODE_PHONE}
+            onClick={() => setModeState(MODE_PHONE)}
+          >
             전화번호로 찾기
           </Tab>
-          <Tab isActive={mode === 'email'} onClick={() => setMode('email')}>
+          <Tab
+            isActive={mode === MODE_EMAIL}
+            onClick={() => setModeState(MODE_EMAIL)}
+          >
             이메일로 찾기
           </Tab>
         </TabWrapper>
 
+        <RadioGroup>
+          <RadioLabel>
+            <input
+              type="radio"
+              name="userType"
+              value={USER_BUYER}
+              checked={userType === USER_BUYER}
+              onChange={(e) => setUserType(e.target.value)}
+            />
+            구매자
+          </RadioLabel>
+          <RadioLabel>
+            <input
+              type="radio"
+              name="userType"
+              value={USER_SELLER}
+              checked={userType === USER_SELLER}
+              onChange={(e) => setUserType(e.target.value)}
+            />
+            판매자
+          </RadioLabel>
+        </RadioGroup>
+
         <InputGroup>
           <Label>이름</Label>
-          <CheckInput
+          <Input
+            ref={refs.name}
             type="text"
-            placeholder="이름을 입력하세요"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            placeholder="이름"
+            value={values.name}
+            onChange={onChange(FIELD_NAME)}
+            onKeyDown={(e) => handleEnterKey(e, FIELD_NAME)}
           />
         </InputGroup>
 
-        {mode === 'phone' ? (
+        {mode === MODE_PHONE ? (
           <InputGroup>
             <Label>전화번호</Label>
-            <CheckInput
-              type="text"
+            <Input
+              ref={refs.phone}
+              type="tel"
               placeholder="예: 01012345678"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
+              value={values.phone}
+              onChange={onChange(FIELD_PHONE)}
+              onKeyDown={(e) => handleEnterKey(e, FIELD_PHONE)}
             />
           </InputGroup>
         ) : (
           <InputGroup>
             <Label>이메일</Label>
-            <CheckInput
+            <Input
+              ref={refs.email}
               type="email"
-              placeholder="가입하신 이메일을 입력해주세요"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              placeholder="ex) aa@naver.com"
+              value={values.email}
+              onChange={onChange(FIELD_EMAIL)}
+              onKeyDown={(e) => handleEnterKey(e, FIELD_EMAIL)}
             />
           </InputGroup>
         )}
 
         {error && <Message>{error}</Message>}
 
-        <ButtonWrapper>
-          <CheckButton type="button" onClick={handleSubmit}>
-            확인
-          </CheckButton>
-        </ButtonWrapper>
+        <SubmitButton type="submit" disabled={loading}>
+          {loading ? '조회 중...' : '아이디 찾기'}
+        </SubmitButton>
       </Box>
     </Container>
   );
 };
 
 export default FindIdInputStep;
-
-const Container = styled.div`
-  min-height: 100vh;
-  padding: 20px 15px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  background: #fafafa;
-`;
-
-const LogoWrapper = styled.div`
-  width: 100%;
-  max-width: 460px;
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 30px;
-
-  & > div img {
-    height: 70px;
-    object-fit: contain;
-  }
-`;
-
-const TopBar = styled.div`
-  width: 100%;
-  max-width: 480px;
-  padding: 10px 0 5px 10px;
-  display: flex;
-  align-items: center;
-`;
-
-const BackButton = styled.button`
-  background: none;
-  border: none;
-  font-size: 16px;
-  color: rgb(105, 111, 148);
-  cursor: pointer;
-  padding: 6px 12px;
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background: rgba(105, 111, 148, 0.15);
-  }
-`;
-
-const Box = styled.div`
-  background: white;
-  padding: 40px;
-  border-radius: 12px;
-  min-width: 480px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 1px solid #ddd;
-  display: flex;
-  flex-direction: column;
-`;
-
-const Title = styled.h2`
-  font-size: 28px;
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 28px;
-  text-align: center;
-`;
-
-const TabWrapper = styled.div`
-  display: flex;
-  border-bottom: 2px solid #ddd;
-  margin-bottom: 24px;
-`;
-
-const Tab = styled.button`
-  flex: 1;
-  background: none;
-  border: none;
-  padding: 14px 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: ${(props) => (props.isActive ? 'rgb(105, 111, 148)' : '#888')};
-  border-bottom: ${(props) =>
-    props.isActive ? '3px solid rgb(105, 111, 148)' : '3px solid transparent'};
-  cursor: pointer;
-  transition: color 0.25s ease, border-bottom 0.25s ease;
-
-  &:hover {
-    color: rgb(105, 111, 148);
-  }
-`;
-
-const InputGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 16px;
-`;
-
-const Label = styled.label`
-  font-weight: 600;
-  font-size: 14px;
-  margin-bottom: 6px;
-  color: #555;
-`;
-
-const ButtonWrapper = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 16px;
-`;
-
-const CheckInput = styled.input`
-  flex: 1;
-  padding: 12px;
-  font-size: 16px;
-  border: none;
-  border-bottom: 1px solid #ccc;
-  background: transparent;
-
-  &:focus {
-    outline: none;
-    border-bottom: 2px solid rgb(105, 111, 148);
-  }
-
-  &::placeholder {
-    color: #a3a9c1;
-  }
-`;
-
-const CheckButton = styled.button`
-  width: 100%;
-  height: 48px;
-  background: rgb(105, 111, 148);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background-color 0.25s ease;
-  margin-top: 4px;
-
-  &:hover {
-    background: rgb(85, 90, 130);
-  }
-`;
-
-const Message = styled.p`
-  color: #d93025;
-  font-size: 14px;
-  margin-top: 8px;
-  text-align: center;
-  font-weight: 600;
-`;
