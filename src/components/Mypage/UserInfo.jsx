@@ -5,18 +5,13 @@ import AddressListModal from '../AddressListModal';
 import ResetPasswordModal from '../ResetPasswordModal';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
-function ProfilePage() {
+function UserInfo() {
   const [password, setPassword] = useState('');
+  const [seePassword, setSeePassword] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const userData = JSON.parse(sessionStorage.getItem('userData'));
   const username = userData?.username;
-
-  const [seePassword, setSeePassword] = useState(false);
-
-  const seePasswordHandler = () => {
-    setSeePassword(!seePassword);
-  };
 
   const [user, setUser] = useState({
     name: '',
@@ -26,6 +21,7 @@ function ProfilePage() {
     role: '',
   });
 
+  // 전화번호 추가
   const [isAddingPhone, setIsAddingPhone] = useState(false);
   const [newPhoneNumber, setNewPhoneNumber] = useState('');
 
@@ -33,6 +29,7 @@ function ProfilePage() {
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const [isVerified, setIsVerified] = useState(false);
+
   const [loading, setLoading] = useState(false);
 
   // 타이머
@@ -42,8 +39,13 @@ function ProfilePage() {
   // 주소지입력
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
 
+  // 비밀번호 재설정 모달
   const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] =
     useState(false);
+
+  const seePasswordHandler = () => {
+    setSeePassword(!seePassword);
+  };
 
   const handlePasswordCheck = async () => {
     if (!password) {
@@ -52,7 +54,7 @@ function ProfilePage() {
     }
     try {
       const response = await axios.post('/myPage/checkPassword', { password });
-      if (response.data === true) {
+      if (response.data.isSuccess === true) {
         setIsAuthenticated(true);
       } else {
         alert('비밀번호가 일치하지 않습니다.');
@@ -67,7 +69,7 @@ function ProfilePage() {
     const fetchUserDetails = async () => {
       try {
         const response = await axios.get(`/user`);
-        setUser(response.data);
+        setUser(response.data.result);
       } catch (error) {
         console.error('회원 정보 조회 실패', error);
       }
@@ -225,7 +227,7 @@ function ProfilePage() {
 
   if (user.provider === 'local' && !isAuthenticated) {
     return (
-      <Wrapper>
+      <Container>
         <Section>
           <SectionTitle>내 정보 확인</SectionTitle>
           <UserDetail>
@@ -258,12 +260,12 @@ function ProfilePage() {
           </UserDetail>
           <Button onClick={handlePasswordCheck}>확인</Button>
         </Section>
-      </Wrapper>
+      </Container>
     );
   }
 
   return (
-    <Wrapper>
+    <Container>
       <Section>
         <SectionTitle>내 정보 관리</SectionTitle>
         <UserDetail>
@@ -359,14 +361,14 @@ function ProfilePage() {
       {isAddressModalOpen && (
         <AddressListModal onClose={handleCloseAddressModal} />
       )}
-    </Wrapper>
+    </Container>
   );
 }
 
-export default ProfilePage;
+export default UserInfo;
 
-const Wrapper = styled.div`
-  max-width: 860px;
+const Container = styled.div`
+  max-width: 1000px;
   font-family: 'Noto Sans KR', sans-serif;
   color: #222;
 `;
@@ -377,16 +379,13 @@ const Section = styled.section`
 `;
 
 const SectionTitle = styled.h2`
-  font-weight: 700;
-  font-size: 1.25rem;
-  margin-bottom: 24px;
-  border-bottom: 1px solid #ddd;
-  padding-bottom: 12px;
-  color: #222;
+  font-size: 32px;
+  font-weight: bold;
+  margin-bottom: 30px;
 `;
 
 const UserDetail = styled.p`
-  font-size: 1rem;
+  font-size: 16px;
   color: #444;
   margin: 12px 0 5px 0;
   display: flex;
@@ -450,7 +449,7 @@ const Input = styled.input`
   flex: 1;
   min-width: 200px;
   padding: 8px 40px 8px 12px; /* 오른쪽 아이콘 공간 확보 */
-  font-size: 1rem;
+  font-size: 16px;
   border: 1px solid #ccc;
   border-radius: 4px;
 
@@ -492,6 +491,6 @@ const IconButton = styled.button`
 const TimerText = styled.p`
   color: #d22525;
   margin-left: 12px;
-  font-size: 1rem;
+  font-size: 16px;
   font-weight: bold;
 `;

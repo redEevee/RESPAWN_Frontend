@@ -21,53 +21,61 @@ function PointsPage() {
   const [expires, setExpires] = useState([]);
   const [activeTab, setActiveTab] = useState('all'); // all | saves | uses | expires
   const [month, setMonth] = useState(new Date());
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // 1) 탭→리스트 매핑 상수(파일 내 단 한 번)
+  const tabToListMap = {
+    all: history,
+    saves,
+    uses,
+    expiring: expires,
+  };
+
+  // 2) 현재 탭 리스트 선택
+  const currentList = tabToListMap[activeTab] || history;
 
   useEffect(() => {
     const fetchPoints = async () => {
+      setLoading(true);
+      setError(null);
       try {
         const year = month.getFullYear();
         const m = month.getMonth() + 1;
 
-        const totalRes = await axios.get(`/api/points/total/active`, {
-          params: { year, month: m },
-        });
-        const expiringPointsRes = await axios.get(
-          `/api/points/expire/this-month/total`,
-          { params: { year, month: m } }
-        );
-        const historyRes = await axios.get(`/api/points/history`, {
-          params: { year, month: m },
-        });
-        const savesRes = await axios.get(`/api/points/saves`, {
-          params: { year, month: m },
-        });
-        const usesRes = await axios.get(`/api/points/uses`, {
-          params: { year, month: m },
-        });
-        const expireRes = await axios.get(`/api/points/expire/list`, {
-          params: { year, month: m },
-        });
+        const [
+          totalRes,
+          expiringPointsRes,
+          historyRes,
+          savesRes,
+          usesRes,
+          expireRes,
+        ] = await Promise.all([
+          axios.get(`/api/points/total/active`, { params: { year, month: m } }),
+          axios.get(`/api/points/expire/this-month/total`, {
+            params: { year, month: m },
+          }),
+          axios.get(`/api/points/history`, { params: { year, month: m } }),
+          axios.get(`/api/points/saves`, { params: { year, month: m } }),
+          axios.get(`/api/points/uses`, { params: { year, month: m } }),
+          axios.get(`/api/points/expire/list`, { params: { year, month: m } }),
+        ]);
 
-        setTotalPoints(totalRes.data);
-        setExpiringPoints(expiringPointsRes.data.totalExpiringThisMonth || 0);
-        setHistory(historyRes.data?.content || []);
-        setSaves(savesRes.data?.content || []);
-        setUses(usesRes.data?.content || []);
-        setExpires(expireRes.data || []);
+        setTotalPoints(totalRes.data ?? 0);
+        setExpiringPoints(expiringPointsRes.data?.totalExpiringThisMonth ?? 0);
+        setHistory(historyRes.data?.content ?? []);
+        setSaves(savesRes.data?.content ?? []);
+        setUses(usesRes.data?.content ?? []);
+        setExpires(expireRes.data ?? []);
       } catch (e) {
-        console.error('적립금 데이터 불러오기 실패', e);
+        setError('데이터를 불러오지 못했습니다.');
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchPoints();
   }, [month]);
-
-  const list = useMemo(() => {
-    if (activeTab === 'saves') return saves;
-    if (activeTab === 'uses') return uses;
-    if (activeTab === 'expiring') return expires;
-    return history;
-  }, [activeTab, history, saves, uses, expires]);
 
   const isMinusType = (type) =>
     type === 'USE' || type === 'EXPIRE' || type === 'CANCEL_SAVE';
@@ -108,6 +116,90 @@ function PointsPage() {
     setMonth(
       (prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1)
     );
+
+  const renderEmpty = (text) => <Empty>{text}</Empty>;
+
+  const renderExpiringSection = (items) => {
+    if (!items || items.length === 0)
+      return renderEmpty('만료 예정 내역이 없습니다.');
+    return (
+      <CardList scrollable={items.length > SCROLL_THRESHOLD}>
+        {items.map((item) => {
+          const expiryDate = new Date(item.expiryAt);
+          const dateTxt = `${expiryDate.getMonth() + 1}.${String(
+            expiryDate.getDate()
+          ).padStart(2, '0')}`;
+          const timeTxt = `${String(expiryDate.getHours()).padStart(
+            2,
+            '0'
+          )}:${String(expiryDate.getMinutes()).padStart(2, '0')}`;
+          return (
+            <Card key={item.ledgerId}>
+              <Left>
+                <div className="date">{dateTxt}</div>
+              </Left>
+              <Center>
+                <div className="title">{item.reason || '만료 예정 포인트'}</div>
+                <div className="sub">
+                  만료 예정 · {expiryDate.toLocaleDateString()} · {timeTxt}
+                </div>
+              </Center>
+              <Right className="minus">
+                -{item.remainingAmount.toLocaleString()}원
+              </Right>
+            </Card>
+          );
+        })}
+      </CardList>
+    );
+  };
+
+  const renderHistoryLikeSection = (items) => {
+    if (!items || items.length === 0) return renderEmpty('내역이 없습니다.');
+    return (
+      <CardList scrollable={items.length > SCROLL_THRESHOLD}>
+        {items.map((item) => {
+          const occurred = new Date(item.occurredAt);
+          const dateTxt = `${String(occurred.getMonth() + 1).padStart(
+            2,
+            '0'
+          )}.${String(occurred.getDate()).padStart(2, '0')}`;
+          const timeTxt = `${String(occurred.getHours()).padStart(
+            2,
+            '0'
+          )}:${String(occurred.getMinutes()).padStart(2, '0')}`;
+          const typeLabel = TYPE_LABELS[item.type] || item.type;
+          const amountVal = getAmountValue(item);
+          const isMinus = amountVal < 0;
+          return (
+            <Card key={item.id}>
+              <Left>
+                <div className="date">{dateTxt}</div>
+                <div className="time">{timeTxt}</div>
+              </Left>
+              <Center>
+                <div className="title">
+                  {item.title ||
+                    item.memo ||
+                    item.reason ||
+                    `${typeLabel} 내역`}
+                </div>
+                <div className="sub">
+                  {typeLabel}
+                  {item.expiryAt
+                    ? ` · 만료 ${new Date(item.expiryAt).toLocaleDateString()}`
+                    : ''}
+                </div>
+              </Center>
+              <Right className={isMinus ? 'minus' : 'plus'}>
+                {formatAmount(amountVal)}
+              </Right>
+            </Card>
+          );
+        })}
+      </CardList>
+    );
+  };
 
   return (
     <Container>
@@ -167,88 +259,13 @@ function PointsPage() {
         </Chip>
       </ChipTabs>
 
-      {activeTab === 'expiring' ? (
-        list.length === 0 ? (
-          <Empty>만료 예정 내역이 없습니다.</Empty>
-        ) : (
-          <CardList scrollable={list.length > SCROLL_THRESHOLD}>
-            {list.map((item) => {
-              const expiryDate = new Date(item.expiryAt);
-              const dateTxt = `${expiryDate.getMonth() + 1}.${String(
-                expiryDate.getDate()
-              ).padStart(2, '0')}`;
-              const timeTxt = `${String(expiryDate.getHours()).padStart(
-                2,
-                '0'
-              )}:${String(expiryDate.getMinutes()).padStart(2, '0')}`;
-              return (
-                <Card key={item.ledgerId}>
-                  <Left>
-                    <div className="date">{dateTxt}</div>
-                  </Left>
-                  <Center>
-                    <div className="title">
-                      {item.reason || '만료 예정 포인트'}
-                    </div>
-                    <div className="sub">
-                      만료 예정 · {expiryDate.toLocaleDateString()} · {timeTxt}
-                    </div>
-                  </Center>
-                  <Right className="minus">
-                    -{item.remainingAmount.toLocaleString()}원
-                  </Right>
-                </Card>
-              );
-            })}
-          </CardList>
-        )
-      ) : list.length === 0 ? (
-        <Empty>내역이 없습니다.</Empty>
-      ) : (
-        <CardList scrollable={list.length > SCROLL_THRESHOLD}>
-          {list.map((item) => {
-            const occurred = new Date(item.occurredAt);
-            const dateTxt = `${String(occurred.getMonth() + 1).padStart(
-              2,
-              '0'
-            )}.${String(occurred.getDate()).padStart(2, '0')}`;
-            const timeTxt = `${String(occurred.getHours()).padStart(
-              2,
-              '0'
-            )}:${String(occurred.getMinutes()).padStart(2, '0')}`;
-            const typeLabel = TYPE_LABELS[item.type] || item.type;
-            const amountVal = getAmountValue(item);
-            const isMinus = amountVal < 0;
-            return (
-              <Card key={item.id}>
-                <Left>
-                  <div className="date">{dateTxt}</div>
-                  <div className="time">{timeTxt}</div>
-                </Left>
-                <Center>
-                  <div className="title">
-                    {item.title ||
-                      item.memo ||
-                      item.reason ||
-                      `${typeLabel} 내역`}
-                  </div>
-                  <div className="sub">
-                    {typeLabel}
-                    {item.expiryAt
-                      ? ` · 만료 ${new Date(
-                          item.expiryAt
-                        ).toLocaleDateString()}`
-                      : ''}
-                  </div>
-                </Center>
-                <Right className={isMinus ? 'minus' : 'plus'}>
-                  {formatAmount(amountVal)}
-                </Right>
-              </Card>
-            );
-          })}
-        </CardList>
-      )}
+      {loading
+        ? renderEmpty('불러오는 중...')
+        : error
+        ? renderEmpty(error)
+        : activeTab === 'expiring'
+        ? renderExpiringSection(currentList)
+        : renderHistoryLikeSection(currentList)}
     </Container>
   );
 }

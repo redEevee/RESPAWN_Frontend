@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import styled from 'styled-components';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from '../../api/axios';
+import axios from '../../../api/axios';
 
 const RefundPage = () => {
   const navigate = useNavigate();
@@ -195,7 +195,7 @@ const Header = styled.header`
 `;
 
 const Title = styled.h1`
-  font-size: 1.25rem;
+  font-size: 20px;
   font-weight: 700;
   margin: 0 0 6px;
   color: #111827;
@@ -204,7 +204,7 @@ const Title = styled.h1`
 const Desc = styled.p`
   margin: 0;
   color: #6b7280;
-  font-size: 0.95rem;
+  font-size: 16px;
 `;
 
 const Section = styled.section`
@@ -216,7 +216,7 @@ const Section = styled.section`
 `;
 
 const SectionTitle = styled.h2`
-  font-size: 1.05rem;
+  font-size: 18px;
   margin: 0 0 12px;
   color: #111827;
 `;
@@ -261,7 +261,7 @@ const Thumb = styled.div`
 const NoImage = styled.div`
   width: 100%;
   height: 100%;
-  font-size: 0.75rem;
+  font-size: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -277,7 +277,7 @@ const ItemInfo = styled.div`
   }
   .meta {
     color: #6b7280;
-    font-size: 0.9rem;
+    font-size: 16px;
   }
 `;
 
@@ -322,7 +322,7 @@ const Textarea = styled.textarea`
 `;
 
 const Hint = styled.div`
-  font-size: 0.85rem;
+  font-size: 14px;
   color: #6b7280;
 `;
 
@@ -342,7 +342,7 @@ const ActionBar = styled.div`
 
 const Note = styled.div`
   color: #6b7280;
-  font-size: 0.9rem;
+  font-size: 14px;
 `;
 
 const ButtonGroup = styled.div`

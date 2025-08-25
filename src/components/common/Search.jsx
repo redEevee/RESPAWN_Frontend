@@ -23,6 +23,7 @@ const Search = () => {
     <SearchContainer>
       <SearchInput
         placeholder="상품을 검색해보세요!"
+        type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={handleKeyPress}

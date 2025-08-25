@@ -53,8 +53,8 @@ const LoginPage = (e) => {
       setFailCount(0);
 
       if (
-        response.data.passwordChangeDue === 'true' &&
-        response.data.passwordChangeSnoozed === 'false'
+        response.data.passwordChangeDue &&
+        !response.data.passwordChangeSnoozed
       ) {
         navigate('/update-password');
       } else {
@@ -298,7 +298,7 @@ const IconButton = styled.button`
   border: none;
   cursor: pointer;
   color: #666;
-  font-size: 1.1rem;
+  font-size: 18px;
 
   &:hover {
     color: rgb(105, 111, 148);

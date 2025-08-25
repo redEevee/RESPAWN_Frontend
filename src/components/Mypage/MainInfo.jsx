@@ -2,42 +2,57 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import axios from '../../api/axios';
 import SmallBanner from '../Banner/SmallBanner';
-import OrderCard from '../OrderHistory/OrderCard';
+import OrderCard from './OrderHistory/OrderCard';
 
 function MainInfo() {
   const [user, setUser] = useState({});
   const [latestOrder, setLatestOrder] = useState(null);
   const [points, setPoints] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+
     const fetchData = async () => {
       try {
-        const userRes = await axios.get('http://localhost:8080/user');
-        const orderRes = await axios.get(
-          'http://localhost:8080/api/orders/latest'
-        );
-        const pointsRes = await axios.get(
-          'http://localhost:8080/api/points/total/active',
-          {
-            withCredentials: true, // 세션/쿠키 인증 시 필요
-          }
-        );
+        const [userRes, orderRes, pointsRes] = await Promise.allSettled([
+          axios.get('/user', { signal: controller.signal }),
+          axios.get('/api/orders/latest', { signal: controller.signal }),
+          axios.get('/api/points/total/active', { signal: controller.signal }),
+        ]);
 
-        console.log('pointsRes', pointsRes.data);
-        console.log('userRes', userRes.data);
-        console.log('orderRes', orderRes.data);
-        setPoints(pointsRes.data);
-        setUser(userRes.data);
-        setLatestOrder(orderRes.data);
+        if (!active) return;
+
+        console.log('pointsRes', pointsRes.value.data);
+        console.log('userRes', userRes.value.data);
+        console.log('orderRes', orderRes.value.data);
+
+        if (userRes.status === 'fulfilled') setUser(userRes.value.data.result);
+        if (orderRes.status === 'fulfilled')
+          setLatestOrder(orderRes.value.data);
+        if (pointsRes.status === 'fulfilled') setPoints(pointsRes.value.data);
       } catch (error) {
         console.error('유저 또는 주문 정보 불러오기 실패', error);
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
       }
     };
     fetchData();
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, []);
 
+  if (loading) {
+    return <div>로딩 중...</div>;
+  }
+
   return (
-    <Wrapper>
+    <Container>
       <SmallBanner />
       <MainContent>
         <TopInfoBox>
@@ -63,17 +78,16 @@ function MainInfo() {
           <NoOrderText>최근 주문 내역이 없습니다.</NoOrderText>
         )}
       </MainContent>
-    </Wrapper>
+    </Container>
   );
 }
 
 export default MainInfo;
 
-const Wrapper = styled.div`
+const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   font-family: 'Noto Sans KR', sans-serif;
-  padding: 20px;
 `;
 
 const MainContent = styled.div`
@@ -105,7 +119,7 @@ const InfoItem = styled.div`
 `;
 
 const SectionTitle = styled.h3`
-  font-size: 1.4rem;
+  font-size: 22px;
   margin-bottom: 20px;
   border-bottom: 2px solid #222;
   padding-bottom: 6px;
@@ -114,5 +128,5 @@ const SectionTitle = styled.h3`
 const NoOrderText = styled.p`
   color: #999;
   text-align: center;
-  font-size: 1rem;
+  font-size: 16px;
 `;

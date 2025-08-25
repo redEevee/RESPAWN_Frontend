@@ -43,9 +43,7 @@ const CardWrapper = styled.div`
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
-  font-size: 0.95rem;
   margin-bottom: 20px;
-  color: #374151;
 `;
 
 const Left = styled.div`
@@ -55,11 +53,12 @@ const Left = styled.div`
 
 const OrderDate = styled.div`
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 16px;
+  color: #374151;
 `;
 
 const OrderId = styled.div`
-  font-size: 0.85rem;
+  font-size: 14px;
   color: #6b7280;
 `;
 
@@ -68,10 +67,11 @@ const ItemList = styled.div`
   flex-direction: column;
   gap: 12px;
 `;
+
 const OrderPrice = styled.div`
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 18px;
   text-align: right;
   margin-top: 24px;
-  color: #1f2937;
+  color: #374151;
 `;
