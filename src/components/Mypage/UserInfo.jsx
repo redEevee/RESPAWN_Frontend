@@ -2,13 +2,21 @@ import React, { useEffect, useState, useRef } from 'react';
 import styled from 'styled-components';
 import axios from '../../api/axios';
 import AddressListModal from '../AddressListModal';
+import ResetPasswordModal from '../ResetPasswordModal';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 function ProfilePage() {
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const userData = JSON.parse(localStorage.getItem('userData'));
+  const userData = JSON.parse(sessionStorage.getItem('userData'));
   const username = userData?.username;
+
+  const [seePassword, setSeePassword] = useState(false);
+
+  const seePasswordHandler = () => {
+    setSeePassword(!seePassword);
+  };
 
   const [user, setUser] = useState({
     name: '',
@@ -34,16 +42,16 @@ function ProfilePage() {
   // 주소지입력
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
 
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] =
+    useState(false);
+
   const handlePasswordCheck = async () => {
     if (!password) {
       alert('비밀번호를 입력해주세요.');
       return;
     }
     try {
-      const response = await axios.post(
-        'http://localhost:8080/myPage/checkPassword',
-        { password }
-      );
+      const response = await axios.post('/myPage/checkPassword', { password });
       if (response.data === true) {
         setIsAuthenticated(true);
       } else {
@@ -58,9 +66,7 @@ function ProfilePage() {
   useEffect(() => {
     const fetchUserDetails = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/user`, {
-          withCredentials: true,
-        });
+        const response = await axios.get(`/user`);
         setUser(response.data);
       } catch (error) {
         console.error('회원 정보 조회 실패', error);
@@ -117,11 +123,7 @@ function ProfilePage() {
     }
     try {
       setLoading(true);
-      await axios.post(
-        'http://localhost:8080/verify-phone-number',
-        { phoneNumber: newPhoneNumber },
-        { withCredentials: true }
-      );
+      await axios.post('/verify-phone-number', { phoneNumber: newPhoneNumber });
       setIsCodeSent(true);
       setTimer(300); // 5분
       alert('인증번호가 발송되었습니다. 메시지를 확인해주세요.');
@@ -145,11 +147,9 @@ function ProfilePage() {
     }
     try {
       setLoading(true);
-      await axios.post(
-        'http://localhost:8080/phone-number/verification-code',
-        { code: verificationCode },
-        { withCredentials: true }
-      );
+      await axios.post('/phone-number/verification-code', {
+        code: verificationCode,
+      });
       alert('전화번호가 성공적으로 인증되었습니다.');
       setIsVerified(true);
       resetTimer();
@@ -169,15 +169,11 @@ function ProfilePage() {
     }
     try {
       setLoading(true);
-      await axios.put(
-        'http://localhost:8080/myPage/setPhoneNumber',
-        { phoneNumber: newPhoneNumber },
-        { withCredentials: true }
-      );
-      alert('전화번호가 추가되었습니다.');
-      const response = await axios.get('http://localhost:8080/user', {
-        withCredentials: true,
+      await axios.put('/myPage/setPhoneNumber', {
+        phoneNumber: newPhoneNumber,
       });
+      alert('전화번호가 추가되었습니다.');
+      const response = await axios.get('/user');
       setUser(response.data);
       setIsAddingPhone(false);
       setNewPhoneNumber('');
@@ -219,6 +215,14 @@ function ProfilePage() {
     setIsAddressModalOpen(false);
   };
 
+  const handleOpenResetPasswordModal = () => {
+    setIsResetPasswordModalOpen(true);
+  };
+
+  const handleCloseResetPasswordModal = () => {
+    setIsResetPasswordModalOpen(false);
+  };
+
   if (user.provider === 'local' && !isAuthenticated) {
     return (
       <Wrapper>
@@ -230,12 +234,27 @@ function ProfilePage() {
           </UserDetail>
           <UserDetail>
             <Label>비밀번호</Label>
-            <Input
-              type="password"
-              placeholder="비밀번호 입력"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <Field>
+              <Input
+                type={seePassword ? 'text' : 'password'}
+                placeholder="비밀번호 입력"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handlePasswordCheck();
+                  }
+                }}
+              />
+              <IconButton
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={seePasswordHandler}
+                aria-label="비밀번호 보기 전환"
+              >
+                {seePassword ? <FaEyeSlash /> : <FaEye />}
+              </IconButton>
+            </Field>
           </UserDetail>
           <Button onClick={handlePasswordCheck}>확인</Button>
         </Section>
@@ -253,6 +272,15 @@ function ProfilePage() {
         <UserDetail>
           <Label>유저네임</Label> <Value>{user.username || '-'}</Value>
         </UserDetail>
+        <UserDetail>
+          <Label>비밀번호</Label>
+          <Button onClick={handleOpenResetPasswordModal}>재설정</Button>
+        </UserDetail>
+
+        {isResetPasswordModalOpen && (
+          <ResetPasswordModal onClose={handleCloseResetPasswordModal} />
+        )}
+
         <UserDetail>
           <Label>이메일</Label> <Value>{user.email || '-'}</Value>
         </UserDetail>
@@ -337,8 +365,6 @@ function ProfilePage() {
 
 export default ProfilePage;
 
-// --- styled-components ---
-
 const Wrapper = styled.div`
   max-width: 860px;
   font-family: 'Noto Sans KR', sans-serif;
@@ -388,13 +414,12 @@ const Value = styled.div`
 const Button = styled.button`
   background-color: #222;
   color: #fff;
-  padding: 8px 18px;
+  padding: 8px 16px;
   border: none;
   border-radius: 4px;
   font-weight: 600;
   cursor: pointer;
-  margin-top: 16px;
-  transition: background-color 0.3s;
+  margin-left: 5px;
   min-width: 100px;
   &:hover:enabled {
     background-color: #555;
@@ -413,16 +438,54 @@ const PhoneInputContainer = styled.div`
   align-items: center;
 `;
 
+const Field = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+`;
+
 const Input = styled.input`
-  flex-grow: 1;
+  flex: 1;
   min-width: 200px;
-  padding: 8px 12px;
+  padding: 8px 40px 8px 12px; /* 오른쪽 아이콘 공간 확보 */
   font-size: 1rem;
   border: 1px solid #ccc;
   border-radius: 4px;
+
   &:focus {
     outline: none;
     border-color: #222;
+  }
+`;
+
+const IconButton = styled.button`
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: #666;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  cursor: pointer;
+
+  /* 포커스 및 호버 상태 접근성/시각 피드백 */
+  &:hover {
+    color: #222;
+  }
+  &:focus {
+    outline: 2px solid #999;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* 아이콘 크기 조절 */
+  svg {
+    width: 18px;
+    height: 18px;
   }
 `;
 

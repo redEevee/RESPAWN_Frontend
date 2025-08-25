@@ -3,11 +3,13 @@ import styled from 'styled-components';
 import DeliveryModal from './DeliveryModal';
 import axios from '../api/axios';
 
-function AddressListModal({ onClose, onConfirm }) {
+function AddressListModal({ onClose, onConfirm, preSelectedId }) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [addresses, setAddresses] = useState([]);
-  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [selectedAddressId, setSelectedAddressId] = useState(
+    preSelectedId || null
+  );
 
   const selectedAddress = addresses.find((a) => a.id === selectedAddressId);
 
@@ -15,11 +17,20 @@ function AddressListModal({ onClose, onConfirm }) {
     fetchAddresses();
   }, []);
 
+  useEffect(() => {
+    if (preSelectedId) {
+      setSelectedAddressId(preSelectedId);
+    }
+  }, [preSelectedId]);
+
   const fetchAddresses = async () => {
     try {
       const response = await axios.get('http://localhost:8080/api/addresses');
       const data = Array.isArray(response.data) ? response.data : [];
       setAddresses(data);
+      if (preSelectedId) {
+        setSelectedAddressId(preSelectedId);
+      }
     } catch (error) {
       console.error('주소 목록 불러오기 실패:', error);
       alert('주소 데이터를 불러오는 데 실패했습니다.');
@@ -48,8 +59,13 @@ function AddressListModal({ onClose, onConfirm }) {
       alert('배송지를 선택해주세요.');
       return;
     }
-    onConfirm(selectedAddressId); // 부모에게 선택된 ID 전달
-    onClose(); // 모달 닫기
+    const selectedAddress = addresses.find((a) => a.id === selectedAddressId);
+    if (!selectedAddress) {
+      alert('선택한 배송지를 찾을 수 없습니다.');
+      return;
+    }
+    onConfirm(selectedAddress); // 주소 객체 전체 전달
+    onClose();
   };
 
   return (
@@ -74,6 +90,7 @@ function AddressListModal({ onClose, onConfirm }) {
                     type="radio"
                     name="selectedAddress"
                     value={item.id}
+                    checked={selectedAddressId === item.id}
                     onChange={() => setSelectedAddressId(item.id)}
                   />
                 </td>

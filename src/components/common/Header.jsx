@@ -1,21 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import Logo from './Logo';
 import userIcon from '../../assets/user_icon.png';
 import cartIcon from '../../assets/cart_icon.png';
 import categoryIcon from '../../assets/category_icon.png';
+import closeIcon from '../../assets/close_icon.png';
 import Search from './Search';
 import axios from '../../api/axios';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Header = () => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [activeGroup, setActiveGroup] = useState(0);
+  const dropdownRef = useRef(null);
 
   const categoryGroups = [
     {
-      title: '🎮 콘솔 / 컨트롤러',
+      title: '콘솔 / 컨트롤러',
       items: [
         '게임 컨트롤러',
         '조이스틱',
@@ -25,7 +27,7 @@ const Header = () => {
       ],
     },
     {
-      title: '🖥️ 게이밍 PC / 부품',
+      title: '게이밍 PC / 부품',
       items: [
         '그래픽카드',
         'CPU',
@@ -36,7 +38,7 @@ const Header = () => {
       ],
     },
     {
-      title: '🧩 게이밍 주변기기',
+      title: '게이밍 주변기기',
       items: [
         '게이밍 마우스',
         '게이밍 키보드',
@@ -47,7 +49,7 @@ const Header = () => {
       ],
     },
     {
-      title: '🪑 게이밍 환경',
+      title: '게이밍 환경',
       items: [
         '게이밍 체어',
         '게이밍 데스크',
@@ -57,11 +59,11 @@ const Header = () => {
       ],
     },
     {
-      title: '🧠 스트리밍 장비',
+      title: '스트리밍 장비',
       items: ['캡쳐보드', '사운드 카드', '오디오 인터페이스', '프로젝터'],
     },
     {
-      title: '📦 악세서리 / 기타',
+      title: '악세서리 / 기타',
       items: [
         '마우스패드',
         '손목 보호대',
@@ -84,15 +86,15 @@ const Header = () => {
     '이벤트',
   ];
 
-  const userData = JSON.parse(localStorage.getItem('userData'));
+  const userData = JSON.parse(sessionStorage.getItem('userData'));
   const name = userData?.name;
   const role = userData?.authorities;
-  console.log(userData);
 
   const handleLogout = async () => {
     try {
       await axios.post('/logout');
-      localStorage.removeItem('userData');
+      sessionStorage.removeItem('userData');
+      localStorage.setItem('auth:updated', String(Date.now()));
       alert('로그아웃 완료');
       navigate('/');
     } catch (error) {
@@ -100,44 +102,51 @@ const Header = () => {
     }
   };
 
+  const toggleCategory = (e) => {
+    e.stopPropagation();
+    setIsOpen((v) => !v);
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onDocClick = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('click', onDocClick);
+    return () => document.removeEventListener('click', onDocClick);
+  }, [isOpen]);
+
   return (
     <HeaderContainer>
       <TopBar>
         <TopMenu>
           {name ? (
             <>
-              <span>{name}님</span>
-              <span onClick={handleLogout} style={{ cursor: 'pointer' }}>
-                로그아웃
-              </span>
+              <UserNameText>{name}님</UserNameText>
+              <TopTextButton onClick={handleLogout}>로그아웃</TopTextButton>
             </>
           ) : (
-            <a href="/login" style={{ textDecoration: 'none', color: '#666' }}>
-              <span>로그인</span>
-            </a>
+            <TopTextLink to="/login">로그인</TopTextLink>
           )}
 
           {role === '[ROLE_USER]' && (
-            <a href="/mypage">
+            <Link to="/mypage">
               <UserIcon src={userIcon} alt="User Icon" />
-            </a>
+            </Link>
           )}
 
           {role === '[ROLE_USER]' && (
-            <a href="/cart">
+            <Link to="/cart">
               <CartIcon src={cartIcon} alt="Cart Icon" />
-            </a>
+            </Link>
           )}
 
           {role === '[ROLE_SELLER]' && (
-            <a
-              href="/sellerCenter"
-              style={{ textDecoration: 'none', color: '#666' }}
-            >
-              <span>판매자센터</span>
-            </a>
+            <TopTextLink to="/sellerCenter">판매자센터</TopTextLink>
           )}
-          <span>고객센터</span>
+          <TopTextLink>고객센터</TopTextLink>
         </TopMenu>
       </TopBar>
 
@@ -148,16 +157,35 @@ const Header = () => {
 
       <CateGoryBar>
         <CateGoryMenu>
-          <Category>
-            <UserIcon src={categoryIcon} onClick={() => setIsOpen(!isOpen)} />
+          <Category ref={dropdownRef}>
+            <IconButton
+              type="button"
+              onClick={toggleCategory}
+              aria-haspopup="menu"
+              aria-expanded={isOpen}
+              aria-controls="category-menu"
+              aria-label={isOpen ? '카테고리 닫기' : '카테고리 열기'}
+            >
+              <CategoryIcon
+                src={isOpen ? closeIcon : categoryIcon}
+                alt=""
+                aria-hidden="true"
+              />
+            </IconButton>
             {isOpen && (
-              <DropdownWrapper>
+              <DropdownWrapper
+                id="category-menu"
+                role="menu"
+                aria-label="카테고리"
+              >
                 <CategoryList>
                   {categoryGroups.map((group, idx) => (
                     <CategoryItem
                       key={idx}
                       onMouseEnter={() => setActiveGroup(idx)}
                       isActive={activeGroup === idx}
+                      role="menuitem"
+                      tabIndex={0}
                     >
                       {group.title}
                     </CategoryItem>
@@ -168,7 +196,9 @@ const Header = () => {
                   <SubTitle>{categoryGroups[activeGroup].title}</SubTitle>
                   <ul>
                     {categoryGroups[activeGroup].items.map((item, i) => (
-                      <li key={i}>{item}</li>
+                      <li key={i} role="menuitem" tabIndex={0}>
+                        {item}
+                      </li>
                     ))}
                   </ul>
                 </SubCategoryList>
@@ -211,6 +241,26 @@ const TopMenu = styled.div`
   gap: 20px;
   font-size: 13px;
   color: #666;
+`;
+
+const UserNameText = styled.span`
+  font-weight: 700;
+  letter-spacing: 0.1px;
+`;
+
+const TopTextLink = styled(Link)`
+  text-decoration: none;
+  color: #666;
+  font-size: 13px;
+`;
+
+const TopTextButton = styled.button`
+  background: none;
+  border: none;
+  padding: 0;
+  color: #666;
+  font-size: 13px;
+  cursor: pointer;
 `;
 
 const UserIcon = styled.img`
@@ -256,6 +306,27 @@ const Category = styled.div`
   align-items: center;
   font-size: 13px;
   color: #666;
+`;
+
+const IconButton = styled.button`
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &:focus-visible {
+    outline: 2px solid rgb(105, 111, 148);
+    outline-offset: 2px;
+  }
+`;
+
+const CategoryIcon = styled.img`
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
 `;
 
 const Menu = styled.div`

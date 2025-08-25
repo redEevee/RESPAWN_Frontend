@@ -5,7 +5,10 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 const menuItems = [
   {
     title: 'MY 쇼핑',
-    items: [{ key: 'orders', label: '주문목록/배송조회' }],
+    items: [
+      { key: 'coupon', label: '쿠폰' },
+      { key: 'orders', label: '주문목록/배송조회' },
+    ],
   },
   {
     title: 'MY 활동',
@@ -13,6 +16,7 @@ const menuItems = [
       { key: 'inquiry_history', label: '문의내역 확인' },
       { key: 'refund', label: '환불내역 확인' },
       { key: 'review', label: '구매후기' },
+      { key: 'point', label: '적립금' },
     ],
   },
   {

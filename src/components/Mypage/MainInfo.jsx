@@ -7,6 +7,7 @@ import OrderCard from '../OrderHistory/OrderCard';
 function MainInfo() {
   const [user, setUser] = useState({});
   const [latestOrder, setLatestOrder] = useState(null);
+  const [points, setPoints] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -15,6 +16,17 @@ function MainInfo() {
         const orderRes = await axios.get(
           'http://localhost:8080/api/orders/latest'
         );
+        const pointsRes = await axios.get(
+          'http://localhost:8080/api/points/total/active',
+          {
+            withCredentials: true, // 세션/쿠키 인증 시 필요
+          }
+        );
+
+        console.log('pointsRes', pointsRes.data);
+        console.log('userRes', userRes.data);
+        console.log('orderRes', orderRes.data);
+        setPoints(pointsRes.data);
         setUser(userRes.data);
         setLatestOrder(orderRes.data);
       } catch (error) {
@@ -30,16 +42,16 @@ function MainInfo() {
       <MainContent>
         <TopInfoBox>
           <InfoItem>
-            <label>정기구독</label>
-            <span>구독내역 없음</span>
+            <label>쿠폰</label>
+            <span>0 개</span>
           </InfoItem>
           <InfoItem>
             <label>회원등급</label>
-            <span>{user.role === 'ROLE_USER' ? '구매자' : '관리자'}</span>
+            <span>{user.grade}</span>
           </InfoItem>
           <InfoItem>
             <label>적립금</label>
-            <span>0 P</span>
+            <span>{points.toLocaleString()} P</span>
           </InfoItem>
         </TopInfoBox>
 

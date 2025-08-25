@@ -7,14 +7,14 @@ import { useNavigate } from 'react-router-dom';
 const SellerHeader = () => {
   const navigate = useNavigate();
 
-  const userData = JSON.parse(localStorage.getItem('userData'));
+  const userData = JSON.parse(sessionStorage.getItem('userData'));
   const name = userData?.name;
   console.log(userData);
 
   const handleLogout = async () => {
     try {
       await axios.post('/logout');
-      localStorage.removeItem('userData');
+      sessionStorage.removeItem('userData');
       alert('로그아웃 완료');
       navigate('/');
     } catch (error) {

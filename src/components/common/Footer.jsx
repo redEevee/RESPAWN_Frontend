@@ -7,9 +7,28 @@ const Footer = () => {
       <Content>
         <Brand>RESPAWN</Brand>
         <Info>
-          <div>대표: ooo | 사업자등록번호: 123-45-67890</div>
-          <div>주소: 서울특별시 어디구 어디동 123</div>
-          <div>고객센터: 0000-0000 | 이메일: hello@respawn.com</div>
+          <InfoRow>
+            <InfoLabel>대표</InfoLabel>
+            <InfoValue>ooo</InfoValue>
+            <Separator>|</Separator>
+            <InfoLabel>사업자등록번호</InfoLabel>
+            <InfoValue>123-45-67890</InfoValue>
+          </InfoRow>
+          <InfoRow>
+            <InfoLabel>주소</InfoLabel>
+            <InfoValue>서울특별시 어디구 어디동 123</InfoValue>
+          </InfoRow>
+          <InfoRow>
+            <InfoLabel>고객센터</InfoLabel>
+            <InfoValue>
+              <InfoValue>0000-0000</InfoValue>
+            </InfoValue>
+            <Separator>|</Separator>
+            <InfoLabel>이메일</InfoLabel>
+            <InfoValue>
+              <InfoValue>hello@respawn.com</InfoValue>
+            </InfoValue>
+          </InfoRow>
         </Info>
         <Copyright>ⓒ 2025 RESPAWN. All rights reserved.</Copyright>
       </Content>
@@ -41,8 +60,32 @@ const Brand = styled.h2`
 `;
 
 const Info = styled.div`
-  margin-bottom: 16px;
-  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+  font-size: 14px;
+  line-height: 1.7;
+`;
+
+const InfoRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  align-items: baseline;
+`;
+
+const InfoLabel = styled.span`
+  color: #000;
+`;
+
+const InfoValue = styled.span`
+  color: #000;
+`;
+
+const Separator = styled.span`
+  color: #000;
+  margin: 0 4px;
 `;
 
 const Copyright = styled.div`

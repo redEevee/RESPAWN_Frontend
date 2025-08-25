@@ -13,6 +13,7 @@ const SellerLayout = () => {
           <StyledNavLink to="refundList">환불 관리</StyledNavLink>
           <StyledNavLink to="reviewList">리뷰</StyledNavLink>
           <StyledNavLink to="inquiryList">문의 관리</StyledNavLink>
+          <StyledNavLink to="profile">개인정보확인/수정</StyledNavLink>
         </Nav>
       </Sidebar>
       <Content>

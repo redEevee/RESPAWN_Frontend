@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import axios from '../../api/axios';
 import AddressListModal from '../AddressListModal';
-import { useParams } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+import DeliveryModal from '../DeliveryModal';
+import { useParams, useNavigate } from 'react-router-dom';
 import StepProgress from '../common/StepProgress';
+import CouponModal from '../CouponModal';
 
 // PaymentComponent를 모달 없이 바로 결제 실행하도록 수정
 const PaymentComponent = ({ orderInfo, onPaymentComplete, onClose }) => {
@@ -106,6 +107,8 @@ const PaymentComponent = ({ orderInfo, onPaymentComplete, onClose }) => {
                   orderId,
                   selectedAddressId,
                   selectedCartItemIds,
+                  // selectedCouponId: orderInfo.selectedCoupon?.id || null,
+                  // couponDiscount: orderInfo.couponDiscount || 0,
                 }),
               });
 
@@ -152,10 +155,11 @@ const PaymentComponent = ({ orderInfo, onPaymentComplete, onClose }) => {
 };
 
 const OrderList = () => {
+  const POINT_UNIT = 10;
   const navigate = useNavigate();
   const { orderId } = useParams();
+  const [orderData, setOrderData] = useState(null);
   const [orders, setOrders] = useState([]);
-  const [totalAmount, setTotalAmount] = useState(0);
   const [buyerInfo, setBuyerInfo] = useState({
     name: '',
     phone: '',
@@ -164,11 +168,33 @@ const OrderList = () => {
 
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [selectedCartItemIds, setSelectedCartItemIds] = useState([]);
+  const [addressForm, setAddressForm] = useState({
+    zoneCode: '',
+    baseAddress: '',
+    detailAddress: '',
+    recipient: '',
+    phone: '',
+  });
+  const [showAddressForm, setShowAddressForm] = useState(true);
+  const [selectedAddressType, setSelectedAddressType] = useState('basic');
+  const [defaultAddress, setDefaultAddress] = useState(null);
 
-  const [showAddressForm, setShowAddressForm] = useState(false);
-  const [selectedAddressType, setSelectedAddressType] = useState('recent');
-  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
+  const [isAddressListModalOpen, setIsAddressListModalOpen] = useState(false);
+  const [deliveryModalInitialData, setDeliveryModalInitialData] =
+    useState(null);
+  const [preSelectedAddressId, setPreSelectedAddressId] = useState(null);
+  const [prevAddressType, setPrevAddressType] = useState(selectedAddressType);
+
   const [selectedPayment, setSelectedPayment] = useState('신용카드');
+
+  const [availablePoints, setAvailablePoints] = useState(''); // 보유/가용 포인트
+  const [usedPointInput, setUsedPointInput] = useState(''); // 입력창 바인딩
+  const [usedPoint, setUsedPoint] = useState(0); // 계산에 쓰는 값
+
+  const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
+  const [selectedCoupon, setSelectedCoupon] = useState(null); // { id, name, discountAmount } 형태 가정
+  const [couponDiscount, setCouponDiscount] = useState(0);
 
   // PaymentComponent 실행을 위한 상태
   const [showPaymentComponent, setShowPaymentComponent] = useState(false);
@@ -183,13 +209,60 @@ const OrderList = () => {
     삼성페이: '삼성페이 앱으로 결제창이 전환됩니다.',
   };
 
-  const handleAddressConfirm = (addressId) => {
-    setSelectedAddressId(addressId);
-    setIsAddressModalOpen(false);
+  const finalAmount = Math.max(
+    0,
+    (orderData?.itemTotalAmount || 0) +
+      (orderData?.totalDeliveryFee || 0) -
+      usedPoint
+    // - couponDiscount
+  );
+
+  // 배송지 타입 변경 시
+  const handleAddressTypeChange = (type) => {
+    setPrevAddressType(selectedAddressType);
+
+    if (type === 'basic') {
+      if (defaultAddress) {
+        setAddressForm(defaultAddress);
+        setSelectedAddressId(defaultAddress.id || null);
+        setSelectedAddressType('basic');
+      }
+      setIsDeliveryModalOpen(false);
+      setIsAddressListModalOpen(false);
+    } else if (type === 'select') {
+      // 배송지 목록 모달 열기
+      setIsAddressListModalOpen(true);
+      setIsDeliveryModalOpen(false);
+      setSelectedAddressType('select');
+    } else if (type === 'new') {
+      // 새로운 배송지 입력 모달 열기
+      setIsDeliveryModalOpen(true);
+      setIsAddressListModalOpen(false);
+      setSelectedAddressType('new');
+    }
+  };
+
+  // 배송지 목록 모달에서 주소 선택 시 처리
+  const handleAddressListConfirm = (address) => {
+    setSelectedAddressId(address.id);
+    setAddressForm({
+      zoneCode: address.zoneCode || '',
+      baseAddress: address.baseAddress || '',
+      detailAddress: address.detailAddress || '',
+      recipient: address.recipient || '',
+      phone: address.phone || '',
+    });
+    setSelectedAddressType('select');
+    setIsAddressListModalOpen(false);
   };
 
   // 결제하기 버튼 클릭 시 바로 PaymentComponent 실행 (모달 없이)
   const handlePaymentClick = () => {
+    if (!orderData) {
+      alert('주문정보를 불러오는 중입니다. 잠시 후 시도해주세요.');
+      return;
+    }
+
     if (selectedCartItemIds.length === 0) {
       alert('주소와 상품을 선택해주세요.');
       return;
@@ -197,6 +270,11 @@ const OrderList = () => {
 
     if (!selectedAddressId) {
       alert('배송지를 선택해주세요.');
+      return;
+    }
+
+    if (usedPoint === 0 && usedPointInput) {
+      alert('적립금 적용 버튼을 눌러주세요.');
       return;
     }
 
@@ -248,6 +326,111 @@ const OrderList = () => {
     return null;
   };
 
+  const toNumber = (v) => {
+    const n = Number(String(v).replace(/[^\d]/g, ''));
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const getPayableMaxPoint = () => {
+    const orderAmount = orderData?.itemTotalAmount || 0; // 상품합계
+    const deliveryFee = orderData?.totalDeliveryFee || 0;
+    const coupon = 0; // 현재 -0원 고정
+    const total = orderAmount + deliveryFee - coupon;
+    return Math.max(0, total);
+  };
+
+  //  const getPayableMaxPoint = () => {
+  //    const orderAmount = orderData?.itemTotalAmount || 0; // 상품합계
+  //    const deliveryFee = orderData?.totalDeliveryFee || 0;
+  //    const totalBeforeDiscount = orderAmount + deliveryFee;
+  //    const totalAfterCoupon = Math.max(0, totalBeforeDiscount - couponDiscount);
+  //    return totalAfterCoupon; // 쿠폰 적용 후 금액을 상한으로
+  //  };
+
+  const clampUsedPoint = (val) => {
+    const raw = toNumber(val);
+    // 단위 절삭
+    const unitAdjusted = Math.floor(raw / POINT_UNIT) * POINT_UNIT;
+    // 가용포인트/결제최대포인트 제한
+    const maxByBalance = availablePoints;
+    const maxByPayable = getPayableMaxPoint();
+    return Math.max(0, Math.min(unitAdjusted, maxByBalance, maxByPayable));
+  };
+
+  const handlePointChange = (e) => {
+    const raw = e.target.value.replace(/[^\d]/g, '');
+    setUsedPointInput(raw);
+  };
+
+  const applyClampUsedPoint = (rawStr) => {
+    const rawNum = Number(rawStr || 0);
+    const unitAdjusted = Math.floor(rawNum / POINT_UNIT) * POINT_UNIT;
+    const maxByBalance = availablePoints;
+    const maxByPayable = getPayableMaxPoint();
+    const clamped = Math.max(
+      0,
+      Math.min(unitAdjusted, maxByBalance, maxByPayable)
+    );
+    setUsedPoint(clamped);
+    setUsedPointInput(clamped === 0 ? '' : String(clamped)); // 입력창도 정규화
+  };
+
+  const handlePointBlur = () => {
+    // 이전에는 applyClampUsedPoint로 usedPoint까지 변경했음
+    // 이제는 입력값만 보정(표시 정규화)하고 usedPoint는 유지
+    const rawNum = Number(usedPointInput || 0);
+    const unitAdjusted = Math.floor(rawNum / POINT_UNIT) * POINT_UNIT;
+    const maxByBalance = availablePoints;
+    const maxByPayable = getPayableMaxPoint();
+    const clamped = Math.max(
+      0,
+      Math.min(unitAdjusted, maxByBalance, maxByPayable)
+    );
+    setUsedPointInput(clamped === 0 ? '' : String(clamped));
+  };
+
+  const handleUseMaxPoint = () => {
+    const max = getPayableMaxPoint();
+    // 입력창만 채우고, 적용은 사용자가 별도 '적용' 버튼을 눌러 진행
+    const clampedByMax = Math.floor(max / POINT_UNIT) * POINT_UNIT;
+    const finalCandidate = Math.max(0, Math.min(clampedByMax, availablePoints));
+    setUsedPointInput(finalCandidate === 0 ? '' : String(finalCandidate));
+  };
+
+  const handleApplyPoint = async () => {
+    if (!orderData) {
+      alert('주문정보를 불러오는 중입니다.');
+      return;
+    }
+
+    const clampedClient = clampUsedPoint(usedPointInput);
+
+    try {
+      const formData = new URLSearchParams();
+      formData.append('orderId', orderId);
+      formData.append('buyerId', orderData.buyerId);
+      formData.append('usePointAmount', String(clampedClient));
+
+      // 서버가 문자열을 반환하므로, 응답 본문은 사용하지 않음
+      await axios.post('/api/points/apply', formData, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          Accept: 'application/json',
+        },
+      });
+
+      setUsedPoint(clampedClient);
+      setUsedPointInput(clampedClient > 0 ? String(clampedClient) : '');
+    } catch (e) {
+      console.error(e);
+      const msg =
+        e?.response?.data?.message ||
+        e?.response?.data ||
+        '포인트 적용 중 오류가 발생했습니다.';
+      alert(msg);
+    }
+  };
+
   useEffect(() => {
     const isRefresh = () => {
       const navEntries = performance.getEntriesByType('navigation');
@@ -287,28 +470,78 @@ const OrderList = () => {
       .get(`/api/orders/${orderId}`)
       .then((res) => {
         const data = res.data;
-        setOrders(res.data.orderItems || []);
+        console.log('orderList', data);
+        setOrderData(data);
+        setOrders(data.orderItems || []);
         setBuyerInfo({
           name: data.name || '',
           phone: data.phoneNumber || '',
           email: data.email || '',
         });
-        setSelectedAddressId(1);
         setSelectedCartItemIds(
           res.data.orderItems.map((item) => item.cartItemId)
         );
-        setTotalAmount(data.totalAmount || 0);
+
+        const hasAddress =
+          !!data.addressId ||
+          !!data.zoneCode ||
+          !!data.baseAddress ||
+          !!data.detailAddress ||
+          !!data.recipient ||
+          !!data.addressPhone;
+
+        const defaultAddr = hasAddress
+          ? {
+              id: data.addressId ?? null,
+              zoneCode: data.zoneCode ?? '',
+              baseAddress: data.baseAddress ?? '',
+              detailAddress: data.detailAddress ?? '',
+              recipient: data.recipient ?? '',
+              phone: data.addressPhone ?? '',
+            }
+          : null;
+        setDefaultAddress(defaultAddr);
+
+        // 선택된 주소가 없을 때만 기본 주소 적용
+        if (!selectedAddressId) {
+          if (defaultAddr) {
+            setAddressForm(defaultAddr);
+            setSelectedAddressId(defaultAddr.id); // null일 수도 있음
+            setSelectedAddressType('basic');
+          } else {
+            // 주소가 전혀 없을 때는 선택 상태를 초기화
+            setAddressForm({
+              id: null,
+              zoneCode: '',
+              baseAddress: '',
+              detailAddress: '',
+              recipient: '',
+              phone: '',
+            });
+            setSelectedAddressId(null);
+            setSelectedAddressType(null); // 또는 'none'
+          }
+        }
       })
       .catch((err) => console.error('주문 내역 불러오기 실패', err));
   }, [orderId]);
 
-  const handleOpenAddressModal = () => {
-    setIsAddressModalOpen(true);
-  };
-
-  const handleCloseAddressModal = () => {
-    setIsAddressModalOpen(false);
-  };
+  useEffect(() => {
+    axios
+      .get('/api/points/total/active') // 환경에 따라 '/total/active' 로 변경
+      .then((res) => {
+        // 응답이 number(long) 단일 값이면 res.data 자체가 숫자일 수도 있고,
+        // { value: number } 같은 래핑일 수도 있으니 서버 응답 형태에 맞추세요.
+        console.log(res.data);
+        const total =
+          typeof res.data === 'number' ? res.data : Number(res.data);
+        setAvailablePoints(Number(total) || 0);
+      })
+      .catch((err) => {
+        console.error('포인트 조회 실패', err);
+        setAvailablePoints(0);
+      });
+  }, []);
 
   return (
     <Container>
@@ -357,7 +590,7 @@ const OrderList = () => {
                   type="radio"
                   name="addressType"
                   checked={selectedAddressType === 'basic'}
-                  onChange={() => setSelectedAddressType('basic')}
+                  onChange={() => handleAddressTypeChange('basic')}
                 />{' '}
                 기본 배송지
               </label>
@@ -366,40 +599,78 @@ const OrderList = () => {
                 <input
                   type="radio"
                   name="addressType"
-                  checked={selectedAddressType === 'new'}
-                  onChange={() => setSelectedAddressType('new')}
+                  checked={selectedAddressType === 'select'}
+                  onChange={() => handleAddressTypeChange('select')}
                 />{' '}
-                새로운 주소
+                선택 배송지
               </label>
-              <AddressListButton onClick={handleOpenAddressModal}>
-                배송지 목록
+
+              <AddressListButton
+                type="button"
+                onClick={() => {
+                  handleAddressTypeChange('new'); // 모달 열기
+                }}
+              >
+                새로운 배송지 추가
               </AddressListButton>
             </AddressRadioGroup>
 
-            {isAddressModalOpen && (
+            {isDeliveryModalOpen && (
+              <DeliveryModal
+                onClose={() => {
+                  setIsDeliveryModalOpen(false);
+                  setSelectedAddressType(prevAddressType);
+                }}
+                initialData={deliveryModalInitialData}
+                onSaveComplete={(savedAddress) => {
+                  // 배송지 모달 닫기
+                  setIsDeliveryModalOpen(false);
+                  // 방금 저장한 주소 ID 저장
+                  setPreSelectedAddressId(savedAddress.id);
+                  // 목록 모달 켜기
+                  setIsAddressListModalOpen(true);
+                }}
+              />
+            )}
+
+            {isAddressListModalOpen && (
               <AddressListModal
-                onClose={handleCloseAddressModal}
-                onConfirm={handleAddressConfirm}
+                onClose={() => setIsAddressListModalOpen(false)}
+                preSelectedId={preSelectedAddressId} // 목록에서 기본 선택
+                onConfirm={handleAddressListConfirm}
               />
             )}
 
             {showAddressForm && (
               <AddressForm>
-                <div>
-                  <input type="text" placeholder="우편번호" />{' '}
-                  <button>주소 찾기</button>
-                </div>
-                <input type="text" placeholder="기본주소" />
-                <input type="text" placeholder="상세주소" />
-                <input type="text" placeholder="받는사람 이름" />
-                <PhoneGroup>
-                  <select>
-                    <option value="010">010</option>
-                  </select>
-                  -
-                  <input type="text" maxLength={4} /> -{' '}
-                  <input type="text" maxLength={4} />
-                </PhoneGroup>
+                <FormGroup>
+                  <label>우편번호</label>
+                  <Input type="text" value={addressForm.zoneCode} readOnly />
+                </FormGroup>
+
+                <FormGroup>
+                  <label>기본주소</label>
+                  <Input type="text" value={addressForm.baseAddress} readOnly />
+                </FormGroup>
+
+                <FormGroup>
+                  <label>상세주소</label>
+                  <Input
+                    type="text"
+                    value={addressForm.detailAddress}
+                    readOnly
+                  />
+                </FormGroup>
+
+                <FormGroup>
+                  <label>받는 사람</label>
+                  <Input type="text" value={addressForm.recipient} readOnly />
+                </FormGroup>
+
+                <FormGroup>
+                  <label>전화번호</label>
+                  <Input type="text" value={addressForm.phone} readOnly />
+                </FormGroup>
               </AddressForm>
             )}
 
@@ -449,46 +720,172 @@ const OrderList = () => {
             <h3>최종 결제 정보</h3>
             <PriceRow>
               <span>주문금액</span>
-              <span>{totalAmount.toLocaleString()}원</span>
+              <span>{orderData?.itemTotalAmount.toLocaleString()}원</span>
             </PriceRow>
-            <PriceRow>
-              <span>즉시 적립금 할인</span>
-              <span>-0원</span>
-            </PriceRow>
+            <PointsBox>
+              <PointsInlineRow>
+                <InlineItem>
+                  <span>사용가능</span>
+                  <PointsStrong>
+                    {Math.max(
+                      0,
+                      (availablePoints || 0) - (usedPoint || 0)
+                    ).toLocaleString()}
+                    원
+                  </PointsStrong>
+                </InlineItem>
+
+                <InlineItem>
+                  <span>보유 적립금</span>
+                  <PointsStrong>
+                    {Number(availablePoints || 0).toLocaleString()}원
+                  </PointsStrong>
+                </InlineItem>
+              </PointsInlineRow>
+
+              <PointsControl>
+                <input
+                  type="text"
+                  value={usedPointInput.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} // 보기만 콤마 포맷
+                  onChange={handlePointChange}
+                  onBlur={handlePointBlur}
+                  placeholder="사용할 적립금 입력"
+                  inputMode="numeric"
+                  disabled={!orderData}
+                />
+                <button
+                  type="button"
+                  onClick={handleUseMaxPoint}
+                  disabled={!orderData}
+                >
+                  모두사용
+                </button>
+                <button
+                  type="button"
+                  onClick={handleApplyPoint}
+                  disabled={!orderData}
+                >
+                  적용
+                </button>
+              </PointsControl>
+
+              <PointsHelp>
+                {POINT_UNIT > 1
+                  ? `적립금은 ${POINT_UNIT.toLocaleString()}원 단위로 사용 가능합니다.`
+                  : '적립금은 1원 단위로 사용 가능합니다.'}
+              </PointsHelp>
+            </PointsBox>
             <PriceRow>
               <span>적립금 사용</span>
-              <span>-0원</span>
+              <span>-{usedPoint.toLocaleString()}원</span>
             </PriceRow>
             <PriceRow>
               <span>쿠폰할인</span>
-              <span>-0원</span>
+              <span>
+                {selectedCoupon ? (
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    <strong>
+                      -{Number(couponDiscount ?? 0).toLocaleString()}원
+                    </strong>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // 쿠폰 취소
+                        setSelectedCoupon(null);
+                        setCouponDiscount(0);
+                        // 쿠폰 취소 시, 포인트 상한 재적용 (넘치지 않도록)
+                        // const clamped = clampUsedPoint(usedPoint);
+                        // setUsedPoint(clamped);
+                        // setUsedPointInput(clamped === 0 ? '' : String(clamped));
+                      }}
+                      style={{
+                        padding: '6px 10px',
+                        fontSize: '12px',
+                        border: '1px solid #ccc',
+                        borderRadius: '6px',
+                        background: '#fff',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      취소
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsCouponModalOpen(true)}
+                    style={{
+                      padding: '8px 12px',
+                      fontSize: '14px',
+                      border: '1px solid #ccc',
+                      borderRadius: '6px',
+                      background: '#fff',
+                      cursor: 'pointer',
+                    }}
+                    disabled={!orderData}
+                  >
+                    쿠폰 선택
+                  </button>
+                )}
+              </span>
             </PriceRow>
             <PriceRow>
               <span>배송비</span>
-              <span>0원</span>
+              <span>{orderData?.totalDeliveryFee}원</span>
             </PriceRow>
             <PriceRow total>
               <span>최종 결제금액</span>
-              <span>{totalAmount.toLocaleString()}원</span>
+              <span>{finalAmount.toLocaleString()}원</span>
             </PriceRow>
             <PayButton onClick={handlePaymentClick}>
-              {totalAmount.toLocaleString()}원 결제하기
+              {finalAmount.toLocaleString()}원 결제하기
             </PayButton>
           </Summary>
         </RightPanel>
       </CheckoutLayout>
 
+      {isCouponModalOpen && orderData && (
+        <CouponModal
+          onClose={() => setIsCouponModalOpen(false)}
+          orderSummary={
+            {
+              // itemTotalAmount: orderData?.itemTotalAmount || 0,
+              // totalDeliveryFee: orderData?.totalDeliveryFee || 0,
+              // usedPoint, // 필요 시 참고
+            }
+          }
+          onApply={({ coupon, discountAmount }) => {
+            setSelectedCoupon(coupon);
+            setCouponDiscount(discountAmount);
+            setIsCouponModalOpen(false);
+
+            // 쿠폰 적용 후 포인트가 초과되지 않도록 재클램프
+            // const clamped = clampUsedPoint(usedPoint);
+            // setUsedPoint(clamped);
+            // setUsedPointInput(clamped === 0 ? '' : String(clamped));
+          }}
+        />
+      )}
+
       {/* PaymentComponent - 모달 없이 바로 결제 실행 */}
-      {showPaymentComponent && (
+      {showPaymentComponent && orderData && (
         <PaymentComponent
           orderInfo={{
             orderId,
-            totalAmount,
+            totalAmount: finalAmount,
             buyerInfo,
             orders,
             selectedPayment,
             selectedAddressId,
             selectedCartItemIds,
+            // selectedCoupon,
+            // couponDiscount,
           }}
           onPaymentComplete={handlePaymentComplete}
           onClose={handlePaymentClose}
@@ -500,7 +897,6 @@ const OrderList = () => {
 
 export default OrderList;
 
-// 기존 스타일드 컴포넌트들 (모달 관련 스타일 제거)
 const Container = styled.div`
   padding: 40px;
   max-width: 1200px;
@@ -594,24 +990,56 @@ const AddressRadioGroup = styled.div`
 const AddressForm = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+`;
 
-  input,
-  select,
-  button {
-    padding: 8px;
-    font-size: 14px;
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #333;
+  }
+
+  input {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.95rem;
   }
 
   button {
-    margin-left: 10px;
+    background: #222;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    &:hover {
+      background: #444;
+    }
   }
 `;
 
-const PhoneGroup = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
+const Input = styled.input`
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: ${({ readOnly }) => (readOnly ? '#f5f5f5' : 'white')};
+  cursor: ${({ readOnly }) => (readOnly ? 'default' : 'text')};
+  font-size: 16px;
+
+  &:focus {
+    border-color: ${({ readOnly }) => (readOnly ? '#ccc' : '#0056ff')};
+    outline: none;
+  }
 `;
 
 const PaymentSection = styled.div`
@@ -703,9 +1131,9 @@ const PriceRow = styled.div`
   display: flex;
   justify-content: space-between;
   margin: 8px 0;
-  font-size: ${(props) => (props.total ? '18px' : '16px')};
-  font-weight: ${(props) => (props.total ? 'bold' : 'normal')};
-  color: ${(props) => (props.total ? '#e60023' : '#000')};
+  font-size: ${({ $total }) => ($total ? '18px' : '16px')};
+  font-weight: ${({ $total }) => ($total ? 'bold' : 'normal')};
+  color: ${({ $total }) => ($total ? '#e60023' : '#000')};
 `;
 
 const PayButton = styled.button`
@@ -734,4 +1162,85 @@ const SelectedAddressDisplay = styled.div`
   margin-top: 10px;
   font-size: 14px;
   color: #555;
+`;
+
+const PointsBox = styled.div`
+  width: 100%; /* 너비를 100%로 설정 */
+  box-sizing: border-box; /* 패딩과 보더를 너비에 포함 */
+  margin: 12px 0;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+`;
+
+const PointsInlineRow = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px; /* 구분자와의 간격 */
+  margin: 6px 0;
+  flex-wrap: wrap; /* 모바일에서 줄바꿈 허용 */
+`;
+
+const InlineItem = styled.div`
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+
+  span {
+    font-size: 12px;
+    color: #666;
+  }
+`;
+const PointsStrong = styled.strong`
+  font-weight: 600; /* 지나치게 튀지 않게 600 */
+  color: #222; /* Summary 텍스트 톤과 유사 */
+  font-size: 14px;
+`;
+
+const PointsControl = styled.div`
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+
+  input {
+    min-width: 90px;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    background: #fff;
+  }
+
+  button {
+    padding: 10px 12px;
+    min-width: 90px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: #f5f7ff; /* 기존 버튼 hover와 톤 맞춤 */
+      border-color: rgb(85, 90, 130);
+      color: rgb(85, 90, 130);
+    }
+
+    &:disabled {
+      background: #f2f2f2;
+      color: #999;
+      border-color: #ddd;
+      cursor: not-allowed;
+    }
+  }
+`;
+
+const PointsHelp = styled.div`
+  margin-top: 8px;
+  font-size: 12px;
+  color: #777; /* NoticeBox보다 톤을 낮춰 부드럽게 */
 `;

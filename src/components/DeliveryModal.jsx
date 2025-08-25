@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import axios from '../api/axios';
 import DaumPostcode from 'react-daum-postcode';
 
-function DeliverModal({ onClose, initialData }) {
+function DeliverModal({ onClose, onSaveComplete, initialData }) {
   const [isDaumPostOpen, setIsDaumPostOpen] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -52,13 +52,22 @@ function DeliverModal({ onClose, initialData }) {
     e.preventDefault();
 
     try {
+      let response;
       if (initialData) {
-        await axios.put(
+        response = await axios.put(
           `http://localhost:8080/api/addresses/${formData.id}`,
           formData
         );
       } else {
-        await axios.post(`http://localhost:8080/api/addresses/add`, formData);
+        response = await axios.post(
+          `http://localhost:8080/api/addresses/add`,
+          formData
+        );
+      }
+      // 서버에서 저장된 최신 주소 객체를 부모에 전달
+      if (onSaveComplete) {
+        onSaveComplete(response.data);
+        console.log(response.data);
       }
       onClose();
     } catch (error) {
