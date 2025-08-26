@@ -10,12 +10,15 @@ const ReviewPage = () => {
 
   useEffect(() => {
     if (!orderId) return;
-    axios
-      .get(`/api/orders/history/${orderId}`)
-      .then((res) => setOrder(res.data))
-      .catch((err) => {
+
+    (async () => {
+      try {
+        const res = await axios.get(`/api/orders/history/${orderId}`);
+        setOrder(res.data);
+      } catch (err) {
         console.error('주문 정보 불러오기 실패:', err);
-      });
+      }
+    })();
   }, [orderId]);
 
   const selectedItem = useMemo(() => {

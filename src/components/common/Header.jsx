@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import Logo from './Logo';
-import userIcon from '../../assets/user_icon.png';
-import cartIcon from '../../assets/cart_icon.png';
 import categoryIcon from '../../assets/category_icon.png';
 import closeIcon from '../../assets/close_icon.png';
 import Search from './Search';
@@ -87,8 +85,8 @@ const Header = () => {
   ];
 
   const userData = JSON.parse(sessionStorage.getItem('userData'));
-  const name = userData?.name;
-  const role = userData?.authorities;
+  const authorities = userData?.authorities;
+  const role = userData?.role;
 
   const handleLogout = async () => {
     try {
@@ -108,6 +106,7 @@ const Header = () => {
   };
 
   useEffect(() => {
+    console.log(userData);
     if (!isOpen) return;
     const onDocClick = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -122,28 +121,23 @@ const Header = () => {
     <HeaderContainer>
       <TopBar>
         <TopMenu>
-          {name ? (
+          {authorities ? (
             <>
-              <UserNameText>{name}님</UserNameText>
               <TopTextButton onClick={handleLogout}>로그아웃</TopTextButton>
             </>
           ) : (
             <TopTextLink to="/login">로그인</TopTextLink>
           )}
 
-          {role === '[ROLE_USER]' && (
-            <Link to="/mypage">
-              <UserIcon src={userIcon} alt="User Icon" />
-            </Link>
+          {role === 'ROLE_USER' && (
+            <TopTextLink to="/mypage">마이페이지</TopTextLink>
           )}
 
-          {role === '[ROLE_USER]' && (
-            <Link to="/cart">
-              <CartIcon src={cartIcon} alt="Cart Icon" />
-            </Link>
+          {role === 'ROLE_USER' && (
+            <TopTextLink to="/cart">장바구니</TopTextLink>
           )}
 
-          {role === '[ROLE_SELLER]' && (
+          {role === 'ROLE_SELLER' && (
             <TopTextLink to="/sellerCenter">판매자센터</TopTextLink>
           )}
           <TopTextLink>고객센터</TopTextLink>
@@ -243,11 +237,6 @@ const TopMenu = styled.div`
   color: #666;
 `;
 
-const UserNameText = styled.span`
-  font-weight: 700;
-  letter-spacing: 0.1px;
-`;
-
 const TopTextLink = styled(Link)`
   text-decoration: none;
   color: #666;
@@ -260,18 +249,6 @@ const TopTextButton = styled.button`
   padding: 0;
   color: #666;
   font-size: 13px;
-  cursor: pointer;
-`;
-
-const UserIcon = styled.img`
-  width: 30px;
-  height: 30px;
-  cursor: pointer;
-`;
-
-const CartIcon = styled.img`
-  width: 20px;
-  height: 20px;
   cursor: pointer;
 `;
 
