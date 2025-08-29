@@ -52,7 +52,9 @@ const ReviewList = ({ itemId }) => {
 
   return (
     <Container>
-      <h3>상품평 ({totalReviews})</h3>
+      <Title>
+        상품평 <Count>({totalReviews})</Count>
+      </Title>
       <StatsContainer>
         <AverageBox>
           <AverageScore>⭐ {averageRating}</AverageScore>
@@ -109,7 +111,19 @@ const ReviewList = ({ itemId }) => {
 export default ReviewList;
 
 const Container = styled.div`
-  margin-top: 20px;
+  width: 100%;
+  margin: 0 auto;
+`;
+
+const Title = styled.h2`
+  font-size: 24px;
+  font-weight: bold;
+`;
+
+const Count = styled.span`
+  color: #d32f2f;
+  font-size: 24px;
+  margin-left: 4px;
 `;
 
 const NoReview = styled.p`
