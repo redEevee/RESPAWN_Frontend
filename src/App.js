@@ -40,6 +40,7 @@ import Settings from './components/Admin/Settings';
 import Login from './components/Admin/Login';
 import SearchResultListPage from './pages/SearchResultListPage';
 import AuthGate from './AuthGate';
+import AuthCallback from "./pages/AuthCallback";
 
 function App() {
   return (
@@ -49,6 +50,7 @@ function App() {
         <Routes>
           <Route path="/" element={<MainPage />} />
           <Route path="/search" element={<SearchResultListPage />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="members" element={<Members />} />
