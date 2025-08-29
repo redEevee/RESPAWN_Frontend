@@ -10,7 +10,7 @@ const Search = () => {
   const handleSearch = () => {
     if (query.trim() === '') return;
     const params = new URLSearchParams({ query });
-    navigate(`/search?query=${encodeURIComponent(params)}`);
+    navigate(`/search?${params.toString()}`);
   };
 
   const handleKeyPress = (e) => {
@@ -22,8 +22,11 @@ const Search = () => {
   return (
     <SearchContainer>
       <SearchInput
+        autoComplete="off"
         placeholder="상품을 검색해보세요!"
         type="text"
+        name="q"
+        inputMode="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={handleKeyPress}

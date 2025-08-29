@@ -258,6 +258,20 @@ function UserInfo() {
           <UserDetail>
             <Label>아이디</Label>
             <Value>{userData?.username || '-'}</Value>
+            <Input
+              type={'text'}
+              autoComplete="username"
+              value={userData?.username || '-'}
+              style={{
+                position: 'absolute',
+                width: '1px',
+                height: '1px',
+                margin: '-1px',
+                overflow: 'hidden',
+                clip: 'rect(0, 0, 0, 0)',
+                border: 0,
+              }}
+            />
           </UserDetail>
           <UserDetail>
             <Label>비밀번호</Label>
@@ -265,6 +279,7 @@ function UserInfo() {
               <Input
                 type={seePassword ? 'text' : 'password'}
                 placeholder="비밀번호 입력"
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={(e) => {
