@@ -126,7 +126,7 @@ export default SearchFilter;
 
 const FilterBar = styled.section`
   position: sticky;
-  z-index: 20;
+  z-index: 5;
   background: #fff;
   border: 1px solid #eaeaea;
   border-radius: 10px;

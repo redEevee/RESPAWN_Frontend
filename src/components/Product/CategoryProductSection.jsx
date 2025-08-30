@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from '../../api/axios';
 import styled from 'styled-components';
+import ProductCard from '../Product/ProductCard';
 
 const CategoryProductSection = ({
   categoryName,
@@ -96,14 +97,8 @@ const CategoryProductSection = ({
           </KeywordList>
         </Side>
         <Grid $cols={gridCols}>
-          {products.map((p) => (
-            <Card key={p.id}>
-              <Img src={p.imageUrl} alt={p.name} />
-              <Info>
-                <Name>{p.name}</Name>
-                <Price>{Number(p.price).toLocaleString()}원</Price>
-              </Info>
-            </Card>
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} />
           ))}
         </Grid>
       </Body>
@@ -215,29 +210,4 @@ const Card = styled.div`
   &:hover {
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
   }
-`;
-
-const Img = styled.img`
-  width: 100%;
-  aspect-ratio: 1/1;
-  object-fit: cover;
-  background: #f7f7f7;
-`;
-
-const Info = styled.div`
-  padding: 8px 12px; /* 카드 내부 텍스트 여백 */
-  display: grid;
-  gap: 4px;
-`;
-
-const Name = styled.div`
-  font-size: 14px;
-  min-height: 2.5em;
-  margin: 0;
-`;
-
-const Price = styled.div`
-  font-size: 15px;
-  font-weight: 700;
-  margin: 0;
 `;
