@@ -1,14 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import styled from 'styled-components';
 import axios from '../../api/axios';
 import SmallBanner from '../Banner/SmallBanner';
 import OrderCard from './OrderHistory/OrderCard';
+import Pagination from '../Pagination';
+
+const ORDERS_PER_PAGE = 3;
 
 function MainInfo() {
   const [user, setUser] = useState({});
-  const [latestOrder, setLatestOrder] = useState(null);
-  const [points, setPoints] = useState(0);
+  const [recentOrders, setRecentOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     let active = true;
@@ -16,22 +19,31 @@ function MainInfo() {
 
     const fetchData = async () => {
       try {
-        const [userRes, orderRes, pointsRes] = await Promise.allSettled([
-          axios.get('/user', { signal: controller.signal }),
-          axios.get('/api/orders/latest', { signal: controller.signal }),
-          axios.get('/api/points/total/active', { signal: controller.signal }),
+        const [userRes, orderRes] = await Promise.allSettled([
+          axios.get('/myPage/summary', { signal: controller.signal }),
+          axios.get('/api/orders/history/recent-month', {
+            signal: controller.signal,
+          }),
         ]);
 
         if (!active) return;
 
-        console.log('pointsRes', pointsRes.value.data);
         console.log('userRes', userRes.value.data);
         console.log('orderRes', orderRes.value.data);
 
-        if (userRes.status === 'fulfilled') setUser(userRes.value.data.result);
-        if (orderRes.status === 'fulfilled')
-          setLatestOrder(orderRes.value.data);
-        if (pointsRes.status === 'fulfilled') setPoints(pointsRes.value.data);
+        // user 처리
+        if (userRes.status === 'fulfilled') {
+          setUser(userRes.value.data.result);
+        }
+
+        // orders 처리: 배열 -> 최신 1건 선택
+        if (orderRes.status === 'fulfilled') {
+          const orders = Array.isArray(orderRes.value.data)
+            ? orderRes.value.data
+            : [];
+          setRecentOrders(orders);
+          setCurrentPage(1);
+        }
       } catch (error) {
         console.error('유저 또는 주문 정보 불러오기 실패', error);
       } finally {
@@ -47,6 +59,31 @@ function MainInfo() {
     };
   }, []);
 
+  // 정렬: 최신 주문이 먼저
+  const sortedOrders = useMemo(
+    () =>
+      recentOrders
+        .slice()
+        .sort(
+          (a, b) =>
+            new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
+        ),
+    [recentOrders]
+  );
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(sortedOrders.length / ORDERS_PER_PAGE)
+  );
+  const startIdx = (currentPage - 1) * ORDERS_PER_PAGE;
+  const endIdx = startIdx + ORDERS_PER_PAGE;
+  const currentOrders = sortedOrders.slice(startIdx, endIdx);
+
+  // totalPages가 줄어든 경우 페이지 보정
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
   if (loading) {
     return <div>로딩 중...</div>;
   }
@@ -58,7 +95,7 @@ function MainInfo() {
         <TopInfoBox>
           <InfoItem>
             <label>쿠폰</label>
-            <span>0 개</span>
+            <span>{user.couponCount} 개</span>
           </InfoItem>
           <InfoItem>
             <label>회원등급</label>
@@ -66,14 +103,25 @@ function MainInfo() {
           </InfoItem>
           <InfoItem>
             <label>적립금</label>
-            <span>{points.toLocaleString()} P</span>
+            <span>{user.activePoint} P</span>
           </InfoItem>
         </TopInfoBox>
 
         <SectionTitle>주문배송조회</SectionTitle>
 
-        {latestOrder ? (
-          <OrderCard order={latestOrder} />
+        {sortedOrders.length > 0 ? (
+          <>
+            {currentOrders.map((o) => (
+              <OrderCard key={o.orderId} order={o} />
+            ))}
+            {totalPages > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            )}
+          </>
         ) : (
           <NoOrderText>최근 주문 내역이 없습니다.</NoOrderText>
         )}
