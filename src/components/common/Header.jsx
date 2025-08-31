@@ -18,7 +18,7 @@ const Header = () => {
       title: '콘솔 / 컨트롤러',
       items: [
         '게임 컨트롤러',
-        '조이스틱',
+        'umpc',
         '플레이스테이션 액세서리',
         'XBOX 액세서리',
         '닌텐도 스위치',
@@ -38,12 +38,13 @@ const Header = () => {
     {
       title: '게이밍 주변기기',
       items: [
-        '게이밍 마우스',
-        '게이밍 키보드',
-        '게이밍 헤드셋',
+        '마우스',
+        '키보드',
+        '헤드셋',
         '모니터',
-        '웹캠',
+        '스피커',
         '마이크',
+        '레이싱 휠',
       ],
     },
     {
@@ -55,10 +56,6 @@ const Header = () => {
         'RGB 조명',
         '방음 패드',
       ],
-    },
-    {
-      title: '스트리밍 장비',
-      items: ['캡쳐보드', '사운드 카드', '오디오 인터페이스', '프로젝터'],
     },
     {
       title: '악세서리 / 기타',
@@ -106,7 +103,6 @@ const Header = () => {
   };
 
   useEffect(() => {
-    console.log(userData);
     if (!isOpen) return;
     const onDocClick = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {

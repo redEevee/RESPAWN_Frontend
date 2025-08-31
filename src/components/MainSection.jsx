@@ -26,13 +26,6 @@ const MainSection = () => (
       gridCols={4}
     />
     <CategoryProductSection
-      categoryName="본체"
-      keywords={['조립PC', '라이젠', '특가']}
-      apiCategoryParam="본체"
-      maxItems={8}
-      gridCols={4}
-    />
-    <CategoryProductSection
       categoryName="스피커"
       keywords={['블루투스', '2.1채널', '가성비']}
       apiCategoryParam="스피커"
