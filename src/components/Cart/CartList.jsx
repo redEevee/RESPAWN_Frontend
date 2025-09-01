@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import styled from 'styled-components';
 import axios from '../../api/axios';
 import { useNavigate } from 'react-router-dom';
@@ -7,29 +7,51 @@ import StepProgress from '../common/StepProgress';
 const CartList = () => {
   const [cartItems, setCartItems] = useState([]);
   const navigate = useNavigate();
-  const [allChecked, setAllChecked] = useState(false);
+  const allChecked =
+    cartItems.length > 0 && cartItems.every((item) => item.checked);
 
   const handleCheckAll = () => {
-    setAllChecked((prev) => !prev);
+    const nextChecked = !allChecked;
     setCartItems((prev) =>
-      prev.map((item) => ({ ...item, checked: !allChecked }))
+      prev.map((item) => ({ ...item, checked: nextChecked }))
+    );
+  };
+
+  const handleCheck = (id) => {
+    setCartItems((prev) =>
+      prev.map((item) =>
+        item.cartItemId === id ? { ...item, checked: !item.checked } : item
+      )
     );
   };
 
   useEffect(() => {
-    axios
-      .get(`/api/cart`)
-      .then((res) => {
+    const controller = new AbortController();
+    const fetchCartItems = async () => {
+      try {
+        const res = await axios.get(`/api/cart`, {
+          signal: controller.signal,
+        });
+
         const itemsWithChecked = res.data.cartItems.map((item) => ({
           ...item,
-          checked: false, // ✅ 초기값 true or false
+          checked: false,
         }));
+
         setCartItems(itemsWithChecked);
-      })
-      .catch((err) => console.error('장바구니 데이터 로드 실패', err));
+      } catch (err) {
+        console.error('장바구니 데이터 로드 실패', err);
+      }
+    };
+
+    fetchCartItems();
+
+    return () => {
+      controller.abort();
+    };
   }, []);
 
-  const handleBuySelectedItems = () => {
+  const handleBuySelectedItems = async () => {
     const selectedItems = cartItems.filter((item) => item.checked);
     const itemIds = selectedItems.map((item) => item.cartItemId);
 
@@ -38,96 +60,115 @@ const CartList = () => {
       return;
     }
 
-    axios
-      .post('/api/orders/cart', {
+    try {
+      const res = await axios.post('/api/orders/cart', {
         cartItemIds: itemIds,
-      })
-      .then((res) => {
-        const orderId = res.data.orderId;
-        navigate(`/order/${orderId}`);
-      })
-      .catch((err) => {
-        console.error(err);
-        alert('주문 생성에 실패했습니다.');
-      });
-  };
-
-  const handleCountIncrease = async (cartItemId) => {
-    try {
-      // 백엔드 수량 업데이트 요청
-      await axios.post(`/api/cart/items/${cartItemId}/increase`, {
-        amount: 1,
       });
 
-      // 프론트 UI 업데이트
-      setCartItems((prev) =>
-        prev.map((item) =>
-          item.cartItemId === cartItemId
-            ? { ...item, count: item.count + 1 }
-            : item
-        )
-      );
-    } catch (error) {
-      console.error('수량 변경 실패:', error);
-      alert('수량 변경에 실패했습니다. 다시 시도해주세요.');
+      const orderId = res.data.orderId;
+      navigate(`/order/${orderId}`);
+    } catch (err) {
+      console.error(err);
+      alert('주문 생성에 실패했습니다.');
     }
   };
 
-  const handleCountDecrease = async (cartItemId) => {
-    const targetItem = cartItems.find((item) => item.cartItemId === cartItemId);
-    if (!targetItem || targetItem.count <= 1) return;
+  const handleCountChange = async (cartItemId, amount) => {
+    const item = cartItems.find((item) => item.cartItemId === cartItemId);
+    if (!item || (item.count <= 1 && amount < 0)) return;
+
+    setCartItems((prev) =>
+      prev.map((item) =>
+        item.cartItemId === cartItemId
+          ? { ...item, count: item.count + amount }
+          : item
+      )
+    );
 
     try {
-      // 백엔드 수량 업데이트 요청
-      await axios.post(`/api/cart/items/${cartItemId}/decrease`, {
-        amount: 1,
+      const endpoint = amount > 0 ? 'increase' : 'decrease';
+      await axios.post(`/api/cart/items/${cartItemId}/${endpoint}`, {
+        amount: Math.abs(amount),
       });
-
-      // 프론트 UI 업데이트
-      setCartItems((prev) =>
-        prev.map((item) =>
-          item.cartItemId === cartItemId
-            ? { ...item, count: item.count - 1 }
-            : item
-        )
-      );
     } catch (error) {
       console.error('수량 변경 실패:', error);
       alert('수량 변경에 실패했습니다. 다시 시도해주세요.');
+      setCartItems((prev) =>
+        prev.map((item) =>
+          item.cartItemId === cartItemId
+            ? { ...item, count: item.count - amount }
+            : item
+        )
+      );
     }
   };
 
-  const handleCheck = (id) => {
-    setCartItems((prev) => {
-      const updated = prev.map((item) =>
-        item.cartItemId === id ? { ...item, checked: !item.checked } : item
-      );
-      setAllChecked(updated.every((item) => item.checked));
-      return updated;
-    });
-  };
-
-  const getTotalPrice = () => {
+  const totalPrice = useMemo(() => {
     return cartItems
       .filter((item) => item.checked)
       .reduce((acc, item) => acc + item.itemPrice * item.count, 0);
-  };
+  }, [cartItems]);
 
-  const handleDeleteItem = async (cartItemId) => {
-    const confirmDelete = window.confirm('정말 삭제할까요?');
-    if (!confirmDelete) return;
+  const handleDeleteSelected = async () => {
+    const selectedIds = cartItems
+      .filter((it) => it.checked)
+      .map((it) => it.cartItemId);
+    if (selectedIds.length === 0) {
+      alert('선택된 상품이 없습니다.');
+      return;
+    }
+    const ok = window.confirm(
+      `선택한 ${selectedIds.length}개 상품을 삭제할까요?`
+    );
+    if (!ok) return;
 
     try {
-      await axios.delete(`/api/cart/items/${cartItemId}`);
-      // 삭제 성공 시 화면에서도 제거
+      await axios.delete('/api/cart/items/delete', {
+        headers: { 'Content-Type': 'application/json' },
+        data: {
+          cartItemIds: selectedIds,
+        },
+      });
+
       setCartItems((prev) =>
-        prev.filter((item) => item.cartItemId !== cartItemId)
+        prev.filter((it) => !selectedIds.includes(it.cartItemId))
       );
-    } catch (error) {
-      console.error('삭제 실패:', error);
-      alert('삭제에 실패했습니다. 다시 시도해주세요.');
+    } catch (e) {
+      console.error('선택 삭제 실패:', e);
+      alert('선택 삭제에 실패했습니다. 다시 시도해주세요.');
     }
   };
+
+  const handleClearAll = async () => {
+    if (cartItems.length === 0) {
+      alert('장바구니가 비어 있습니다.');
+      return;
+    }
+    const ok = window.confirm('장바구니를 모두 비우시겠습니까?');
+    if (!ok) return;
+
+    try {
+      await axios.delete('/api/cart'); // 예시
+
+      setCartItems([]);
+    } catch (e) {
+      console.error('전체 비우기 실패:', e);
+      alert('전체 비우기에 실패했습니다. 다시 시도해주세요.');
+    }
+  };
+
+  if (cartItems.length === 0) {
+    return (
+      <Container>
+        <StepProgressWrapper>
+          <StepProgress currentStep={1} />
+        </StepProgressWrapper>
+        <Title>장바구니</Title>
+        <EmptyCartMessage>장바구니에 담긴 상품이 없습니다.</EmptyCartMessage>
+        {/* 필요하다면 '쇼핑 계속하기' 버튼 등을 추가할 수 있습니다. */}
+      </Container>
+    );
+  }
 
   return (
     <Container>
@@ -162,17 +203,19 @@ const CartList = () => {
               </td>
               <td>
                 <ProductInfo>
-                  <img src={item.imageUrl} alt={item.imageUrl} />
+                  <img src={item.imageUrl} alt={item.itemName} />
                   <span>{item.itemName}</span>
                 </ProductInfo>
               </td>
               <td>
                 <CountControl>
-                  <button onClick={() => handleCountDecrease(item.cartItemId)}>
+                  <button
+                    onClick={() => handleCountChange(item.cartItemId, -1)}
+                  >
                     -
                   </button>
                   <span>{item.count}</span>
-                  <button onClick={() => handleCountIncrease(item.cartItemId)}>
+                  <button onClick={() => handleCountChange(item.cartItemId, 1)}>
                     +
                   </button>
                 </CountControl>
@@ -181,18 +224,24 @@ const CartList = () => {
                 <Price>
                   {(item.itemPrice * item.count).toLocaleString()}원
                 </Price>
-                <DeleteButton onClick={() => handleDeleteItem(item.cartItemId)}>
-                  삭제
-                </DeleteButton>
               </td>
             </ItemRow>
           ))}
         </tbody>
       </Table>
 
+      <ButtonActions>
+        <DeleteButton onClick={handleDeleteSelected}>
+          선택 상품 삭제
+        </DeleteButton>
+        <DeleteButton onClick={handleClearAll}>
+          장바구니 전체 비우기
+        </DeleteButton>
+      </ButtonActions>
+
       <Summary>
         <FinalPrice>
-          결제 예정 금액 <span>{getTotalPrice().toLocaleString()}원</span>
+          결제 예정 금액 <span>{totalPrice.toLocaleString()}원</span>
         </FinalPrice>
         <GreenButton onClick={handleBuySelectedItems}>주문하기</GreenButton>
       </Summary>
@@ -225,21 +274,24 @@ const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
   text-align: left;
+  overflow: hidden;
 
   th,
   td {
     padding: 20px;
     border-bottom: 1px solid #eee;
     word-break: break-word; /* 긴 단어 줄바꿈 */
-  }
-
-  th:first-child,
-  td:first-child {
-    text-align: center; // 체크박스 컬럼 중앙 정렬
+    text-align: center;
   }
 
   th {
     background: #f5f5f5;
+  }
+
+  /* 상품명(3번째 열)만 왼쪽 정렬 */
+  thead th:nth-child(2),
+  tbody td:nth-child(2) {
+    text-align: left;
   }
 `;
 
@@ -270,9 +322,9 @@ const ProductInfo = styled.div`
 
 const CountControl = styled.div`
   display: flex;
+  justify-content: center;
   align-items: center;
   gap: 10px;
-
   button {
     width: 30px;
     height: 30px;
@@ -285,7 +337,13 @@ const CountControl = styled.div`
 
 const Price = styled.div`
   font-weight: bold;
-  margin-bottom: 10px;
+`;
+
+const ButtonActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
 `;
 
 const Summary = styled.div`
@@ -324,12 +382,12 @@ const GreenButton = styled.button`
 `;
 
 const DeleteButton = styled.button`
-  margin-left: 10px;
-  background-color: #ccc;
+  padding: 10px 20px;
+  background-color: #eee;
   color: #333;
   border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
+  font-size: 15px;
+  border-radius: 8px;
   cursor: pointer;
 `;
 
@@ -337,4 +395,13 @@ const Checkbox = styled.input`
   width: 18px;
   height: 18px;
   cursor: pointer;
+`;
+
+const EmptyCartMessage = styled.div`
+  text-align: center;
+  padding: 80px 20px;
+  font-size: 18px;
+  color: #888;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
 `;

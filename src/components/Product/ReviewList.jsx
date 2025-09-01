@@ -10,18 +10,19 @@ const ReviewList = ({ itemId }) => {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    if (itemId) {
-      axios
-        .get(`api/reviews/items/${itemId}`)
-        .then((response) => {
-          setReviews(response.data);
-          console.log(response.data);
-          setCurrentPage(1);
-        })
-        .catch((error) => {
-          console.error('리뷰 불러오기 실패:', error);
-        });
-    }
+    if (!itemId) return;
+
+    const fetchReviews = async () => {
+      try {
+        const res = await axios.get(`api/reviews/items/${itemId}`);
+        setReviews(res.data || []);
+        setCurrentPage(1);
+      } catch (err) {
+        console.error('리뷰 불러오기 실패:', err);
+      }
+    };
+
+    fetchReviews();
   }, [itemId]);
 
   const getRatingStats = (reviews) => {

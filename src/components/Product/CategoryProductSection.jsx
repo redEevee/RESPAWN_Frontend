@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import axios from '../../api/axios';
 import styled from 'styled-components';
 import ProductCard from '../Product/ProductCard';
@@ -22,6 +22,16 @@ const CategoryProductSection = ({
     )}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
+
+  const handleAddToCart = useCallback(async (product) => {
+    try {
+      await axios.post('/api/cart/add', { itemId: product.id, count: 1 });
+      alert(`${product.name}이(가) 장바구니에 담겼습니다.`);
+    } catch (err) {
+      console.error('장바구니 담기 실패:', err);
+      alert('장바구니 담기 실패');
+    }
+  }, []);
 
   useEffect(() => {
     requestedRef.current = false;
@@ -98,7 +108,11 @@ const CategoryProductSection = ({
         </Side>
         <Grid $cols={gridCols}>
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard
+              key={product.id}
+              product={product}
+              onAddToCart={handleAddToCart}
+            />
           ))}
         </Grid>
       </Body>
