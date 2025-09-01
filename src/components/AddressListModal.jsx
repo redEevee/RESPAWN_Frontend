@@ -25,7 +25,7 @@ function AddressListModal({ onClose, onConfirm, preSelectedId }) {
 
   const fetchAddresses = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/api/addresses');
+      const response = await axios.get('/api/addresses');
       const data = Array.isArray(response.data) ? response.data : [];
       setAddresses(data);
       if (preSelectedId) {
@@ -43,9 +43,7 @@ function AddressListModal({ onClose, onConfirm, preSelectedId }) {
       return;
     }
     try {
-      await axios.delete(
-        `http://localhost:8080/api/addresses/${selectedAddressId}`
-      );
+      await axios.delete(`/api/addresses/${selectedAddressId}`);
       fetchAddresses();
     } catch (error) {
       console.error('주소 목록 불러오기 실패:', error);

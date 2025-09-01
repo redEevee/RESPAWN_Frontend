@@ -5,10 +5,9 @@ import { useNavigate } from 'react-router-dom';
 function LoginOkPage() {
   const navigate = useNavigate();
   useEffect(() => {
-    axios
-      .get('/loginOk')
-      .then((response) => {
-        // 유저 정보 상태 저장 또는 페이지 이동 처리
+    const handleLogin = async () => {
+      try {
+        const response = await axios.get('/loginOk');
         const data = response.data;
         sessionStorage.setItem('userData', JSON.stringify(data));
 
@@ -18,16 +17,17 @@ function LoginOkPage() {
 
         localStorage.setItem('auth:updated', String(Date.now()));
         window.close();
-        // 창이 닫히지 않으면 0.5초 후 홈으로 강제 이동
         setTimeout(() => {
           if (!window.closed) {
             navigate('/');
           }
         }, 500);
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error('유저 정보 불러오기 실패:', err);
-      });
+      }
+    };
+
+    handleLogin();
   }, [navigate]);
 
   return <div>로그인 처리 중...</div>;

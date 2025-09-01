@@ -162,11 +162,10 @@ const SearchResultListPage = () => {
   ];
 
   const availableCategories = [
-    { id: '스마트폰', name: '스마트폰' },
-    { id: '노트북', name: '노트북' },
     { id: '모니터', name: '모니터' },
     { id: '헤드셋', name: '헤드셋' },
     { id: '마우스', name: '마우스' },
+    { id: '키보드', name: '키보드' },
   ];
 
   return (
@@ -204,7 +203,7 @@ export default SearchResultListPage;
 
 const PageWrapper = styled.div`
   --filter-h: 112px;
-  max-width: 1320px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 40px 20px;
   display: flex;

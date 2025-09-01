@@ -54,15 +54,9 @@ function DeliverModal({ onClose, onSaveComplete, initialData }) {
     try {
       let response;
       if (initialData) {
-        response = await axios.put(
-          `http://localhost:8080/api/addresses/${formData.id}`,
-          formData
-        );
+        response = await axios.put(`/api/addresses/${formData.id}`, formData);
       } else {
-        response = await axios.post(
-          `http://localhost:8080/api/addresses/add`,
-          formData
-        );
+        response = await axios.post(`/api/addresses/add`, formData);
       }
       // 서버에서 저장된 최신 주소 객체를 부모에 전달
       if (onSaveComplete) {

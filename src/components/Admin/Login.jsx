@@ -41,12 +41,7 @@ const Login = (e) => {
       formData.append('username', user.username);
       formData.append('password', user.password);
 
-      const response = await axios({
-        url: 'http://localhost:8080/loginProc',
-        method: 'POST',
-        data: formData,
-        withCredentials: true,
-      });
+      const response = await axios.post('/loginProc', formData);
       console.log('로그인 성공', response.data);
 
       sessionStorage.setItem('userData', JSON.stringify(response.data));
