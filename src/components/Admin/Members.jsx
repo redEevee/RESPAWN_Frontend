@@ -12,6 +12,8 @@ const Members = () => {
     size: 20,
     totalPages: 0,
     totalElements: 0,
+    isFirst: true,
+    isLast: true,
   });
 
   const currentPage1 = pageInfo.page + 1; // 1-based
@@ -41,7 +43,6 @@ const Members = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const [rawData, setRawData] = useState([]); // 서버 원본 페이지 content
   const [data, setData] = useState([]); // 정렬 적용 후 화면용
   const [sort, setSort] = useState({ field: 'username', dir: 'asc' });
 
@@ -80,10 +81,10 @@ const Members = () => {
       const params = {
         page,
         size,
-        sort: 'username',
-        dir: 'asc',
+        sort: sort.field,
+        dir: sort.dir,
         keyword: appliedFilters.keyword || undefined,
-        field: appliedFilters.field || undefined, // 없으면 서버 기본값(name)
+        field: appliedFilters.keyword ? appliedFilters.field : undefined,
         dateRange: dateRange || undefined,
       };
       const res = await axios.get(url, { params });
@@ -97,7 +98,7 @@ const Members = () => {
         email: u.email ?? '',
         phone: roleTab === 'buyer' ? u.phoneNumber ?? '' : '',
         company: roleTab === 'seller' ? u.company ?? '' : '',
-        joinedAt: u.createdAt ?? '',
+        createdAt: u.createdAt ?? '',
         grade: u.grade ?? '',
         userType: u.userType ?? roleTab,
       }));
@@ -107,8 +108,9 @@ const Members = () => {
         size: res.data.size,
         totalPages: res.data.totalPages,
         totalElements: res.data.totalElements,
+        isFirst: res.data.first,
+        isLast: res.data.last,
       });
-      setRawData(normalized);
     } catch (e) {
       console.error(e);
       setError('회원 데이터를 불러오는 중 오류가 발생했습니다.');
@@ -120,7 +122,7 @@ const Members = () => {
   // roleTab 변경, page 변경될 때마다 fetch
   useEffect(() => {
     fetchMembers(pageInfo.page, pageInfo.size);
-  }, [roleTab, pageInfo.page, pageInfo.size, appliedFilters]);
+  }, [roleTab, pageInfo.page, pageInfo.size, appliedFilters, sort]);
 
   const onChangeFilter = (e) => {
     const { name, value } = e.target;
@@ -154,7 +156,7 @@ const Members = () => {
     const vb = getValue(b, field);
 
     // 날짜 필드 처리(ISO 또는 yyyy-MM-dd 형태)
-    if (field === 'joinedAt') {
+    if (field === 'createdAt') {
       const ta = va ? new Date(va).getTime() : 0;
       const tb = vb ? new Date(vb).getTime() : 0;
       return ta - tb;
@@ -167,15 +169,8 @@ const Members = () => {
     });
   };
 
-  useEffect(() => {
-    const sorted = [...rawData].sort((a, b) => {
-      const c = compare(a, b, sort.field);
-      return sort.dir === 'asc' ? c : -c;
-    });
-    setData(sorted);
-  }, [rawData, sort]);
-
   const onSort = (field) => {
+    setPageInfo((p) => ({ ...p, page: 0 }));
     setSort((prev) => {
       const dir =
         prev.field === field ? (prev.dir === 'asc' ? 'desc' : 'asc') : 'asc';
@@ -304,7 +299,7 @@ const Members = () => {
               />
               {roleTab === 'buyer' ? (
                 <SortableTh
-                  field="phone"
+                  field="phoneNumber"
                   label="전화번호"
                   onClick={onSort}
                   activeField={sort.field}
@@ -340,7 +335,7 @@ const Members = () => {
                 />
               )}
               <SortableTh
-                field="joinedAt"
+                field="createdAt"
                 label="가입일"
                 onClick={onSort}
                 activeField={sort.field}
@@ -387,7 +382,7 @@ const Members = () => {
                   {roleTab === 'buyer' && (
                     <td className="col-grade">{m.grade || '-'}</td>
                   )}
-                  <td className="col-joined">{formatDate(m.joinedAt)}</td>
+                  <td className="col-joined">{formatDate(m.createdAt)}</td>
                   <td className="col-actions">
                     <ManageBtn onClick={() => onClickManage(m)}>관리</ManageBtn>
                   </td>
@@ -403,6 +398,8 @@ const Members = () => {
           currentPage={currentPage1}
           totalPages={totalPages1}
           onPageChange={handlePageChange}
+          isFirst={pageInfo.isFirst}
+          isLast={pageInfo.isLast}
         />
       </PaginationBar>
     </Wrap>
