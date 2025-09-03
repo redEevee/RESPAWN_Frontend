@@ -1,15 +1,27 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from '../../api/axios';
 import styled, { css } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import StarRating from '../../components/common/StarRating';
 
+const PAGE_SIZE = 10;
+
 const MyReviewList = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('writable');
-  const [writableItems, setWritableItems] = useState([]);
-  const [writtenReviews, setWrittenReviews] = useState([]);
+  const [items, setItems] = useState([]);
+  const [counts, setCounts] = useState({ writable: 0, written: 0 });
+
+  // 무한 스크롤 상태
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [countsLoaded, setCountsLoaded] = useState(false); // 카운트 로드 여부 추적
+
+  // Intersection Observer를 위한 Ref
+  const sentinelRef = useRef(null);
+  const inFlightRef = useRef(false); // 중복 요청 방지
 
   // 리뷰 작성 버튼 클릭 시
   const handleWriteReview = (orderId, orderItemId) => {
@@ -17,97 +29,139 @@ const MyReviewList = () => {
   };
 
   // 서버에서 내 리뷰 목록 불러오기
-  const fetchMyReviews = async () => {
-    try {
+  // 특정 탭의 데이터 불러오기 (무한 스크롤용)
+  const fetchMyReviews = useCallback(
+    async (isInitialLoad = false) => {
+      if (inFlightRef.current) return;
+      inFlightRef.current = true;
       setLoading(true);
-      const res = await axios.get('/api/reviews/my');
-      console.log(res.data);
-      setWritableItems(res.data.writableItems || []);
-      setWrittenReviews(res.data.writtenReviews || []);
-    } catch (error) {
-      console.error(error);
-      alert('리뷰 목록을 불러오는데 실패했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
+      const currentOffset = isInitialLoad ? 0 : offset;
+
+      try {
+        const params = {
+          offset: currentOffset,
+          limit: PAGE_SIZE,
+        };
+        const response = await axios.get(`/api/reviews/count`);
+        const res = await axios.get(`/api/reviews/${activeTab}`, { params });
+        console.log(response.data);
+        console.log(res.data);
+
+        // ✅ API 응답 구조에 맞춰 'items' 키를 사용합니다.
+        const newItems = res.data.content || [];
+
+        setItems((prevItems) =>
+          isInitialLoad ? newItems : [...prevItems, ...newItems]
+        );
+        setOffset(currentOffset + newItems.length);
+        setHasMore(newItems.length === PAGE_SIZE);
+
+        setCounts({
+          writable: response.data.writableCount || 0,
+          written: response.data.writtenCount || 0,
+        });
+      } catch (error) {
+        console.error(error);
+        alert('리뷰 목록을 불러오는데 실패했습니다.');
+        setHasMore(false);
+      } finally {
+        setLoading(false);
+        if (isInitialLoad) setInitialLoading(false);
+        inFlightRef.current = false;
+      }
+    },
+    [activeTab, offset, countsLoaded]
+  );
+
+  // 탭 변경 시 상태 초기화 및 데이터 다시 불러오기
   useEffect(() => {
-    fetchMyReviews();
-  }, []);
+    setItems([]);
+    setOffset(0);
+    setHasMore(true);
+    setInitialLoading(true);
+    fetchMyReviews(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
-  /**
-   * 리뷰 작성 가능한 목록
-   */
-  const WritableSection = ({ loading, items, onWrite }) => {
-    if (loading) return <Message>리뷰 목록을 불러오는 중입니다...</Message>;
-    if (!items || items.length === 0)
-      return <Message>작성할 리뷰가 없습니다.</Message>;
+  // IntersectionObserver 설정
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || loading || !hasMore) return;
 
-    return (
-      <ReviewList>
-        {items.map((item) => (
-          <WritableItem key={item.orderItemId}>
-            <ItemImage
-              src={item.itemImage}
-              alt={item.itemName}
-              loading="lazy"
-            />
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchMyReviews();
+        }
+      },
+      { rootMargin: '0px 0px 200px 0px' }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [loading, hasMore, fetchMyReviews]);
+
+  const renderContent = () => {
+    if (initialLoading)
+      return <Message>리뷰 목록을 불러오는 중입니다...</Message>;
+    if (items.length === 0) {
+      return (
+        <Message>
+          {activeTab === 'writable'
+            ? '작성할 리뷰가 없습니다.'
+            : '작성한 리뷰가 없습니다.'}
+        </Message>
+      );
+    }
+
+    if (activeTab === 'writable') {
+      return items.map((item) => (
+        <WritableItem key={item.orderItemId}>
+          <ItemImage src={item.imageUrl} alt={item.itemName} loading="lazy" />
+          <ItemInfo>
+            <ItemName>{item.itemName}</ItemName>
+          </ItemInfo>
+          <Actions>
+            <ActionButton
+              onClick={() => handleWriteReview(item.orderId, item.orderItemId)}
+            >
+              리뷰 작성하기
+            </ActionButton>
+          </Actions>
+        </WritableItem>
+      ));
+    }
+
+    if (activeTab === 'written') {
+      return items.map((review) => (
+        <WrittenItem key={review.reviewId}>
+          <ItemHeader>
+            {review.imageUrl && (
+              <ReviewImage src={review.imageUrl} alt="" loading="lazy" />
+            )}
             <ItemInfo>
-              <ItemName>{item.itemName}</ItemName>
-            </ItemInfo>
-            <Actions>
-              <ActionButton
-                onClick={() => onWrite(item.orderId, item.orderItemId)}
-              >
-                리뷰 작성하기
-              </ActionButton>
-            </Actions>
-          </WritableItem>
-        ))}
-      </ReviewList>
-    );
-  };
-
-  /**
-   * 작성한 리뷰 목록
-   */
-  const WrittenSection = ({ loading, reviews }) => {
-    if (loading) return <Message>리뷰 목록을 불러오는 중입니다...</Message>;
-    if (!reviews || reviews.length === 0)
-      return <Message>작성한 리뷰가 없습니다.</Message>;
-
-    return (
-      <ReviewList>
-        {reviews.map((review) => (
-          <WrittenItem key={review.reviewId}>
-            <ItemHeader>
-              <ReviewImage
-                src={review.imageUrl}
-                alt={review.itemName}
-                loading="lazy"
-              />
               <ItemName>{review.itemName}</ItemName>
-            </ItemHeader>
-            <ReviewContent>
-              <StarRating value={review.rating} />
-              <ReviewDate>
-                {new Date(review.createdDate).toLocaleDateString()}
-              </ReviewDate>
-              {review.content.split('\n').map((line, index) => (
-                <p key={index}>{line}</p>
-              ))}
-            </ReviewContent>
-          </WrittenItem>
-        ))}
-      </ReviewList>
-    );
+              <StarRating value={review.rating} readOnly={true} />
+            </ItemInfo>
+          </ItemHeader>
+          <ReviewContent>
+            <ReviewDate>
+              {new Date(review.createdDate).toLocaleDateString()}
+            </ReviewDate>
+            {(review.content || '').split('\n').map((line, index) => (
+              <p key={index}>{line}</p>
+            ))}
+          </ReviewContent>
+        </WrittenItem>
+      ));
+    }
+    return null;
   };
 
   return (
     <Container>
       <Title>리뷰</Title>
-
       <TabContainer role="tablist" aria-label="리뷰 탭">
         <TabButton
           role="tab"
@@ -115,7 +169,7 @@ const MyReviewList = () => {
           active={activeTab === 'writable'}
           onClick={() => setActiveTab('writable')}
         >
-          리뷰 작성 <Count>{writableItems.length}</Count>
+          리뷰 작성 <Count>{counts.writable}</Count>
         </TabButton>
         <TabButton
           role="tab"
@@ -123,20 +177,17 @@ const MyReviewList = () => {
           active={activeTab === 'written'}
           onClick={() => setActiveTab('written')}
         >
-          작성한 리뷰 <Count>{writtenReviews.length}</Count>
+          작성한 리뷰 <Count>{counts.written}</Count>
         </TabButton>
       </TabContainer>
 
       <Content>
-        {activeTab === 'writable' ? (
-          <WritableSection
-            loading={loading}
-            items={writableItems}
-            onWrite={handleWriteReview}
-          />
-        ) : (
-          <WrittenSection loading={loading} reviews={writtenReviews} />
+        <ReviewList>{renderContent()}</ReviewList>
+
+        {loading && !initialLoading && (
+          <Message>더 많은 리뷰를 불러오는 중...</Message>
         )}
+        {hasMore && !loading && <Sentinel ref={sentinelRef} />}
       </Content>
     </Container>
   );
@@ -195,6 +246,7 @@ const ReviewList = styled.ul`
   list-style: none;
   padding: 0;
   margin: 0;
+  min-height: 300px;
 `;
 
 const ListItemBase = styled.li`
@@ -223,14 +275,13 @@ const ItemInfo = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: center;
 `;
 
 const ItemName = styled.h3`
-  flex: 1;
-  text-align: left;
   font-size: 15px;
   font-weight: 500;
-  margin: 0 0 8px 0;
+  margin: 0;
   color: #333;
   line-height: 1.4;
 `;
@@ -259,9 +310,9 @@ const WrittenItem = styled(ListItemBase)``;
 
 const ItemHeader = styled.div`
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
   margin-bottom: 15px;
+  align-items: center;
 `;
 
 const ReviewImage = styled.img`
@@ -269,7 +320,6 @@ const ReviewImage = styled.img`
   height: 80px;
   object-fit: cover;
   border-radius: 6px;
-  margin-right: 12px;
   border: 1px solid #eee;
 `;
 
@@ -277,6 +327,8 @@ const ReviewContent = styled.div`
   font-size: 14px;
   color: #555;
   line-height: 1.6;
+  padding-left: 96px; /* 이미지 너비 + 간격 만큼 들여쓰기 */
+
   p {
     margin: 8px 0;
   }
@@ -285,12 +337,18 @@ const ReviewContent = styled.div`
 const ReviewDate = styled.p`
   font-size: 13px;
   color: #999;
-  margin: 0 0 10px 0 !important;
+  margin: 10px 0 !important;
 `;
 
 const Message = styled.div`
-  text-align: center;
-  padding: 50px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
   color: #888;
   font-size: 16px;
+`;
+
+const Sentinel = styled.div`
+  height: 1px;
 `;
