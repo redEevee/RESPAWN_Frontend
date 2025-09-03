@@ -136,7 +136,7 @@ const Header = () => {
           {role === 'ROLE_SELLER' && (
             <TopTextLink to="/sellerCenter">판매자센터</TopTextLink>
           )}
-          <TopTextLink>고객센터</TopTextLink>
+          <TopTextLink to="/customerCenter">고객센터</TopTextLink>
         </TopMenu>
       </TopBar>
 

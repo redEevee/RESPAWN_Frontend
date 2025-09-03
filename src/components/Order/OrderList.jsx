@@ -107,8 +107,6 @@ const PaymentComponent = ({ orderInfo, onPaymentComplete, onClose }) => {
                   orderId,
                   selectedAddressId,
                   selectedCartItemIds,
-                  // selectedCouponId: orderInfo.selectedCoupon?.id || null,
-                  // couponDiscount: orderInfo.couponDiscount || 0,
                 }),
               });
 
@@ -190,11 +188,13 @@ const OrderList = () => {
 
   const [availablePoints, setAvailablePoints] = useState(''); // 보유/가용 포인트
   const [usedPointInput, setUsedPointInput] = useState(''); // 입력창 바인딩
+  const [appliedUsedPoint, setAppliedUsedPoint] = useState(0);
   const [usedPoint, setUsedPoint] = useState(0); // 계산에 쓰는 값
 
   const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
-  const [selectedCoupon, setSelectedCoupon] = useState(null); // { id, name, discountAmount } 형태 가정
+  const [couponCode, setCouponCode] = useState(null); // { id, name, discountAmount } 형태 가정
   const [couponDiscount, setCouponDiscount] = useState(0);
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   // PaymentComponent 실행을 위한 상태
   const [showPaymentComponent, setShowPaymentComponent] = useState(false);
@@ -213,8 +213,8 @@ const OrderList = () => {
     0,
     (orderData?.itemTotalAmount || 0) +
       (orderData?.totalDeliveryFee || 0) -
-      usedPoint
-    // - couponDiscount
+      usedPoint -
+      couponDiscount
   );
 
   // 배송지 타입 변경 시
@@ -283,16 +283,17 @@ const OrderList = () => {
   };
 
   // PaymentComponent에서 결제 완료 시 호출될 함수
-  const handlePaymentComplete = (paymentResult) => {
+  const handlePaymentComplete = () => {
     setShowPaymentComponent(false);
 
     // 결제 완료 후 주문 완료 처리
     axios
       .post(`/api/orders/${orderId}/complete`, {
         addressId: selectedAddressId,
-        paymentInfo: paymentResult,
+        couponCode,
       })
       .then((res) => {
+        console.log('couponCode', couponCode);
         alert(res.data.message || '주문이 완료되었습니다!');
         navigate(`/order/${orderId}/complete`);
       })
@@ -334,18 +335,10 @@ const OrderList = () => {
   const getPayableMaxPoint = () => {
     const orderAmount = orderData?.itemTotalAmount || 0; // 상품합계
     const deliveryFee = orderData?.totalDeliveryFee || 0;
-    const coupon = 0; // 현재 -0원 고정
-    const total = orderAmount + deliveryFee - coupon;
-    return Math.max(0, total);
+    const totalBeforeDiscount = orderAmount + deliveryFee;
+    const totalAfterCoupon = Math.max(0, totalBeforeDiscount - couponDiscount);
+    return totalAfterCoupon; // 쿠폰 적용 후 금액을 상한으로
   };
-
-  //  const getPayableMaxPoint = () => {
-  //    const orderAmount = orderData?.itemTotalAmount || 0; // 상품합계
-  //    const deliveryFee = orderData?.totalDeliveryFee || 0;
-  //    const totalBeforeDiscount = orderAmount + deliveryFee;
-  //    const totalAfterCoupon = Math.max(0, totalBeforeDiscount - couponDiscount);
-  //    return totalAfterCoupon; // 쿠폰 적용 후 금액을 상한으로
-  //  };
 
   const clampUsedPoint = (val) => {
     const raw = toNumber(val);
@@ -375,35 +368,26 @@ const OrderList = () => {
     setUsedPointInput(clamped === 0 ? '' : String(clamped)); // 입력창도 정규화
   };
 
+  // blur 시 표시 정규화
   const handlePointBlur = () => {
-    // 이전에는 applyClampUsedPoint로 usedPoint까지 변경했음
-    // 이제는 입력값만 보정(표시 정규화)하고 usedPoint는 유지
-    const rawNum = Number(usedPointInput || 0);
-    const unitAdjusted = Math.floor(rawNum / POINT_UNIT) * POINT_UNIT;
-    const maxByBalance = availablePoints;
-    const maxByPayable = getPayableMaxPoint();
-    const clamped = Math.max(
-      0,
-      Math.min(unitAdjusted, maxByBalance, maxByPayable)
-    );
+    const clamped = clampUsedPoint(usedPointInput);
     setUsedPointInput(clamped === 0 ? '' : String(clamped));
   };
 
+  // 모두사용: clamp 재사용
   const handleUseMaxPoint = () => {
-    const max = getPayableMaxPoint();
-    // 입력창만 채우고, 적용은 사용자가 별도 '적용' 버튼을 눌러 진행
-    const clampedByMax = Math.floor(max / POINT_UNIT) * POINT_UNIT;
-    const finalCandidate = Math.max(0, Math.min(clampedByMax, availablePoints));
-    setUsedPointInput(finalCandidate === 0 ? '' : String(finalCandidate));
+    const maxCandidate = clampUsedPoint(getPayableMaxPoint());
+    setUsedPointInput(maxCandidate === 0 ? '' : String(maxCandidate));
   };
 
-  const handleApplyPoint = async () => {
+  const handleApplyPoint = async (overrideValue) => {
     if (!orderData) {
       alert('주문정보를 불러오는 중입니다.');
       return;
     }
 
-    const clampedClient = clampUsedPoint(usedPointInput);
+    const candidate = overrideValue != null ? overrideValue : usedPointInput;
+    const clampedClient = clampUsedPoint(candidate);
 
     try {
       const formData = new URLSearchParams();
@@ -420,6 +404,7 @@ const OrderList = () => {
       });
 
       setUsedPoint(clampedClient);
+      setAppliedUsedPoint(clampedClient);
       setUsedPointInput(clampedClient > 0 ? String(clampedClient) : '');
     } catch (e) {
       console.error(e);
@@ -430,6 +415,27 @@ const OrderList = () => {
       alert(msg);
     }
   };
+
+  const handleCancelCoupon = async () => {
+    try {
+      setCancelLoading(true);
+      // 1) 서버 호출: 필요 시 method/바디 수정
+      await axios.post(`/api/coupons/cancel?orderId=${orderData.orderId}`);
+
+      // 2) 성공 시 기존 로직 실행
+      setCouponCode(null);
+      setCouponDiscount(0);
+      const clamped = clampUsedPoint(usedPoint);
+      setUsedPoint(clamped);
+      setUsedPointInput(clamped === 0 ? '' : String(clamped));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
+  const isDirty = clampUsedPoint(usedPointInput) !== (appliedUsedPoint || 0);
 
   useEffect(() => {
     const isRefresh = () => {
@@ -719,7 +725,7 @@ const OrderList = () => {
           <Summary>
             <h3>최종 결제 정보</h3>
             <PriceRow>
-              <span>주문금액</span>
+              <span>상품금액</span>
               <span>{orderData?.itemTotalAmount.toLocaleString()}원</span>
             </PriceRow>
             <PointsBox>
@@ -746,7 +752,11 @@ const OrderList = () => {
               <PointsControl>
                 <input
                   type="text"
-                  value={usedPointInput.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} // 보기만 콤마 포맷
+                  value={
+                    usedPointInput
+                      ? Number(usedPointInput).toLocaleString()
+                      : ''
+                  }
                   onChange={handlePointChange}
                   onBlur={handlePointBlur}
                   placeholder="사용할 적립금 입력"
@@ -755,17 +765,21 @@ const OrderList = () => {
                 />
                 <button
                   type="button"
+                  onClick={
+                    isDirty || appliedUsedPoint === 0
+                      ? () => handleApplyPoint()
+                      : () => handleApplyPoint(0)
+                  }
+                  disabled={!orderData}
+                >
+                  {isDirty || appliedUsedPoint === 0 ? '적용' : '취소'}
+                </button>
+                <button
+                  type="button"
                   onClick={handleUseMaxPoint}
                   disabled={!orderData}
                 >
                   모두사용
-                </button>
-                <button
-                  type="button"
-                  onClick={handleApplyPoint}
-                  disabled={!orderData}
-                >
-                  적용
                 </button>
               </PointsControl>
 
@@ -782,7 +796,7 @@ const OrderList = () => {
             <PriceRow>
               <span>쿠폰할인</span>
               <span>
-                {selectedCoupon ? (
+                {couponCode ? (
                   <span
                     style={{
                       display: 'inline-flex',
@@ -796,13 +810,7 @@ const OrderList = () => {
                     <button
                       type="button"
                       onClick={() => {
-                        // 쿠폰 취소
-                        setSelectedCoupon(null);
-                        setCouponDiscount(0);
-                        // 쿠폰 취소 시, 포인트 상한 재적용 (넘치지 않도록)
-                        // const clamped = clampUsedPoint(usedPoint);
-                        // setUsedPoint(clamped);
-                        // setUsedPointInput(clamped === 0 ? '' : String(clamped));
+                        handleCancelCoupon();
                       }}
                       style={{
                         padding: '6px 10px',
@@ -813,7 +821,7 @@ const OrderList = () => {
                         cursor: 'pointer',
                       }}
                     >
-                      취소
+                      {cancelLoading ? '취소 중...' : '취소'}
                     </button>
                   </span>
                 ) : (
@@ -853,22 +861,18 @@ const OrderList = () => {
       {isCouponModalOpen && orderData && (
         <CouponModal
           onClose={() => setIsCouponModalOpen(false)}
-          orderSummary={
-            {
-              // itemTotalAmount: orderData?.itemTotalAmount || 0,
-              // totalDeliveryFee: orderData?.totalDeliveryFee || 0,
-              // usedPoint, // 필요 시 참고
-            }
-          }
+          orderSummary={{
+            orderId: orderData.orderId,
+          }}
           onApply={({ coupon, discountAmount }) => {
-            setSelectedCoupon(coupon);
+            setCouponCode(coupon);
             setCouponDiscount(discountAmount);
             setIsCouponModalOpen(false);
 
             // 쿠폰 적용 후 포인트가 초과되지 않도록 재클램프
-            // const clamped = clampUsedPoint(usedPoint);
-            // setUsedPoint(clamped);
-            // setUsedPointInput(clamped === 0 ? '' : String(clamped));
+            const clamped = clampUsedPoint(usedPoint);
+            setUsedPoint(clamped);
+            setUsedPointInput(clamped === 0 ? '' : String(clamped));
           }}
         />
       )}
@@ -884,8 +888,6 @@ const OrderList = () => {
             selectedPayment,
             selectedAddressId,
             selectedCartItemIds,
-            // selectedCoupon,
-            // couponDiscount,
           }}
           onPaymentComplete={handlePaymentComplete}
           onClose={handlePaymentClose}

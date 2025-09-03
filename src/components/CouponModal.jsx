@@ -2,36 +2,18 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import axios from '../api/axios';
 
-const CouponModal = ({ onClose, onApply /*, orderSummary*/ }) => {
+const CouponModal = ({ onClose, onApply, orderSummary }) => {
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isChecking, setIsChecking] = useState(false);
 
   useEffect(() => {
     let cancel = false;
     (async () => {
       try {
-        // TODO: 서버 연동 시
-        // const res = await axios.get('/api/coupons/available');
-        // if (!ignore) setCoupons(Array.isArray(res.data) ? res.data : []);
-
-        // 임시 더미 데이터
-        const dummy = [
-          {
-            id: 1,
-            name: '신규가입 3,000원 할인',
-            discountAmount: 3000,
-            minimum: 10000,
-            expireDate: '2025-08-22',
-          },
-          {
-            id: 2,
-            name: '신규가입 5,000원 할인',
-            discountAmount: 5000,
-            minimum: 15000,
-            expireDate: '2025-08-25',
-          },
-        ];
-        if (!cancel) setCoupons(dummy);
+        const res = await axios.get('/api/coupons/view');
+        console.log(res.data);
+        if (!cancel) setCoupons(Array.isArray(res.data) ? res.data : []);
       } catch (e) {
         console.error(e);
         if (!cancel) setCoupons([]);
@@ -44,11 +26,42 @@ const CouponModal = ({ onClose, onApply /*, orderSummary*/ }) => {
     };
   }, []);
 
-  const handleApply = (coupon) => {
-    onApply({
-      coupon,
-      discountAmount: coupon.discountAmount,
-    });
+  const handleApply = async (coupon) => {
+    // API 호출 중이면 중복 실행 방지
+    if (isChecking) return;
+
+    // orderId가 없으면 실행 중단 (오류 방지)
+    if (!orderSummary?.orderId) {
+      alert('주문 정보가 없어 쿠폰을 확인할 수 없습니다.');
+      return;
+    }
+
+    setIsChecking(true); // 확인 시작
+
+    try {
+      // 백엔드의 /check API 호출
+      const res = await axios.get('/api/coupons/check', {
+        params: {
+          orderId: orderSummary.orderId,
+          code: coupon.code,
+        },
+      });
+      console.log(res.data);
+
+      if (res.data.usable) {
+        onApply({
+          coupon: coupon.code,
+          discountAmount: coupon.couponAmount,
+        });
+      } else {
+        alert(res.data.reason || '쿠폰을 적용할 수 없습니다.');
+      }
+    } catch (e) {
+      console.error('쿠폰 적용 확인 중 오류 발생:', e);
+      alert('오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setIsChecking(false); // 확인 종료
+    }
   };
 
   return (
@@ -66,9 +79,9 @@ const CouponModal = ({ onClose, onApply /*, orderSummary*/ }) => {
                 <CouponInfo>
                   <CouponName>{c.name}</CouponName>
                   <CouponCondition>
-                    {c.minimum.toLocaleString()}원 이상 구매 시 사용 가능
+                    {c.couponAmount.toLocaleString()}원
                   </CouponCondition>
-                  <CouponExpire>{c.expireDate} 까지 사용 가능</CouponExpire>
+                  <CouponExpire>{c.expiresAt} 까지 사용 가능</CouponExpire>
                 </CouponInfo>
                 <SmallBtn onClick={() => handleApply(c)}>적용하기</SmallBtn>
               </Row>
