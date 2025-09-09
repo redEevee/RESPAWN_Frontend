@@ -81,7 +81,6 @@ const OrderHistory = () => {
           <OrderCard key={order.orderId} order={order} />
         ))
       )}
-      {/* 페이지네이션 */}
       {totalPages > 1 && (
         <Pagination
           currentPage={currentPage}

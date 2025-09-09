@@ -63,7 +63,7 @@ const OrderItemCard = ({ item, orderId, orderStatus }) => {
   };
 
   return (
-    <ItemBox>
+    <ItemContainer>
       <ImageWrapper onClick={openProductPage}>
         <img src={item.imageUrl} alt={item.itemName} />
       </ImageWrapper>
@@ -83,13 +83,13 @@ const OrderItemCard = ({ item, orderId, orderStatus }) => {
           )}
         </ButtonsRow>
       </ButtonGroup>
-    </ItemBox>
+    </ItemContainer>
   );
 };
 
 export default OrderItemCard;
 
-const ItemBox = styled.div`
+const ItemContainer = styled.div`
   display: flex;
   gap: 16px;
   padding: 16px;
