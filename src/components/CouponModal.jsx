@@ -47,15 +47,15 @@ const CouponModal = ({ onClose, onApply, orderSummary }) => {
       const res = await axios.get('/api/coupons/check', {
         params: {
           orderId: orderSummary.orderId,
-          code: coupon.code,
+          code: coupon.coupon.code,
         },
       });
       console.log(res.data);
 
       if (res.data.usable) {
         onApply({
-          coupon: coupon.code,
-          discountAmount: coupon.couponAmount,
+          coupon: coupon.coupon.code,
+          discountAmount: coupon.coupon.couponAmount,
         });
       } else {
         alert(res.data.reason || '쿠폰을 적용할 수 없습니다.');
