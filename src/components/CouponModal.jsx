@@ -11,7 +11,11 @@ const CouponModal = ({ onClose, onApply, orderSummary }) => {
     let cancel = false;
     (async () => {
       try {
-        const res = await axios.get('/api/coupons/view');
+        const res = await axios.get('/api/coupons/view', {
+          params: {
+            orderId: orderSummary.orderId,
+          },
+        });
         console.log(res.data);
         if (!cancel) setCoupons(Array.isArray(res.data) ? res.data : []);
       } catch (e) {
@@ -77,11 +81,13 @@ const CouponModal = ({ onClose, onApply, orderSummary }) => {
             coupons.map((c) => (
               <Row key={c.id}>
                 <CouponInfo>
-                  <CouponName>{c.name}</CouponName>
+                  <CouponName>{c.coupon.name}</CouponName>
                   <CouponCondition>
-                    {c.couponAmount.toLocaleString()}원
+                    {c.coupon.couponAmount.toLocaleString()}원
                   </CouponCondition>
-                  <CouponExpire>{c.expiresAt} 까지 사용 가능</CouponExpire>
+                  <CouponExpire>
+                    {c.coupon.expiresAt} 까지 사용 가능
+                  </CouponExpire>
                 </CouponInfo>
                 <SmallBtn onClick={() => handleApply(c)}>적용하기</SmallBtn>
               </Row>
