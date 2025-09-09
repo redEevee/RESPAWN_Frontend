@@ -9,89 +9,27 @@ const Coupon = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let cancel = false;
-    // const controller = new AbortController();
+    const controller = new AbortController();
     (async () => {
       try {
-        // TODO: 실제 서버 연동 시
+        const res = await axios.get('/api/coupons/view', {
+          signal: controller.signal,
+        });
+        console.log(res.data);
 
-        // const res = await axios.get('/api/coupons/my', {
-        //   signal: controller.signal,
-        // });
-        // setAvailableCoupons(res.data.available ?? []);
+        setAvailableCoupons(res.data ?? []);
         // setExpiredCoupons(res.data.expired ?? []);
-
-        // 더미 데이터
-        const dummy = {
-          available: [
-            {
-              id: 1,
-              name: '신규가입 3,000원 할인',
-              amount: 3000,
-              minimum: 10000,
-              expireDate: '2025-08-30',
-            },
-            {
-              id: 2,
-              name: '여름 맞이 5,000원 할인',
-              amount: 5000,
-              minimum: 20000,
-              expireDate: '2025-09-01',
-            },
-            {
-              id: 5,
-              name: '봄맞이 2,000원 할인',
-              amount: 2000,
-              minimum: 15000,
-              expireDate: '2025-07-01',
-            },
-            {
-              id: 6,
-              name: '봄맞이 2,000원 할인',
-              amount: 2000,
-              minimum: 15000,
-              expireDate: '2025-07-01',
-            },
-          ],
-          expired: [
-            {
-              id: 3,
-              name: '봄맞이 2,000원 할인',
-              amount: 2000,
-              minimum: 15000,
-              expireDate: '2025-07-01',
-            },
-            {
-              id: 4,
-              name: '봄맞이 2,000원 할인',
-              amount: 2000,
-              minimum: 15000,
-              expireDate: '2025-07-01',
-            },
-          ],
-        };
-
-        if (!cancel) {
-          setAvailableCoupons(dummy.available);
-          setExpiredCoupons(dummy.expired);
-        }
       } catch (e) {
-        // if (e.name !== 'CanceledError') {
-        //   console.error(e);
-        // }
-        console.error(e);
-        if (!cancel) {
+        if (e?.name !== 'CanceledError') {
+          console.error(e);
           setAvailableCoupons([]);
           setExpiredCoupons([]);
         }
       } finally {
-        if (!cancel) setLoading(false);
+        setLoading(false);
       }
     })();
-    return () => {
-      cancel = true;
-    };
-    // return () => controller.abort();
+    return () => controller.abort();
   }, []);
 
   const formatDate = (dateStr) => {
@@ -132,14 +70,14 @@ const Coupon = () => {
           active={activeTab === 'available'}
           onClick={() => setActiveTab('available')}
         >
-          이용 가능 <Count>({availableCoupons.length})</Count>
+          이용 가능 <Count>{availableCoupons.length}</Count>
         </TabButton>
         <TabButton
           type="button"
           active={activeTab === 'expired'}
           onClick={() => setActiveTab('expired')}
         >
-          만료됨 <Count>({expiredCoupons.length})</Count>
+          만료됨 <Count>{expiredCoupons.length}</Count>
         </TabButton>
       </TabContainer>
 
@@ -152,14 +90,14 @@ const Coupon = () => {
           {currentList.map((c) => (
             <CouponCard key={c.id} aria-disabled={activeTab === 'expired'}>
               <CouponName>{c.name}</CouponName>
-              <CouponDiscount>{renderAmount(c.amount)}</CouponDiscount>
+              <CouponDiscount>{renderAmount(c.couponAmount)}</CouponDiscount>
               <CouponCondition>{renderMinimum(c.minimum)}</CouponCondition>
               {activeTab === 'available' ? (
                 <CouponExpire>
-                  {formatDate(c.expireDate)} 까지 사용 가능
+                  {formatDate(c.expiresAt)} 까지 사용 가능
                 </CouponExpire>
               ) : (
-                <CouponExpire>만료일: {formatDate(c.expireDate)}</CouponExpire>
+                <CouponExpire>만료일: {formatDate(c.expiresAt)}</CouponExpire>
               )}
             </CouponCard>
           ))}
