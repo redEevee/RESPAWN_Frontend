@@ -5,7 +5,7 @@ import categoryIcon from '../../assets/category_icon.png';
 import closeIcon from '../../assets/close_icon.png';
 import Search from './Search';
 import axios from '../../api/axios';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, createSearchParams } from 'react-router-dom';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -84,6 +84,13 @@ const Header = () => {
   const userData = JSON.parse(sessionStorage.getItem('userData'));
   const authorities = userData?.authorities;
   const role = userData?.role;
+
+  const goToCategory = (name) => {
+    navigate({
+      pathname: '/productlist',
+      search: `?${createSearchParams({ category: name }).toString()}`,
+    });
+  };
 
   const handleLogout = async () => {
     try {
@@ -173,6 +180,7 @@ const Header = () => {
                     <CategoryItem
                       key={idx}
                       onMouseEnter={() => setActiveGroup(idx)}
+                      onClick={() => goToCategory(categoryGroups[idx].title)}
                       isActive={activeGroup === idx}
                       role="menuitem"
                       tabIndex={0}
@@ -186,7 +194,12 @@ const Header = () => {
                   <SubTitle>{categoryGroups[activeGroup].title}</SubTitle>
                   <ul>
                     {categoryGroups[activeGroup].items.map((item, i) => (
-                      <li key={i} role="menuitem" tabIndex={0}>
+                      <li
+                        key={i}
+                        role="menuitem"
+                        tabIndex={0}
+                        onClick={() => goToCategory(item)}
+                      >
                         {item}
                       </li>
                     ))}

@@ -85,7 +85,7 @@ const ReviewList = ({ itemId }) => {
           {currentReviews.map((review) => (
             <ReviewCard key={review.reviewId}>
               <Header>
-                <Reviewer>{review.buyerId}</Reviewer>
+                <Reviewer>{review.maskedUsername}</Reviewer>
                 <DateText>
                   {new Date(review.createdDate).toLocaleDateString()}
                 </DateText>

@@ -180,8 +180,6 @@ function OrderComplete() {
 
 export default OrderComplete;
 
-// Styled Components
-
 const Root = styled.div`
   min-height: 100vh;
   padding: 60px 20px;

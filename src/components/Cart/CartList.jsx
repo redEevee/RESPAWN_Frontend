@@ -165,7 +165,6 @@ const CartList = () => {
         </StepProgressWrapper>
         <Title>장바구니</Title>
         <EmptyCartMessage>장바구니에 담긴 상품이 없습니다.</EmptyCartMessage>
-        {/* 필요하다면 '쇼핑 계속하기' 버튼 등을 추가할 수 있습니다. */}
       </Container>
     );
   }

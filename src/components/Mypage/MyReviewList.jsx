@@ -13,11 +13,10 @@ const MyReviewList = () => {
   const [counts, setCounts] = useState({ writable: 0, written: 0 });
 
   // 무한 스크롤 상태
-  const [offset, setOffset] = useState(0);
+  const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [countsLoaded, setCountsLoaded] = useState(false); // 카운트 로드 여부 추적
 
   // Intersection Observer를 위한 Ref
   const sentinelRef = useRef(null);
@@ -28,39 +27,58 @@ const MyReviewList = () => {
     navigate(`/mypage/orders/${orderId}/items/${orderItemId}/registerReview`);
   };
 
+  const fetchCounts = async () => {
+    try {
+      const response = await axios.get(`/api/reviews/count`);
+      setCounts({
+        writable: response.data.writableCount || 0,
+        written: response.data.writtenCount || 0,
+      });
+    } catch (error) {
+      console.error('리뷰 개수를 불러오는데 실패했습니다.', error);
+    }
+  };
+
   // 서버에서 내 리뷰 목록 불러오기
   // 특정 탭의 데이터 불러오기 (무한 스크롤용)
   const fetchMyReviews = useCallback(
     async (isInitialLoad = false) => {
       if (inFlightRef.current) return;
+      if (!hasMore && !isInitialLoad) return;
       inFlightRef.current = true;
       setLoading(true);
 
-      const currentOffset = isInitialLoad ? 0 : offset;
+      const currentPage = isInitialLoad ? 0 : page;
 
       try {
         const params = {
-          offset: currentOffset,
-          limit: PAGE_SIZE,
+          page: currentPage,
+          size: PAGE_SIZE,
         };
-        const response = await axios.get(`/api/reviews/count`);
         const res = await axios.get(`/api/reviews/${activeTab}`, { params });
-        console.log(response.data);
         console.log(res.data);
 
-        // ✅ API 응답 구조에 맞춰 'items' 키를 사용합니다.
         const newItems = res.data.content || [];
+        const pageMeta = res.data.page || {};
+        const number =
+          typeof pageMeta.number === 'number' ? pageMeta.number : currentPage;
+        const totalPages =
+          typeof pageMeta.totalPages === 'number' ? pageMeta.totalPages : 0;
 
         setItems((prevItems) =>
           isInitialLoad ? newItems : [...prevItems, ...newItems]
         );
-        setOffset(currentOffset + newItems.length);
-        setHasMore(newItems.length === PAGE_SIZE);
+        let more;
+        if (totalPages > 0) {
+          more = number + 1 < totalPages;
+        } else {
+          // totalPages 정보가 없을 때의 보루 로직
+          more = newItems.length === PAGE_SIZE;
+        }
+        setHasMore(more);
 
-        setCounts({
-          writable: response.data.writableCount || 0,
-          written: response.data.writtenCount || 0,
-        });
+        // 페이지는 항상 +1
+        setPage(isInitialLoad ? 1 : currentPage + 1);
       } catch (error) {
         console.error(error);
         alert('리뷰 목록을 불러오는데 실패했습니다.');
@@ -71,15 +89,16 @@ const MyReviewList = () => {
         inFlightRef.current = false;
       }
     },
-    [activeTab, offset, countsLoaded]
+    [activeTab, page, hasMore]
   );
 
   // 탭 변경 시 상태 초기화 및 데이터 다시 불러오기
   useEffect(() => {
     setItems([]);
-    setOffset(0);
+    setPage(0);
     setHasMore(true);
     setInitialLoading(true);
+    fetchCounts();
     fetchMyReviews(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
