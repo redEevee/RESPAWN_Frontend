@@ -3,16 +3,13 @@ import styled from 'styled-components';
 
 const generatePageNumbers = (currentPage, totalPages) => {
   if (totalPages <= 7) {
-    // 전체 페이지가 7개 이하이면 모든 페이지 번호를 보여줌
     return Array.from({ length: totalPages }, (_, i) => i + 1);
   }
 
-  // 현재 페이지가 시작 부분에 가까울 때 (예: 1, 2, 3, 4)
   if (currentPage <= 4) {
     return [1, 2, 3, 4, 5, '...', totalPages];
   }
 
-  // 현재 페이지가 끝 부분에 가까울 때
   if (currentPage >= totalPages - 3) {
     return [
       1,
@@ -25,7 +22,6 @@ const generatePageNumbers = (currentPage, totalPages) => {
     ];
   }
 
-  // 현재 페이지가 중간에 있을 때
   return [
     1,
     '...',
@@ -60,7 +56,6 @@ function Pagination({
       </PageButton>
       {pages.map((page, index) =>
         typeof page === 'string' ? (
-          // '...'는 버튼이 아닌 텍스트로 표시
           <Ellipsis key={`ellipsis-${index}`}>...</Ellipsis>
         ) : (
           <PageNumber

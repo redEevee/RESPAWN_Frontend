@@ -16,12 +16,12 @@ const Members = () => {
     isLast: true,
   });
 
-  const currentPage1 = pageInfo.page + 1; // 1-based
-  const totalPages1 = pageInfo.totalPages; // 이미 1-based 개념
+  const currentPage = pageInfo.page + 1;
+  const totalPages = pageInfo.totalPages;
   const handlePageChange = (page1) => {
     // 안전 가드
-    if (page1 < 1 || page1 > totalPages1) return;
-    setPageInfo((p) => ({ ...p, page: page1 - 1 })); // 0-based로 저장
+    if (page1 < 1 || page1 > currentPage) return;
+    setPageInfo((p) => ({ ...p, page: page1 - 1 }));
   };
 
   // 입력 폼 상태
@@ -395,8 +395,8 @@ const Members = () => {
 
       <PaginationBar>
         <Pagination
-          currentPage={currentPage1}
-          totalPages={totalPages1}
+          currentPage={currentPage}
+          totalPages={totalPages}
           onPageChange={handlePageChange}
           isFirst={pageInfo.isFirst}
           isLast={pageInfo.isLast}
