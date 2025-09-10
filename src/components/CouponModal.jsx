@@ -3,32 +3,47 @@ import styled from 'styled-components';
 import axios from '../api/axios';
 
 const CouponModal = ({ onClose, onApply, orderSummary }) => {
-  const [coupons, setCoupons] = useState([]);
+  const [usableCoupons, setUsableCoupons] = useState([]);
+  const [unusableCoupons, setUnusableCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isChecking, setIsChecking] = useState(false);
 
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr);
+    return `${date.getFullYear()}년 ${
+      date.getMonth() + 1
+    }월 ${date.getDate()}일`;
+  };
+
   useEffect(() => {
-    let cancel = false;
+    const controller = new AbortController();
     (async () => {
       try {
-        const res = await axios.get('/api/coupons/view', {
+        const { data } = await axios.get('/api/coupons/view', {
           params: {
             orderId: orderSummary.orderId,
           },
+          signal: controller.signal,
         });
-        console.log(res.data);
-        if (!cancel) setCoupons(Array.isArray(res.data) ? res.data : []);
+        console.log(data);
+        if (Array.isArray(data)) {
+          // usable: true인 쿠폰만 필터링
+          setUsableCoupons(data.filter((c) => c.usable));
+          // usable: false인 쿠폰만 필터링
+          setUnusableCoupons(data.filter((c) => !c.usable));
+        }
       } catch (e) {
-        console.error(e);
-        if (!cancel) setCoupons([]);
+        if (e.name !== 'CanceledError') {
+          console.error(e);
+        }
       } finally {
-        if (!cancel) setLoading(false);
+        setLoading(false);
       }
     })();
     return () => {
-      cancel = true;
+      controller.abort();
     };
-  }, []);
+  }, [orderSummary.orderId]);
 
   const handleApply = async (coupon) => {
     // API 호출 중이면 중복 실행 방지
@@ -69,29 +84,49 @@ const CouponModal = ({ onClose, onApply, orderSummary }) => {
   };
 
   return (
-    <Backdrop onClick={onClose}>
+    <Backdrop>
       <Modal onClick={(e) => e.stopPropagation()}>
         <Header>쿠폰함</Header>
         <Body>
           {loading ? (
             <div>불러오는 중...</div>
-          ) : coupons.length === 0 ? (
+          ) : usableCoupons.length === 0 && unusableCoupons.length === 0 ? (
             <div>사용 가능한 쿠폰이 없습니다.</div>
           ) : (
-            coupons.map((c) => (
-              <Row key={c.id}>
-                <CouponInfo>
-                  <CouponName>{c.coupon.name}</CouponName>
-                  <CouponCondition>
-                    {c.coupon.couponAmount.toLocaleString()}원
-                  </CouponCondition>
-                  <CouponExpire>
-                    {c.coupon.expiresAt} 까지 사용 가능
-                  </CouponExpire>
-                </CouponInfo>
-                <SmallBtn onClick={() => handleApply(c)}>적용하기</SmallBtn>
-              </Row>
-            ))
+            <>
+              {' '}
+              {usableCoupons.length > 0 && (
+                <SectionTitle>사용 가능한 쿠폰</SectionTitle>
+              )}
+              {usableCoupons.map((c) => (
+                <Row key={c.coupon.id}>
+                  <CouponInfo>
+                    <CouponName>{c.coupon.name}</CouponName>
+                    <CouponCondition>
+                      {c.coupon.couponAmount.toLocaleString()}원
+                    </CouponCondition>
+                    <CouponExpire>
+                      {formatDate(c.coupon.expiresAt)} 까지 사용 가능
+                    </CouponExpire>
+                  </CouponInfo>
+                  <SmallBtn onClick={() => handleApply(c)}>적용하기</SmallBtn>
+                </Row>
+              ))}
+              {unusableCoupons.length > 0 && (
+                <SectionTitle>사용 불가능한 쿠폰</SectionTitle>
+              )}
+              {unusableCoupons.map((c) => (
+                <Row key={c.coupon.id} disabled>
+                  <CouponInfo>
+                    <CouponName>{c.coupon.name}</CouponName>
+                    <Reason>{c.reason}</Reason>
+                    <CouponExpire>
+                      {formatDate(c.coupon.expiresAt)} 까지
+                    </CouponExpire>
+                  </CouponInfo>
+                </Row>
+              ))}
+            </>
           )}
         </Body>
         <Footer>
@@ -132,7 +167,7 @@ const Header = styled.div`
 
 const Body = styled.div`
   padding: 16px 20px;
-  max-height: 60vh;
+  height: 60vh;
   overflow: auto;
 `;
 
@@ -144,12 +179,26 @@ const Footer = styled.div`
   gap: 10px;
 `;
 
+const SectionTitle = styled.h3`
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: 20px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+
+  &:first-child {
+    margin-top: 0;
+  }
+`;
+
 const Row = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 12px 0;
   border-bottom: 1px solid #f5f5f5;
+  opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
 `;
 
 const CouponInfo = styled.div`
@@ -181,4 +230,13 @@ const SmallBtn = styled.button`
   border-radius: 6px;
   background: #fff;
   cursor: pointer;
+  cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
+  background: ${({ disabled }) => (disabled ? '#f0f0f0' : '#fff')};
+`;
+
+// 사용 불가 사유를 표시할 스타일 추가
+const Reason = styled.div`
+  font-size: 13px;
+  color: #e53935; /* 강조되는 색상 */
+  font-weight: 500;
 `;
