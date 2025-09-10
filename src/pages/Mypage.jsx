@@ -3,14 +3,14 @@ import { Routes, Route } from 'react-router-dom';
 import MypageDetail from '../components/Mypage/MypageDetail';
 import Header from '../components/common/Header';
 import Footer from '../components/common/Footer';
-import OrderHistory from '../components/OrderHistory/OrderHistory';
+import OrderHistory from '../components/Mypage/OrderHistory/OrderHistory';
 import UserInfo from '../components/Mypage/UserInfo';
 import MainInfo from '../components/Mypage/MainInfo';
 import MyInquiryList from '../components/Mypage/MyInquiryList';
 import MyReviewList from '../components/Mypage/MyReviewList';
-import RefundPage from '../components/ReturnExchange/RefundPage';
-import ReviewPage from '../components/Review/ReviewPage';
-import RefundDetail from '../components/ReturnExchange/RefundDetail';
+import RefundPage from '../components/Mypage/ReturnExchange/RefundPage';
+import ReviewPage from '../components/Mypage/Review/ReviewPage';
+import RefundDetail from '../components/Mypage/ReturnExchange/RefundDetail';
 import MyPoint from '../components/Mypage/MyPoint';
 import Coupon from '../components/Mypage/Coupon';
 

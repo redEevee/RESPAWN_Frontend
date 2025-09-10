@@ -9,7 +9,7 @@ const StepProgress = ({ currentStep }) => {
   ];
 
   return (
-    <StepsWrapper>
+    <StepsContainer>
       {steps.map((step, index) => (
         <Step key={step.id} active={currentStep === step.id}>
           <StepNumber active={currentStep === step.id}>
@@ -19,13 +19,13 @@ const StepProgress = ({ currentStep }) => {
           {index < steps.length - 1 && <Separator>›</Separator>}
         </Step>
       ))}
-    </StepsWrapper>
+    </StepsContainer>
   );
 };
 
 export default StepProgress;
 
-const StepsWrapper = styled.div`
+const StepsContainer = styled.div`
   display: flex;
   align-items: center;
   font-size: 14px;

@@ -10,18 +10,19 @@ const ReviewList = ({ itemId }) => {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    if (itemId) {
-      axios
-        .get(`api/reviews/items/${itemId}`)
-        .then((response) => {
-          setReviews(response.data);
-          console.log(response.data);
-          setCurrentPage(1);
-        })
-        .catch((error) => {
-          console.error('리뷰 불러오기 실패:', error);
-        });
-    }
+    if (!itemId) return;
+
+    const fetchReviews = async () => {
+      try {
+        const res = await axios.get(`api/reviews/items/${itemId}`);
+        setReviews(res.data || []);
+        setCurrentPage(1);
+      } catch (err) {
+        console.error('리뷰 불러오기 실패:', err);
+      }
+    };
+
+    fetchReviews();
   }, [itemId]);
 
   const getRatingStats = (reviews) => {
@@ -52,7 +53,9 @@ const ReviewList = ({ itemId }) => {
 
   return (
     <Container>
-      <h3>상품평 ({totalReviews})</h3>
+      <Title>
+        상품평 <Count>({totalReviews})</Count>
+      </Title>
       <StatsContainer>
         <AverageBox>
           <AverageScore>⭐ {averageRating}</AverageScore>
@@ -82,7 +85,7 @@ const ReviewList = ({ itemId }) => {
           {currentReviews.map((review) => (
             <ReviewCard key={review.reviewId}>
               <Header>
-                <Reviewer>{review.buyerId}</Reviewer>
+                <Reviewer>{review.maskedUsername}</Reviewer>
                 <DateText>
                   {new Date(review.createdDate).toLocaleDateString()}
                 </DateText>
@@ -109,7 +112,19 @@ const ReviewList = ({ itemId }) => {
 export default ReviewList;
 
 const Container = styled.div`
-  margin-top: 20px;
+  width: 100%;
+  margin: 0 auto;
+`;
+
+const Title = styled.h2`
+  font-size: 24px;
+  font-weight: bold;
+`;
+
+const Count = styled.span`
+  color: #d32f2f;
+  font-size: 24px;
+  margin-left: 4px;
 `;
 
 const NoReview = styled.p`

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from '../../api/axios';
+import axios from '../../../api/axios';
 
 const ReviewPage = () => {
   const navigate = useNavigate();
@@ -10,12 +10,15 @@ const ReviewPage = () => {
 
   useEffect(() => {
     if (!orderId) return;
-    axios
-      .get(`/api/orders/history/${orderId}`)
-      .then((res) => setOrder(res.data))
-      .catch((err) => {
+
+    (async () => {
+      try {
+        const res = await axios.get(`/api/orders/history/${orderId}`);
+        setOrder(res.data);
+      } catch (err) {
         console.error('주문 정보 불러오기 실패:', err);
-      });
+      }
+    })();
   }, [orderId]);
 
   const selectedItem = useMemo(() => {
@@ -95,7 +98,7 @@ const ReviewPage = () => {
   }
 
   return (
-    <PageWrap>
+    <Container>
       <Header>
         <Title>리뷰 작성</Title>
         <Desc>상품에 대한 별점과 후기를 남겨주세요.</Desc>
@@ -160,16 +163,14 @@ const ReviewPage = () => {
           </ButtonGroup>
         </ActionBar>
       </Section>
-    </PageWrap>
+    </Container>
   );
 };
 
 export default ReviewPage;
 
-const PageWrap = styled.div`
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 24px 16px;
+const Container = styled.div`
+  max-width: 1000px;
 `;
 
 const Header = styled.header`
@@ -177,7 +178,7 @@ const Header = styled.header`
 `;
 
 const Title = styled.h1`
-  font-size: 1.25rem;
+  font-size: 24px;
   font-weight: 700;
   margin: 0 0 6px;
   color: #111827;
@@ -186,7 +187,7 @@ const Title = styled.h1`
 const Desc = styled.p`
   margin: 0;
   color: #6b7280;
-  font-size: 0.95rem;
+  font-size: 16px;
 `;
 
 const Section = styled.section`
@@ -198,7 +199,7 @@ const Section = styled.section`
 `;
 
 const SectionTitle = styled.h2`
-  font-size: 1.05rem;
+  font-size: 18px;
   margin: 0 0 12px;
   color: #111827;
 `;
@@ -234,7 +235,7 @@ const ItemInfo = styled.div`
   }
   .meta {
     color: #6b7280;
-    font-size: 0.9rem;
+    font-size: 16px;
   }
 `;
 
@@ -268,7 +269,7 @@ const Star = styled.span`
 `;
 
 const RequiredMark = styled.span`
-  font-size: 0.85rem;
+  font-size: 14px;
   color: red;
   margin-left: 4px;
 `;
@@ -286,7 +287,7 @@ const Textarea = styled.textarea`
 `;
 
 const Hint = styled.div`
-  font-size: 0.85rem;
+  font-size: 14px;
   color: #6b7280;
 `;
 
@@ -306,7 +307,7 @@ const ActionBar = styled.div`
 
 const Note = styled.div`
   color: #6b7280;
-  font-size: 0.9rem;
+  font-size: 14px;
 `;
 
 const ButtonGroup = styled.div`

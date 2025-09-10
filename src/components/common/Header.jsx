@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import Logo from './Logo';
-import userIcon from '../../assets/user_icon.png';
-import cartIcon from '../../assets/cart_icon.png';
 import categoryIcon from '../../assets/category_icon.png';
 import closeIcon from '../../assets/close_icon.png';
 import Search from './Search';
 import axios from '../../api/axios';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, createSearchParams } from 'react-router-dom';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -20,7 +18,7 @@ const Header = () => {
       title: '콘솔 / 컨트롤러',
       items: [
         '게임 컨트롤러',
-        '조이스틱',
+        'umpc',
         '플레이스테이션 액세서리',
         'XBOX 액세서리',
         '닌텐도 스위치',
@@ -40,12 +38,13 @@ const Header = () => {
     {
       title: '게이밍 주변기기',
       items: [
-        '게이밍 마우스',
-        '게이밍 키보드',
-        '게이밍 헤드셋',
+        '마우스',
+        '키보드',
+        '헤드셋',
         '모니터',
-        '웹캠',
+        '스피커',
         '마이크',
+        '레이싱 휠',
       ],
     },
     {
@@ -57,10 +56,6 @@ const Header = () => {
         'RGB 조명',
         '방음 패드',
       ],
-    },
-    {
-      title: '스트리밍 장비',
-      items: ['캡쳐보드', '사운드 카드', '오디오 인터페이스', '프로젝터'],
     },
     {
       title: '악세서리 / 기타',
@@ -87,8 +82,15 @@ const Header = () => {
   ];
 
   const userData = JSON.parse(sessionStorage.getItem('userData'));
-  const name = userData?.name;
-  const role = userData?.authorities;
+  const authorities = userData?.authorities;
+  const role = userData?.role;
+
+  const goToCategory = (name) => {
+    navigate({
+      pathname: '/productlist',
+      search: `?${createSearchParams({ category: name }).toString()}`,
+    });
+  };
 
   const handleLogout = async () => {
     try {
@@ -122,31 +124,26 @@ const Header = () => {
     <HeaderContainer>
       <TopBar>
         <TopMenu>
-          {name ? (
+          {authorities ? (
             <>
-              <UserNameText>{name}님</UserNameText>
               <TopTextButton onClick={handleLogout}>로그아웃</TopTextButton>
             </>
           ) : (
             <TopTextLink to="/login">로그인</TopTextLink>
           )}
 
-          {role === '[ROLE_USER]' && (
-            <Link to="/mypage">
-              <UserIcon src={userIcon} alt="User Icon" />
-            </Link>
+          {role === 'ROLE_USER' && (
+            <TopTextLink to="/mypage">마이페이지</TopTextLink>
           )}
 
-          {role === '[ROLE_USER]' && (
-            <Link to="/cart">
-              <CartIcon src={cartIcon} alt="Cart Icon" />
-            </Link>
+          {role === 'ROLE_USER' && (
+            <TopTextLink to="/cart">장바구니</TopTextLink>
           )}
 
-          {role === '[ROLE_SELLER]' && (
+          {role === 'ROLE_SELLER' && (
             <TopTextLink to="/sellerCenter">판매자센터</TopTextLink>
           )}
-          <TopTextLink>고객센터</TopTextLink>
+          <TopTextLink to="/customerCenter">고객센터</TopTextLink>
         </TopMenu>
       </TopBar>
 
@@ -183,6 +180,7 @@ const Header = () => {
                     <CategoryItem
                       key={idx}
                       onMouseEnter={() => setActiveGroup(idx)}
+                      onClick={() => goToCategory(categoryGroups[idx].title)}
                       isActive={activeGroup === idx}
                       role="menuitem"
                       tabIndex={0}
@@ -196,7 +194,12 @@ const Header = () => {
                   <SubTitle>{categoryGroups[activeGroup].title}</SubTitle>
                   <ul>
                     {categoryGroups[activeGroup].items.map((item, i) => (
-                      <li key={i} role="menuitem" tabIndex={0}>
+                      <li
+                        key={i}
+                        role="menuitem"
+                        tabIndex={0}
+                        onClick={() => goToCategory(item)}
+                      >
                         {item}
                       </li>
                     ))}
@@ -243,11 +246,6 @@ const TopMenu = styled.div`
   color: #666;
 `;
 
-const UserNameText = styled.span`
-  font-weight: 700;
-  letter-spacing: 0.1px;
-`;
-
 const TopTextLink = styled(Link)`
   text-decoration: none;
   color: #666;
@@ -260,18 +258,6 @@ const TopTextButton = styled.button`
   padding: 0;
   color: #666;
   font-size: 13px;
-  cursor: pointer;
-`;
-
-const UserIcon = styled.img`
-  width: 30px;
-  height: 30px;
-  cursor: pointer;
-`;
-
-const CartIcon = styled.img`
-  width: 20px;
-  height: 20px;
   cursor: pointer;
 `;
 

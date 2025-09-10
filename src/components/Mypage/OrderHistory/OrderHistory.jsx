@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import OrderCard from './OrderCard';
-import axios from '../../api/axios';
-import Pagination from '../Pagination';
+import axios from '../../../api/axios';
+import Pagination from '../../Pagination';
 import { useLocation } from 'react-router-dom';
 
 const ORDERS_PER_PAGE = 5;
@@ -17,6 +17,7 @@ const OrderHistory = () => {
   const fetchOrderHistory = async () => {
     try {
       const response = await axios.get('/api/orders/history');
+      console.log(response.data);
       setOrders(response.data);
     } catch (error) {
       console.error('주문 내역 조회 실패:', error);
@@ -56,16 +57,20 @@ const OrderHistory = () => {
     setCurrentPage(1);
   };
 
+  const onSearchKeyDown = (e) => {
+    if (e.key === 'Enter') handleSearch();
+  };
+
   return (
     <Container>
       <Title>주문 내역</Title>
-      {/* 검색창 + 검색 버튼 */}
       <SearchBarWrapper>
         <SearchBar
           type="text"
           placeholder="주문한 상품을 검색할 수 있어요!"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={onSearchKeyDown}
         />
         <SearchButton onClick={handleSearch}>조회</SearchButton>
       </SearchBarWrapper>
@@ -76,7 +81,6 @@ const OrderHistory = () => {
           <OrderCard key={order.orderId} order={order} />
         ))
       )}
-      {/* 페이지네이션 */}
       {totalPages > 1 && (
         <Pagination
           currentPage={currentPage}
@@ -92,20 +96,18 @@ export default OrderHistory;
 
 const Container = styled.div`
   max-width: 1000px;
-  margin: 0 auto;
-  padding: 2rem;
 `;
 
 const Title = styled.h2`
-  font-size: 2rem;
+  font-size: 32px;
   font-weight: bold;
-  margin-bottom: 1rem;
+  margin-bottom: 30px;
 `;
 
 const SearchBarWrapper = styled.div`
   display: flex;
   gap: 12px;
-  margin-bottom: 2rem;
+  margin-bottom: 32px;
   max-width: 500px;
   margin-left: auto;
   margin-right: auto;
@@ -114,7 +116,7 @@ const SearchBarWrapper = styled.div`
 const SearchBar = styled.input`
   flex: 1;
   padding: 12px 18px;
-  font-size: 1.1rem;
+  font-size: 18px;
   border: 2px solid #ddd;
   border-radius: 10px;
   transition: border-color 0.3s ease;
@@ -133,7 +135,7 @@ const SearchBar = styled.input`
 
 const SearchButton = styled.button`
   padding: 12px 28px;
-  font-size: 1.1rem;
+  font-size: 18px;
   font-weight: 600;
   border: none;
   border-radius: 30px;
@@ -154,7 +156,7 @@ const SearchButton = styled.button`
 `;
 
 const EmptyMessage = styled.div`
-  font-size: 1.1rem;
+  font-size: 18px;
   color: #6b7280;
   text-align: center;
   padding: 40px 0;

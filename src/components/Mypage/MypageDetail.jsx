@@ -30,7 +30,7 @@ function MypageDetail() {
   const location = useLocation();
 
   return (
-    <Wrapper>
+    <Container>
       <Sidebar>
         <MenuTitle
           className={location.pathname === '/mypage' ? 'active' : ''}
@@ -38,12 +38,14 @@ function MypageDetail() {
         >
           My Page
         </MenuTitle>
+
         {menuItems.map(({ title, items }) => (
           <div key={title}>
             <SubMenuTitle>{title}</SubMenuTitle>
             <MenuList>
               {items.map(({ key, label }) => {
-                const currentKey = location.pathname.split('/').pop();
+                const segments = location.pathname.split('/');
+                const currentKey = segments[2] || ''; // /mypage/:key/
                 return (
                   <MenuItem
                     key={key}
@@ -58,18 +60,17 @@ function MypageDetail() {
           </div>
         ))}
       </Sidebar>
+
       <MainContent>
         <Outlet />
       </MainContent>
-    </Wrapper>
+    </Container>
   );
 }
 
 export default MypageDetail;
 
-// Styled Components
-
-const Wrapper = styled.div`
+const Container = styled.div`
   display: flex;
   max-width: 1200px;
   margin: 40px auto;
@@ -140,8 +141,8 @@ const MenuItem = styled.li`
 
 const MainContent = styled.div`
   flex: 1;
-  padding: 30px 40px;
-  min-height: 600px;
+  padding: 20px 40px;
+  min-height: calc(100vh - 120px);
   overflow-y: auto;
   border-radius: 8px;
 `;

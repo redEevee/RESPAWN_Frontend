@@ -4,17 +4,14 @@ import { Link } from 'react-router-dom';
 
 const ProductCard = ({ product, onAddToCart }) => {
   return (
-    <ProductContainer>
+    <CardContainer>
       <StyledLink to={`/ProductDetail/${product.id}`}>
         <ImageWrapper>
-          <ProductImg
-            src={`http://localhost:8080${product.imageUrl}`}
-            alt={product.name}
-          />
+          <ProductImg src={`${product.imageUrl}`} alt={product.name} />
           <Overlay>
             <AddToCartButton
               onClick={(e) => {
-                e.preventDefault(); // Link 클릭 막기
+                e.preventDefault();
                 onAddToCart(product);
               }}
             >
@@ -28,13 +25,13 @@ const ProductCard = ({ product, onAddToCart }) => {
           <ProcuctPrice>{product.price.toLocaleString()}원</ProcuctPrice>
         </Info>
       </StyledLink>
-    </ProductContainer>
+    </CardContainer>
   );
 };
 
 export default ProductCard;
 
-const ProductContainer = styled.div`
+const CardContainer = styled.div`
   width: 100%;
   border: 1px solid #eee;
   padding: 10px;
@@ -52,6 +49,7 @@ const ImageWrapper = styled.div`
   aspect-ratio: 3 / 3.5;
   overflow: hidden;
   border-radius: 8px;
+  border: 1px solid #eee;
 `;
 
 const ProductImg = styled.img`
@@ -74,7 +72,7 @@ const Overlay = styled.div`
   align-items: center;
   transition: opacity 0.3s ease;
 
-  ${ProductContainer}:hover & {
+  ${CardContainer}:hover & {
     opacity: 1;
   }
 `;

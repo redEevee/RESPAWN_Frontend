@@ -1,5 +1,4 @@
 import React from 'react';
-import axios from './api/axios';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import GlobalStyle from './styles/GlobalStyle';
 import MainPage from './pages/MainPage';
@@ -40,6 +39,11 @@ import Settings from './components/Admin/Settings';
 import Login from './components/Admin/Login';
 import SearchResultListPage from './pages/SearchResultListPage';
 import AuthGate from './AuthGate';
+import ProfileComplete from './pages/ProfileComplete';
+import NoticeRegister from './components/Admin/NoticeRegister';
+import NoticeDetail from './components/Admin/NoticeDetail';
+import NoticeList from './components/CustomerCenter/NoticeList';
+import Notice from './components/CustomerCenter/Notice';
 
 function App() {
   return (
@@ -48,24 +52,31 @@ function App() {
       <AuthGate>
         <Routes>
           <Route path="/" element={<MainPage />} />
+          <Route path="/profile/complete" element={<ProfileComplete />} />
           <Route path="/search" element={<SearchResultListPage />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="members" element={<Members />} />
             <Route
-              path="/admin/members/:userType/:userId"
+              path="members/:userType/:userId"
               element={<MemberDetail />}
             />
             <Route path="notices" element={<Notices />} />
             <Route path="inquiries" element={<Inquiries />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="noticeRegister" element={<NoticeRegister />} />
+            <Route path="notices/:noticeId" element={<NoticeDetail />} />
           </Route>
           <Route path="/adminlogin" element={<Login />} />
-
           <Route path="/uploadproduct" element={<UploadProduct />} />
           <Route path="/productdetail/:id" element={<ProductDetailPage />} />
           <Route path="/productlist" element={<ProductListPage />} />
           <Route path="/customerCenter" element={<CustomerCenterPage />} />
+          <Route path="/customerCenter/noticelist" element={<NoticeList />} />
+          <Route
+            path="/customerCenter/notices/:noticeId"
+            element={<Notice />}
+          />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/order" element={<OrderPage />} />
           <Route path="/login" element={<LogInPage />} />

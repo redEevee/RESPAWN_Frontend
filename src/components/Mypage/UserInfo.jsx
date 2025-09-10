@@ -5,18 +5,13 @@ import AddressListModal from '../AddressListModal';
 import ResetPasswordModal from '../ResetPasswordModal';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
-function ProfilePage() {
+function UserInfo() {
   const [password, setPassword] = useState('');
+  const [seePassword, setSeePassword] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const userData = JSON.parse(sessionStorage.getItem('userData'));
   const username = userData?.username;
-
-  const [seePassword, setSeePassword] = useState(false);
-
-  const seePasswordHandler = () => {
-    setSeePassword(!seePassword);
-  };
 
   const [user, setUser] = useState({
     name: '',
@@ -26,13 +21,14 @@ function ProfilePage() {
     role: '',
   });
 
-  const [isAddingPhone, setIsAddingPhone] = useState(false);
-  const [newPhoneNumber, setNewPhoneNumber] = useState('');
+  const [phoneAuth, setPhoneAuth] = useState({
+    isAdding: false,
+    newPhoneNumber: '',
+    isCodeSent: false,
+    verificationCode: '',
+    isVerified: false,
+  });
 
-  // 인증 관련 state
-  const [isCodeSent, setIsCodeSent] = useState(false);
-  const [verificationCode, setVerificationCode] = useState('');
-  const [isVerified, setIsVerified] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // 타이머
@@ -42,8 +38,13 @@ function ProfilePage() {
   // 주소지입력
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
 
+  // 비밀번호 재설정 모달
   const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] =
     useState(false);
+
+  const seePasswordHandler = () => {
+    setSeePassword(!seePassword);
+  };
 
   const handlePasswordCheck = async () => {
     if (!password) {
@@ -52,7 +53,7 @@ function ProfilePage() {
     }
     try {
       const response = await axios.post('/myPage/checkPassword', { password });
-      if (response.data === true) {
+      if (response.data.isSuccess) {
         setIsAuthenticated(true);
       } else {
         alert('비밀번호가 일치하지 않습니다.');
@@ -67,7 +68,7 @@ function ProfilePage() {
     const fetchUserDetails = async () => {
       try {
         const response = await axios.get(`/user`);
-        setUser(response.data);
+        setUser(response.data.result);
       } catch (error) {
         console.error('회원 정보 조회 실패', error);
       }
@@ -79,23 +80,41 @@ function ProfilePage() {
   }, [username]);
 
   useEffect(() => {
-    // 타이머 카운트다운 관리
     if (timer > 0) {
       intervalRef.current = setInterval(() => {
         setTimer((prev) => {
           if (prev <= 1) {
+            // 만료 시 인터벌 정리
             clearInterval(intervalRef.current);
-            setIsCodeSent(false);
-            setVerificationCode('');
+            // phoneAuth 통합 상태로 만료 처리
+            setPhoneAuth((p) => {
+              if (p.isVerified) return p; // 이미 인증완료면 아무것도 하지 않음
+              alert('인증 시간이 만료되었습니다. 다시 시도해주세요.');
+              return {
+                ...p,
+                isCodeSent: false,
+                verificationCode: '',
+                isVerified: false,
+              };
+            });
             alert('인증 시간이 만료되었습니다. 다시 시도해주세요.');
             return 0;
           }
           return prev - 1;
         });
       }, 1000);
+
+      // 변경된 타이머 틱마다 이전 인터벌 정리
+      return () => {
+        clearInterval(intervalRef.current);
+      };
     }
-    return () => clearInterval(intervalRef.current);
-  }, [timer]);
+
+    // timer가 0 이하인 상태에서의 정리
+    return () => {
+      clearInterval(intervalRef.current);
+    };
+  }, [timer, setPhoneAuth]);
 
   const resetTimer = () => {
     clearInterval(intervalRef.current);
@@ -103,56 +122,62 @@ function ProfilePage() {
   };
 
   const handleAddPhoneNumber = () => {
-    setIsAddingPhone(true);
-    setIsCodeSent(false);
-    setVerificationCode('');
-    setIsVerified(false);
-    setNewPhoneNumber('');
+    setPhoneAuth({
+      isAdding: true,
+      newPhoneNumber: '',
+      isCodeSent: false,
+      verificationCode: '',
+      isVerified: false,
+    });
     resetTimer();
   };
 
   const handlePhoneNumberChange = (e) => {
-    setNewPhoneNumber(e.target.value);
+    setPhoneAuth((prev) => ({ ...prev, newPhoneNumber: e.target.value }));
   };
 
   // 인증번호 발송 요청
   const sendVerificationCode = async () => {
-    if (newPhoneNumber.trim() === '') {
+    if (phoneAuth.newPhoneNumber.trim() === '') {
       alert('전화번호를 입력하세요.');
       return;
     }
     try {
       setLoading(true);
-      await axios.post('/verify-phone-number', { phoneNumber: newPhoneNumber });
-      setIsCodeSent(true);
-      setTimer(300); // 5분
+      await axios.post('/verify-phone-number', {
+        phoneNumber: phoneAuth.newPhoneNumber,
+      });
+      setPhoneAuth((prev) => ({ ...prev, isCodeSent: true }));
+      setTimer(300);
       alert('인증번호가 발송되었습니다. 메시지를 확인해주세요.');
     } catch (error) {
       console.error('인증번호 발송 실패', error);
-      alert('인증번호 발송에 실패했습니다. 나중에 다시 시도해주세요.');
+      alert('인증번호 발송 실패');
     } finally {
       setLoading(false);
     }
   };
 
   const handleVerificationCodeChange = (e) => {
-    setVerificationCode(e.target.value);
+    setPhoneAuth((prev) => ({ ...prev, verificationCode: e.target.value }));
   };
 
   // 인증번호 확인
   const verifyCode = async () => {
-    if (verificationCode.trim() === '') {
+    if (phoneAuth.verificationCode.trim() === '') {
       alert('인증번호를 입력하세요.');
       return;
     }
     try {
       setLoading(true);
-      await axios.post('/phone-number/verification-code', {
-        code: verificationCode,
+      const response = await axios.post('/phone-number/verification-code', {
+        code: phoneAuth.verificationCode,
       });
-      alert('전화번호가 성공적으로 인증되었습니다.');
-      setIsVerified(true);
-      resetTimer();
+      if (response.data?.isSuccess) {
+        setPhoneAuth((prev) => ({ ...prev, isVerified: true }));
+        resetTimer();
+        alert('전화번호가 성공적으로 인증되었습니다.');
+      }
     } catch (error) {
       console.error('인증 실패', error);
       alert('인증번호가 올바르지 않습니다.');
@@ -163,27 +188,29 @@ function ProfilePage() {
 
   // 인증 완료 후 전화번호 저장
   const handleSavePhoneNumber = async () => {
-    if (!isVerified) {
+    if (!phoneAuth.isVerified) {
       alert('전화번호 인증을 먼저 완료하세요.');
       return;
     }
     try {
       setLoading(true);
       await axios.put('/myPage/setPhoneNumber', {
-        phoneNumber: newPhoneNumber,
+        phoneNumber: phoneAuth.newPhoneNumber,
       });
       alert('전화번호가 추가되었습니다.');
       const response = await axios.get('/user');
-      setUser(response.data);
-      setIsAddingPhone(false);
-      setNewPhoneNumber('');
-      setVerificationCode('');
-      setIsCodeSent(false);
-      setIsVerified(false);
+      setUser(response.data.result);
+      setPhoneAuth({
+        isAdding: false,
+        newPhoneNumber: '',
+        isCodeSent: false,
+        verificationCode: '',
+        isVerified: false,
+      });
       resetTimer();
     } catch (error) {
       console.error('전화번호 추가 실패:', error);
-      alert('전화번호 추가 중 오류가 발생했습니다.');
+      alert('전화번호 추가 실패');
     } finally {
       setLoading(false);
     }
@@ -225,12 +252,26 @@ function ProfilePage() {
 
   if (user.provider === 'local' && !isAuthenticated) {
     return (
-      <Wrapper>
+      <Container>
         <Section>
           <SectionTitle>내 정보 확인</SectionTitle>
           <UserDetail>
             <Label>아이디</Label>
             <Value>{userData?.username || '-'}</Value>
+            <Input
+              type={'text'}
+              autoComplete="username"
+              value={userData?.username || '-'}
+              style={{
+                position: 'absolute',
+                width: '1px',
+                height: '1px',
+                margin: '-1px',
+                overflow: 'hidden',
+                clip: 'rect(0, 0, 0, 0)',
+                border: 0,
+              }}
+            />
           </UserDetail>
           <UserDetail>
             <Label>비밀번호</Label>
@@ -238,6 +279,7 @@ function ProfilePage() {
               <Input
                 type={seePassword ? 'text' : 'password'}
                 placeholder="비밀번호 입력"
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={(e) => {
@@ -258,12 +300,12 @@ function ProfilePage() {
           </UserDetail>
           <Button onClick={handlePasswordCheck}>확인</Button>
         </Section>
-      </Wrapper>
+      </Container>
     );
   }
 
   return (
-    <Wrapper>
+    <Container>
       <Section>
         <SectionTitle>내 정보 관리</SectionTitle>
         <UserDetail>
@@ -293,20 +335,19 @@ function ProfilePage() {
           </Value>
         </UserDetail>
 
-        {!user.phoneNumber && !isAddingPhone && (
+        {!user.phoneNumber && !phoneAuth.isAdding && (
           <Button onClick={handleAddPhoneNumber}>전화번호 추가하기</Button>
         )}
 
-        {isAddingPhone && (
+        {phoneAuth.isAdding && (
           <PhoneInputContainer>
             <Input
               type="text"
-              placeholder="전화번호 입력 (예: 01012345678 )"
-              value={newPhoneNumber}
+              value={phoneAuth.newPhoneNumber}
               onChange={handlePhoneNumberChange}
-              disabled={isCodeSent}
+              disabled={phoneAuth.isCodeSent}
             />
-            {!isCodeSent ? (
+            {!phoneAuth.isCodeSent ? (
               <Button onClick={sendVerificationCode} disabled={loading}>
                 {loading ? '발송 중...' : '인증번호 보내기'}
               </Button>
@@ -314,27 +355,29 @@ function ProfilePage() {
               <>
                 <Input
                   type="text"
-                  placeholder="인증번호 입력"
-                  value={verificationCode}
+                  value={phoneAuth.verificationCode}
                   onChange={handleVerificationCodeChange}
+                  disabled={phoneAuth.isVerified}
                 />
-                <Button onClick={verifyCode} disabled={loading || isVerified}>
+                <Button
+                  onClick={verifyCode}
+                  disabled={loading || phoneAuth.isVerified}
+                >
                   {loading
                     ? '확인 중...'
-                    : isVerified
+                    : phoneAuth.isVerified
                     ? '인증완료'
                     : '인증번호 확인'}
                 </Button>
-                {/* 타이머 표시 */}
-                <TimerText>남은 시간: {formatTime(timer)}</TimerText>
-                {/* <CancelButton onClick={handleCancelAddPhoneNumber}>취소</CancelButton> */}
+                {!phoneAuth.isVerified && (
+                  <TimerText>남은 시간: {formatTime(timer)}</TimerText>
+                )}
               </>
             )}
           </PhoneInputContainer>
         )}
 
-        {/* 인증 완료 시에만 전화번호 저장 버튼 노출 */}
-        {isVerified && (
+        {phoneAuth.isVerified && (
           <Button onClick={handleSavePhoneNumber} disabled={loading}>
             저장
           </Button>
@@ -359,14 +402,14 @@ function ProfilePage() {
       {isAddressModalOpen && (
         <AddressListModal onClose={handleCloseAddressModal} />
       )}
-    </Wrapper>
+    </Container>
   );
 }
 
-export default ProfilePage;
+export default UserInfo;
 
-const Wrapper = styled.div`
-  max-width: 860px;
+const Container = styled.div`
+  max-width: 1000px;
   font-family: 'Noto Sans KR', sans-serif;
   color: #222;
 `;
@@ -377,16 +420,13 @@ const Section = styled.section`
 `;
 
 const SectionTitle = styled.h2`
-  font-weight: 700;
-  font-size: 1.25rem;
-  margin-bottom: 24px;
-  border-bottom: 1px solid #ddd;
-  padding-bottom: 12px;
-  color: #222;
+  font-size: 32px;
+  font-weight: bold;
+  margin-bottom: 30px;
 `;
 
 const UserDetail = styled.p`
-  font-size: 1rem;
+  font-size: 16px;
   color: #444;
   margin: 12px 0 5px 0;
   display: flex;
@@ -450,7 +490,7 @@ const Input = styled.input`
   flex: 1;
   min-width: 200px;
   padding: 8px 40px 8px 12px; /* 오른쪽 아이콘 공간 확보 */
-  font-size: 1rem;
+  font-size: 16px;
   border: 1px solid #ccc;
   border-radius: 4px;
 
@@ -492,6 +532,6 @@ const IconButton = styled.button`
 const TimerText = styled.p`
   color: #d22525;
   margin-left: 12px;
-  font-size: 1rem;
+  font-size: 16px;
   font-weight: bold;
 `;

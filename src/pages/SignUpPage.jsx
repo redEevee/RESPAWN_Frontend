@@ -635,6 +635,7 @@ const SignupPage = () => {
               name="username"
               type="text"
               placeholder="아이디"
+              autoComplete="off"
               value={username.username}
               onChange={onChangeHandler('username')}
               required
@@ -654,6 +655,7 @@ const SignupPage = () => {
             name="password"
             type="password"
             placeholder="비밀번호"
+            autoComplete="new-password"
             value={password.password}
             onChange={onChangeHandler('password')}
             required

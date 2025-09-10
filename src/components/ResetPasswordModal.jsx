@@ -118,13 +118,26 @@ function ResetPasswordModal({ onClose }) {
 
         <FormGroup>
           <label>현재 비밀번호</label>
+          <input
+            type="text"
+            autoComplete="username"
+            style={{
+              position: 'absolute',
+              width: 1,
+              height: 1,
+              margin: -1,
+              overflow: 'hidden',
+              clip: 'rect(0,0,0,0)',
+              border: 0,
+            }}
+          />
           <Field>
             <Input
               type={seeCurrentPassword ? 'text' : 'password'}
               value={currentPassword}
               onChange={onChangeHandler('currentPassword')}
               placeholder="현재 비밀번호"
-              autoComplete="current-password"
+              autoComplete="new-password"
             />
             <IconButton
               type="button"
@@ -145,7 +158,7 @@ function ResetPasswordModal({ onClose }) {
               value={password.password}
               onChange={onChangeHandler('password')}
               placeholder="새 비밀번호"
-              autoComplete="current-password"
+              autoComplete="new-password"
             />
             <IconButton
               type="button"
@@ -167,7 +180,7 @@ function ResetPasswordModal({ onClose }) {
               value={confirmPassword.confirmPassword}
               onChange={onChangeHandler('confirmPassword')}
               placeholder="비밀번호 확인"
-              autoComplete="current-password"
+              autoComplete="new-password"
             />
             <IconButton
               type="button"

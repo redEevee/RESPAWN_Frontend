@@ -10,50 +10,54 @@ function ProductDetail() {
   const { id } = useParams();
   const [item, setItem] = useState(null);
   const [count, setCount] = useState(1);
-
   const [activeTab, setActiveTab] = useState('description');
-
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios
-      .get(`/api/items/${id}`)
-      .then((res) => setItem(res.data))
-      .catch((err) => console.error(err));
+    const controller = new AbortController();
+    const fetchItem = async () => {
+      try {
+        const res = await axios.get(`/api/items/${id}`, {
+          signal: controller.signal,
+        });
+        setItem(res.data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchItem();
+
+    return () => {
+      controller.abort();
+    };
   }, [id]);
 
-  const handleBuyNow = () => {
-    axios
-      .post('/api/orders/prepare', {
+  const handleBuyNow = async () => {
+    try {
+      const res = await axios.post('/api/orders/prepare', {
         itemId: item.id,
         count: count,
-      })
-      .then((res) => {
-        const orderId = res.data.orderId;
-        navigate(`/order/${orderId}`);
-      })
-      .catch((err) => {
-        console.error(err);
-        alert('주문 생성에 실패했습니다.');
       });
+      const orderId = res.data.orderId;
+      navigate(`/order/${orderId}`);
+    } catch (err) {
+      console.error(err);
+      alert('주문 생성에 실패했습니다.');
+    }
   };
 
-  const handleAddToCart = () => {
-    axios
-      .post(
-        '/api/cart/add',
-        {
-          itemId: item.id,
-          count: count,
-        } // 인증 정보가 필요하다면
-      )
-      .then((res) => {
-        alert('장바구니에 담겼습니다.');
-      })
-      .catch((err) => {
-        console.error(err);
-        alert('장바구니 추가 실패');
+  const handleAddToCart = async () => {
+    try {
+      await axios.post('/api/cart/add', {
+        itemId: item.id,
+        count: count,
       });
+      alert('장바구니에 담겼습니다.');
+    } catch (err) {
+      console.error(err);
+      alert('장바구니 추가 실패');
+    }
   };
 
   const handleDecrease = () => {

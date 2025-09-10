@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import axios from '../../api/axios';
+import axios from '../../../api/axios';
 
 const OrderItemCard = ({ item, orderId, orderStatus }) => {
   const navigate = useNavigate();
@@ -63,7 +63,7 @@ const OrderItemCard = ({ item, orderId, orderStatus }) => {
   };
 
   return (
-    <ItemBox>
+    <ItemContainer>
       <ImageWrapper onClick={openProductPage}>
         <img src={item.imageUrl} alt={item.itemName} />
       </ImageWrapper>
@@ -83,13 +83,13 @@ const OrderItemCard = ({ item, orderId, orderStatus }) => {
           )}
         </ButtonsRow>
       </ButtonGroup>
-    </ItemBox>
+    </ItemContainer>
   );
 };
 
 export default OrderItemCard;
 
-const ItemBox = styled.div`
+const ItemContainer = styled.div`
   display: flex;
   gap: 16px;
   padding: 16px;
@@ -122,26 +122,26 @@ const Info = styled.div`
 
 const Name = styled.div`
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 16px;
   margin-bottom: 8px;
   color: #222;
   cursor: pointer;
 `;
 
 const Quantity = styled.div`
-  font-size: 0.9rem;
+  font-size: 14px;
   color: #555;
 `;
 
 const Price = styled.div`
-  font-size: 1rem;
+  font-size: 16px;
   font-weight: 700;
   margin-top: 6px;
   color: #111;
 `;
 
 const StatusText = styled.div`
-  font-size: 0.85rem;
+  font-size: 14px;
   font-weight: 600;
   color: #374151;
 `;
@@ -162,7 +162,7 @@ const ButtonsRow = styled.div`
 `;
 
 const ButtonBase = styled.button`
-  font-size: 0.9rem;
+  font-size: 14px;
   font-weight: 600;
   padding: 8px 14px;
   border-radius: 8px;

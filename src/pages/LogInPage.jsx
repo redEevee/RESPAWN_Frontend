@@ -53,8 +53,8 @@ const LoginPage = (e) => {
       setFailCount(0);
 
       if (
-        response.data.passwordChangeDue === 'true' &&
-        response.data.passwordChangeSnoozed === 'false'
+        response.data.passwordChangeDue &&
+        !response.data.passwordChangeSnoozed
       ) {
         navigate('/update-password');
       } else {
@@ -98,13 +98,16 @@ const LoginPage = (e) => {
   useEffect(() => {
     // 팝업창에서 보내준 메시지 처리
     const handleMessage = async (event) => {
-      if (event.data?.type === 'LOGIN_SUCCESS') {
+      const data = event.data || {};
+      // origin 검증(권장): 동일 오리진만 허용
+      // if (event.origin !== 'http://localhost:3000') return;
+
+      // 1) 소셜 로그인 성공
+      if (data.type === 'LOGIN_SUCCESS') {
         try {
           const res = await axios.get('/loginOk');
           sessionStorage.setItem('userData', JSON.stringify(res.data));
-          // 전역 동기화 신호
           localStorage.setItem('auth:updated', String(Date.now()));
-
           console.log('소셜 로그인 성공');
           navigate('/');
         } catch (err) {
@@ -113,6 +116,29 @@ const LoginPage = (e) => {
         } finally {
           setPopup(null);
         }
+        return;
+      }
+
+      // 2) 소셜 로그인 실패 (서버 failure handler에서 postMessage로 전달)
+      if (data.type === 'OAUTH_FAIL') {
+        console.log(data.reason);
+        try {
+          switch (data.reason) {
+            case 'account_conflict':
+              alert(
+                '이미 다른 소셜 계정과 연결된 이메일입니다. 다른 방법을 선택해 주세요.'
+              );
+              break;
+            default:
+              alert('소셜 로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+          }
+          // 필요 시 UI 상태 초기화
+          // setMsg('소셜 로그인 실패'); // 선택
+          // navigate('/'); // 필요 시 라우팅
+        } finally {
+          setPopup(null); // 팝업 상태 정리
+        }
+        return;
       }
     };
 
@@ -153,17 +179,18 @@ const LoginPage = (e) => {
   }, [popup]);
 
   const handleSocialLogin = (provider) => {
-    // 크기 지정(필요시)
-    const popup = window.open(
+    const win = window.open(
       `http://localhost:8080/oauth2/authorization/${provider}`,
       '_blank',
       'width=600,height=700,resizable=yes,scrollbars=yes'
     );
-    if (!popup) {
+    if (!win) {
       alert(
         '팝업이 차단되어 새 창을 열 수 없습니다. 팝업 차단을 해제해주세요.'
       );
+      return;
     }
+    setPopup(win); // 팝업 레퍼런스 저장 (닫힘 감지 useEffect가 동작하도록)
   };
 
   return (
@@ -178,6 +205,7 @@ const LoginPage = (e) => {
               type="text"
               name="username"
               placeholder="아이디"
+              autocomplete="username"
               value={user.username}
               onChange={handleChange}
               required
@@ -189,6 +217,7 @@ const LoginPage = (e) => {
               type={seePassword ? 'text' : 'password'}
               name="password"
               placeholder="비밀번호"
+              autoComplete="current-password"
               value={user.password}
               onChange={handleChange}
               required
@@ -298,7 +327,7 @@ const IconButton = styled.button`
   border: none;
   cursor: pointer;
   color: #666;
-  font-size: 1.1rem;
+  font-size: 18px;
 
   &:hover {
     color: rgb(105, 111, 148);

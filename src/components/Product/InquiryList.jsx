@@ -94,7 +94,7 @@ const InquiryList = ({ itemId }) => {
     <Container>
       <TitleBox>
         <Title>
-          Q&amp;A <Count>{filtered.length}</Count>
+          Q&amp;A <Count>({filtered.length})</Count>
         </Title>
         <Right>
           <label>
@@ -217,7 +217,6 @@ const InquiryList = ({ itemId }) => {
 
 export default InquiryList;
 
-// styled-components
 const Container = styled.div`
   width: 100%;
   margin: 0 auto;
@@ -231,13 +230,13 @@ const TitleBox = styled.div`
 `;
 
 const Title = styled.h2`
-  font-size: 20px;
+  font-size: 24px;
   font-weight: bold;
 `;
 
 const Count = styled.span`
   color: #d32f2f;
-  font-size: 20px;
+  font-size: 24px;
   margin-left: 4px;
 `;
 

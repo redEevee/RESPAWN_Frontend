@@ -144,28 +144,81 @@ function OrderComplete() {
           </InfoCard>
           <InfoCard>
             <InfoHeading>결제 정보</InfoHeading>
+            <PaymentDetailsGrid>
+              {/* 왼쪽 컬럼 */}
+              <PaymentColumn>
+                <ColumnTitle>금액</ColumnTitle>
+                <PaymentRow>
+                  <PaymentLabel>상품 합계</PaymentLabel>
+                  <PaymentValue>
+                    {formatCurrency(orderInfo.itemTotalPrice ?? 0)}원
+                  </PaymentValue>
+                </PaymentRow>
+                <PaymentRow>
+                  <PaymentLabel>배송비</PaymentLabel>
+                  <PaymentValue>
+                    {formatCurrency(orderInfo.deliveryFee ?? 0)}원
+                  </PaymentValue>
+                </PaymentRow>
+                <Divider />
+                <PaymentRow>
+                  <PaymentLabel>합계</PaymentLabel>
+                  <PaymentValue>
+                    {formatCurrency(orderInfo.originalAmount ?? 0)}원
+                  </PaymentValue>
+                </PaymentRow>
+              </PaymentColumn>
+
+              {/* 오른쪽 컬럼 */}
+              <PaymentColumn>
+                <ColumnTitle>할인 및 적립</ColumnTitle>
+                <PaymentRow>
+                  <PaymentLabel>포인트 사용</PaymentLabel>
+                  <PaymentValue isDiscount>
+                    {formatCurrency(orderInfo.usedPointAmount ?? 0)}원
+                  </PaymentValue>
+                </PaymentRow>
+                <PaymentRow>
+                  <PaymentLabel>쿠폰 사용</PaymentLabel>
+                  <PaymentValue isDiscount>
+                    - {formatCurrency(orderInfo.usedCouponAmount ?? 0)}원
+                  </PaymentValue>
+                </PaymentRow>
+                <PaymentRow>
+                  <PaymentLabel>추후 적립금</PaymentLabel>
+                  <PaymentValue>
+                    {formatCurrency(orderInfo.pointBenefit?.savedAmount ?? 0)}원
+                  </PaymentValue>
+                </PaymentRow>
+              </PaymentColumn>
+            </PaymentDetailsGrid>
+
+            <PaymentDivider />
+
             <InfoTable>
               <tbody>
                 <tr>
                   <InfoTh>결제수단</InfoTh>
-                  <td>
+                  <InfoTd>
                     {paymentMethodLabel(orderInfo?.paymentInfo?.paymentMethod)}
-                  </td>
+                  </InfoTd>
                 </tr>
                 <tr>
                   <InfoTh>PG사</InfoTh>
-                  <td>{orderInfo?.paymentInfo?.pgProvider ?? '정보 없음'}</td>
-                </tr>
-                <tr>
-                  <InfoTh>총 결제금액</InfoTh>
-                  <td>
-                    <TotalAmount>
-                      {orderInfo.totalAmount.toLocaleString()}원
-                    </TotalAmount>
-                  </td>
+                  <InfoTd>
+                    {orderInfo?.paymentInfo?.pgProvider ?? '정보 없음'}
+                  </InfoTd>
                 </tr>
               </tbody>
             </InfoTable>
+
+            <PaymentDivider />
+            <FinalTotalRow>
+              <FinalTotalLabel>총 결제금액</FinalTotalLabel>
+              <TotalAmount>
+                {formatCurrency(orderInfo.totalAmount)}원
+              </TotalAmount>
+            </FinalTotalRow>
           </InfoCard>
         </RowSection>
 
@@ -179,8 +232,6 @@ function OrderComplete() {
 }
 
 export default OrderComplete;
-
-// Styled Components
 
 const Root = styled.div`
   min-height: 100vh;
@@ -275,9 +326,6 @@ const Table = styled.table`
     box-shadow: 0 3px 8px rgb(0 0 0 / 0.07);
     transition: background-color 0.25s ease;
   }
-  tbody tr:hover {
-    background: rgba(105, 111, 148, 0.2);
-  }
 
   tbody td {
     padding: 16px 12px;
@@ -316,27 +364,90 @@ const InfoHeading = styled.div`
   border-bottom: 2px solid #b0bec5;
 `;
 
+const PaymentDetailsGrid = styled.div`
+  display: flex;
+  gap: 24px;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+  }
+`;
+
+const PaymentColumn = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`;
+
+const ColumnTitle = styled.h4`
+  font-size: 15px;
+  font-weight: 600;
+  color: #34495e;
+  margin: 0 0 4px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e0e0e0;
+`;
+
+const PaymentRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 15px;
+`;
+
+const PaymentLabel = styled.span`
+  color: #607d8b;
+`;
+
+const PaymentValue = styled.span`
+  font-weight: 600;
+  color: ${(props) => (props.isDiscount ? '#e53935' : '#2c3e50')};
+`;
+
+const Divider = styled.hr`
+  border: none;
+  border-top: 1px solid #cfd8dc;
+`;
+
+const PaymentDivider = styled.hr`
+  border: none;
+  border-top: 1px solid #cfd8dc;
+  margin: 20px 0;
+`;
+
+const FinalTotalRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const FinalTotalLabel = styled.span`
+  font-size: 16px;
+  font-weight: 700;
+  color: #2c3e50;
+`;
+
 const InfoTable = styled.table`
   width: 100%;
   font-size: 15px;
-
-  td {
-    padding: 12px 0 12px 18px;
-    color: #4a4a4a;
-    vertical-align: top;
-  }
-  tr:not(:last-child) td,
-  tr:not(:last-child) th {
-    border-bottom: 1.2px solid #cfd8dc;
-  }
+  border-collapse: collapse; /* 테이블 셀 사이의 간격을 없애줍니다 */
 `;
 
 const InfoTh = styled.th`
   text-align: left;
-  width: 90px;
-  color: #34495e;
+  width: 110px;
+  color: #607d8b;
+  font-weight: 500;
+  padding: 8px 0;
+  vertical-align: top;
+`;
+
+const InfoTd = styled.td`
+  text-align: left;
+  padding: 8px 0;
+  color: #2c3e50;
   font-weight: 600;
-  padding-left: 0;
 `;
 
 const TotalAmount = styled.div`

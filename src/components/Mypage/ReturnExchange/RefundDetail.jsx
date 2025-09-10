@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from '../../api/axios';
+import axios from '../../../api/axios';
 import styled from 'styled-components';
 
 const RefundDetail = () => {
@@ -42,7 +42,7 @@ const RefundDetail = () => {
 
   return (
     <Container>
-      <Title>내 환불 요청 내역</Title>
+      <Title>환불 요청 내역</Title>
       {refunds.length === 0 && <NoData>환불 요청 내역이 없습니다.</NoData>}
       {refunds.map((order) => (
         <div key={order.orderId}>
@@ -94,15 +94,13 @@ const RefundDetail = () => {
 export default RefundDetail;
 
 const Container = styled.div`
-  max-width: 800px;
-  margin: 3rem auto;
-  padding: 0 1rem;
+  max-width: 1000px;
 `;
 
 const Title = styled.h2`
-  font-size: 1.8rem;
+  font-size: 30px;
   font-weight: bold;
-  margin-bottom: 2rem;
+  margin-bottom: 32px;
   text-align: center;
 `;
 
@@ -114,8 +112,8 @@ const NoData = styled.p`
 const RefundCard = styled.div`
   border: 1px solid #ddd;
   border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
+  padding: 30px;
+  margin-bottom: 30px;
   background-color: #fafafa;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 `;
@@ -124,21 +122,21 @@ const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1rem;
+  margin-bottom: 16px;
 `;
 
 const OrderInfo = styled.div`
-  font-size: 0.95rem;
+  font-size: 16px;
   color: #444;
   p {
-    margin: 0.2rem 0;
+    margin: 2px 0;
   }
 `;
 
 const StatusBadge = styled.span`
-  padding: 0.4rem 0.8rem;
-  border-radius: 20px;
-  font-size: 0.85rem;
+  padding: 8px 10px;
+  border-radius: 18px;
+  font-size: 16px;
   font-weight: bold;
   color: white;
   background-color: ${({ status }) => {
@@ -159,7 +157,7 @@ const StatusBadge = styled.span`
 const ProductSection = styled.div`
   display: flex;
   align-items: center;
-  margin-top: 1rem;
+  margin-top: 16px;
 `;
 
 const ProductImage = styled.img`
@@ -167,29 +165,29 @@ const ProductImage = styled.img`
   height: 80px;
   object-fit: cover;
   border-radius: 8px;
-  margin-right: 1rem;
+  margin-right: 16px;
   border: 1px solid #ccc;
 `;
 
 const ProductDetails = styled.div`
   h4 {
-    margin: 0 0 0.4rem 0;
-    font-size: 1rem;
+    margin: 0 0 5px 0;
+    font-size: 16px;
   }
 
   p {
-    margin: 0.2rem 0;
+    margin: 4px 0;
     color: #555;
   }
 `;
 
 const Reason = styled.div`
-  margin-top: 1rem;
-  font-size: 0.95rem;
+  margin-top: 16px;
+  font-size: 16px;
   color: #444;
 
   p {
-    margin: 0.3rem 0;
+    margin: 5px 0;
   }
 
   strong {

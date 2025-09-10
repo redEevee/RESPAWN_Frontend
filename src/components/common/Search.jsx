@@ -1,16 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import searchIcon from '../../assets/search_icon.png';
 
 const Search = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlQuery = searchParams.get('query') || '';
   const [query, setQuery] = useState('');
 
+  // URL이 변하면 입력값도 동기화
+  useEffect(() => {
+    setQuery(urlQuery);
+  }, [urlQuery]);
+
   const handleSearch = () => {
-    if (query.trim() === '') return;
-    const params = new URLSearchParams({ query });
-    navigate(`/search?query=${encodeURIComponent(params)}`);
+    const next = query.trim();
+    if (!next) return;
+    // 검색 결과 페이지로 이동하면서 query 반영
+    setSearchParams(
+      (prev) => {
+        // 다른 파라미터를 보존하고 query만 갱신
+        prev.set('query', next);
+        return prev;
+      },
+      { replace: true }
+    );
+    navigate(`/search?${searchParams.toString()}`);
   };
 
   const handleKeyPress = (e) => {
@@ -22,9 +38,25 @@ const Search = () => {
   return (
     <SearchContainer>
       <SearchInput
+        autoComplete="off"
         placeholder="상품을 검색해보세요!"
+        type="text"
+        name="q"
+        inputMode="search"
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        onChange={(e) => {
+          const next = e.target.value;
+          setQuery(next);
+          // 필요 시 즉시 URL에 반영하여 새로고침/공유 대비
+          setSearchParams(
+            (params) => {
+              if (next.trim()) params.set('query', next);
+              else params.delete('query');
+              return params;
+            },
+            { replace: true }
+          ); // 히스토리 누적 방지
+        }}
         onKeyDown={handleKeyPress}
       />
       <SearchIcon src={searchIcon} alt="search" onClick={handleSearch} />
