@@ -92,15 +92,17 @@ const MyReviewList = () => {
     [activeTab, page, hasMore]
   );
 
+  useEffect(() => {
+    fetchCounts();
+  }, []);
+
   // 탭 변경 시 상태 초기화 및 데이터 다시 불러오기
   useEffect(() => {
     setItems([]);
     setPage(0);
     setHasMore(true);
     setInitialLoading(true);
-    fetchCounts();
     fetchMyReviews(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
   // IntersectionObserver 설정

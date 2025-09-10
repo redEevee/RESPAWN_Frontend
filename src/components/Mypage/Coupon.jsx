@@ -1,36 +1,109 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import axios from '../../api/axios';
 import styled, { css } from 'styled-components';
 
+const PAGE_SIZE = 10;
+
 const Coupon = () => {
   const [activeTab, setActiveTab] = useState('available');
-  const [availableCoupons, setAvailableCoupons] = useState([]);
-  const [expiredCoupons, setExpiredCoupons] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [coupons, setCoupons] = useState([]);
+  const [counts, setCounts] = useState({ available: 0, unavailable: 0 });
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    (async () => {
+  const observer = useRef();
+  const inFlightRef = useRef(false);
+
+  const fetchCounts = async () => {
+    try {
+      const response = await axios.get(`/api/coupons/count`);
+      console.log(response.data);
+      setCounts({
+        available: response.data.availableCount || 0,
+        unavailable: response.data.unavailableCount || 0,
+      });
+    } catch (error) {
+      console.error('쿠폰 개수를 불러오는데 실패했습니다.', error);
+    }
+  };
+
+  const fetchCoupons = useCallback(
+    async (isInitialLoad = false) => {
+      if (inFlightRef.current) return;
+      if (!hasMore && !isInitialLoad) return;
+      inFlightRef.current = true;
+      setError(null);
+
+      const currentPage = isInitialLoad ? 0 : page;
+
       try {
-        const res = await axios.get('/api/coupons/view', {
-          signal: controller.signal,
+        const res = await axios.get(`/api/coupons/${activeTab}`, {
+          params: { page: currentPage, size: PAGE_SIZE },
         });
         console.log(res.data);
 
-        setAvailableCoupons(res.data ?? []);
-        // setExpiredCoupons(res.data.expired ?? []);
-      } catch (e) {
-        if (e?.name !== 'CanceledError') {
-          console.error(e);
-          setAvailableCoupons([]);
-          setExpiredCoupons([]);
+        const newItems = res.data.content || [];
+        const pageMeta = res.data.page || {};
+        const number =
+          typeof pageMeta.number === 'number' ? pageMeta.number : currentPage;
+        const totalPages =
+          typeof pageMeta.totalPages === 'number' ? pageMeta.totalPages : 0;
+
+        setCoupons((prevItems) =>
+          isInitialLoad ? newItems : [...prevItems, ...newItems]
+        );
+        let more;
+        if (totalPages > 0) {
+          more = number + 1 < totalPages;
+        } else {
+          more = newItems.length === PAGE_SIZE;
         }
+        setHasMore(more);
+        setPage(currentPage + 1);
+      } catch (e) {
+        setError('쿠폰 정보를 불러오는 데 실패했습니다.');
+        console.error(e);
+        setHasMore(false);
       } finally {
         setLoading(false);
+        if (isInitialLoad) setInitialLoading(false);
+        inFlightRef.current = false;
       }
-    })();
-    return () => controller.abort();
+    },
+    [activeTab, page, hasMore]
+  );
+
+  const lastCouponElementRef = useCallback(
+    (node) => {
+      if (loading) return;
+      if (observer.current) observer.current.disconnect();
+
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          fetchCoupons(false);
+        }
+      });
+
+      if (node) observer.current.observe(node);
+    },
+    [loading, hasMore, fetchCoupons]
+  );
+
+  useEffect(() => {
+    fetchCounts();
   }, []);
+
+  useEffect(() => {
+    // 상태 초기화
+    setCoupons([]);
+    setPage(0);
+    setHasMore(true);
+    setInitialLoading(true);
+    fetchCoupons(true);
+  }, [activeTab]);
 
   const formatDate = (dateStr) => {
     const d = new Date(dateStr);
@@ -44,16 +117,6 @@ const Coupon = () => {
     const n = Number(amt);
     return Number.isFinite(n) ? `${n.toLocaleString()}원 할인` : '할인';
   };
-
-  const renderMinimum = (min) => {
-    const n = Number(min);
-    return Number.isFinite(n) && n > 0
-      ? `${n.toLocaleString()}원 이상 구매 시 사용 가능`
-      : '제한 없음';
-  };
-
-  const currentList =
-    activeTab === 'available' ? availableCoupons : expiredCoupons;
 
   const emptyMsg =
     activeTab === 'available'
@@ -70,39 +133,43 @@ const Coupon = () => {
           active={activeTab === 'available'}
           onClick={() => setActiveTab('available')}
         >
-          이용 가능 <Count>{availableCoupons.length}</Count>
+          이용 가능 <Count>{counts.available}</Count>
         </TabButton>
         <TabButton
           type="button"
-          active={activeTab === 'expired'}
-          onClick={() => setActiveTab('expired')}
+          active={activeTab === 'unavailable'}
+          onClick={() => setActiveTab('unavailable')}
         >
-          만료됨 <Count>{expiredCoupons.length}</Count>
+          만료됨 <Count>{counts.unavailable}</Count>
         </TabButton>
       </TabContainer>
 
-      {loading ? (
+      {initialLoading ? (
         <Message>불러오는 중...</Message>
-      ) : currentList.length === 0 ? (
+      ) : coupons.length === 0 && !loading ? (
         <Message>{emptyMsg}</Message>
       ) : (
         <CouponList>
-          {currentList.map((c) => (
-            <CouponCard key={c.id} aria-disabled={activeTab === 'expired'}>
+          {coupons.map((c, index) => (
+            <CouponCard
+              key={`${c.id}-${index}`}
+              ref={coupons.length === index + 1 ? lastCouponElementRef : null}
+              aria-disabled={activeTab === 'unavailable'}
+            >
               <CouponName>{c.name}</CouponName>
               <CouponDiscount>{renderAmount(c.couponAmount)}</CouponDiscount>
-              <CouponCondition>{renderMinimum(c.minimum)}</CouponCondition>
-              {activeTab === 'available' ? (
-                <CouponExpire>
-                  {formatDate(c.expiresAt)} 까지 사용 가능
-                </CouponExpire>
-              ) : (
-                <CouponExpire>만료일: {formatDate(c.expiresAt)}</CouponExpire>
-              )}
+              <CouponExpire>
+                {activeTab === 'available'
+                  ? `${formatDate(c.expiresAt)} 까지 사용 가능`
+                  : `만료일: ${formatDate(c.expiresAt)}`}
+              </CouponExpire>
             </CouponCard>
           ))}
         </CouponList>
       )}
+
+      {!initialLoading && loading && <Message>불러오는 중...</Message>}
+      {error && <Message>{error}</Message>}
     </Container>
   );
 };
@@ -195,11 +262,6 @@ const CouponDiscount = styled.div`
   font-size: 1.125rem;
   font-weight: 700;
   color: #e53935;
-`;
-
-const CouponCondition = styled.div`
-  font-size: 0.92rem;
-  color: #5f6b7a;
 `;
 
 const CouponExpire = styled.div`
