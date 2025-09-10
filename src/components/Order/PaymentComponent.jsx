@@ -29,6 +29,7 @@ const PaymentComponent = ({ orderInfo, onPaymentComplete, onClose }) => {
         selectedPayment,
         selectedAddressId,
         selectedCartItemIds,
+        usePointAmount,
       } = orderInfo;
 
       // 상품명 생성 (첫 번째 상품명 + 외 n개)
@@ -95,6 +96,7 @@ const PaymentComponent = ({ orderInfo, onPaymentComplete, onClose }) => {
                 orderId,
                 selectedAddressId,
                 selectedCartItemIds,
+                usePointAmount,
               });
 
               if (data.success) {

@@ -271,6 +271,7 @@ const OrderList = () => {
             selectedPayment,
             selectedAddressId,
             selectedCartItemIds,
+            usePointAmount: discountInfo.usedPoint,
           }}
           onPaymentComplete={handlePaymentComplete}
           onClose={handlePaymentClose}
