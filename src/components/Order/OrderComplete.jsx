@@ -175,7 +175,7 @@ function OrderComplete() {
                 <PaymentRow>
                   <PaymentLabel>포인트 사용</PaymentLabel>
                   <PaymentValue isDiscount>
-                    - {formatCurrency(orderInfo.usedPointAmount ?? 0)}원
+                    {formatCurrency(orderInfo.usedPointAmount ?? 0)}원
                   </PaymentValue>
                 </PaymentRow>
                 <PaymentRow>

@@ -1,5 +1,7 @@
-import React, { useMemo, useState, useId } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import styled, { css } from 'styled-components';
+import { useSearchParams, Link } from 'react-router-dom';
+import axios from '../../api/axios';
 
 const CATEGORIES = [
   { key: 'all', label: '전체' },
@@ -91,79 +93,6 @@ const QUICK_LINKS = [
   { key: 'callback', label: '콜백예약', icon: '⏱️' },
 ];
 
-const srOnly = css`
-  position: absolute !important;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-`;
-
-export default function SupportCenter() {
-  const [keyword, setKeyword] = useState('');
-  const [cat, setCat] = useState('all');
-  const [sort, setSort] = useState('relevance'); // relevance | recent
-
-  const onSearch = () => {
-    console.log('검색:', { keyword, cat, sort });
-  };
-
-  return (
-    <Page>
-      <Main>
-        <Header>
-          <h1>도움이 필요하신가요?</h1>
-          <p>검색으로 바로 해결하거나, 빠른 액션으로 상담을 요청하세요.</p>
-        </Header>
-
-        <CommandBar
-          value={keyword}
-          onChange={setKeyword}
-          onSearch={onSearch}
-          category={cat}
-          onCategory={setCat}
-          sort={sort}
-          onSort={setSort}
-          suggestions={['배송조회', '세금계산서', '반품비', 'A/S 신청']}
-        />
-
-        <NoticeCarousel items={NOTICES} />
-
-        <TwoColumn>
-          <section aria-labelledby="faq-heading">
-            <SectionTitle id="faq-heading">자주 묻는 질문</SectionTitle>
-            <FAQMasonry
-              items={FAQS}
-              category={cat}
-              keyword={keyword}
-              sort={sort}
-              onQuick={(action, item) =>
-                console.log('FAQ Action:', action, item)
-              }
-            />
-          </section>
-
-          <aside>
-            <ActionStack
-              items={QUICK_LINKS}
-              onClick={(k) => console.log('Quick:', k)}
-            />
-            <ContactCard />
-          </aside>
-        </TwoColumn>
-      </Main>
-      <FooterNote>
-        더 도움 필요하다면 고객센터 1:1 문의로 상세내용을 남겨주세요. 평일 기준
-        24시간 내 응답합니다.
-      </FooterNote>
-    </Page>
-  );
-}
-
 function CommandBar({
   value,
   onChange,
@@ -174,19 +103,16 @@ function CommandBar({
   onSort,
   suggestions,
 }) {
-  const inputId = useId();
   return (
-    <CmdWrap role="search">
-      <label htmlFor={inputId} css={srOnly}>
-        검색
-      </label>
+    <CmdWrap role="search" aria-label="고객센터 검색">
+      <label css={srOnly}>검색</label>
       <div className="row">
         <input
-          id={inputId}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="예) 반품비, 세금계산서, A/S 신청"
           onKeyDown={(e) => e.key === 'Enter' && onSearch()}
+          aria-label="검색어"
         />
         <Select
           value={category}
@@ -207,7 +133,9 @@ function CommandBar({
           <option value="relevance">관련도순</option>
           <option value="recent">최신순</option>
         </Select>
-        <SearchBtn onClick={onSearch}>검색</SearchBtn>
+        <SearchBtn onClick={onSearch} aria-label="검색 실행">
+          검색
+        </SearchBtn>
       </div>
       <div className="chips">
         {suggestions.map((s) => (
@@ -220,19 +148,26 @@ function CommandBar({
   );
 }
 
-function NoticeCarousel({ items }) {
+const NoticeList = ({ items }) => {
   return (
-    <NoticeWrap aria-label="공지사항 요약">
-      {items.map((n) => (
-        <NoticeCard key={n.id}>
-          <div className="badge">{n.tag}</div>
-          <div className="title">{n.title}</div>
-          <div className="date">{n.date}</div>
-        </NoticeCard>
-      ))}
-    </NoticeWrap>
+    <NoticeListSection>
+      <header>
+        <h2>공지사항</h2>
+        <Link to="/customerCenter/noticelist">전체보기 &gt;</Link>
+      </header>
+      <ul>
+        {items.map((n) => (
+          <li key={n.id}>
+            <Link to={`/notices/${n.id}`}>
+              <span className="title">{n.title}</span>
+              <span className="date">{n.createdAt?.substring(0, 10)}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </NoticeListSection>
   );
-}
+};
 
 function FAQMasonry({ items, category, keyword, sort, onQuick }) {
   const filtered = useMemo(() => {
@@ -322,6 +257,162 @@ function ContactCard() {
   );
 }
 
+function GuideList() {
+  return (
+    <Stack>
+      <StackBtn>
+        <div className="label">반품/교환 가이드</div>
+      </StackBtn>
+      <StackBtn>
+        <div className="label">세금계산서 발급 안내</div>
+      </StackBtn>
+      <StackBtn>
+        <div className="label">A/S 접수 절차</div>
+      </StackBtn>
+    </Stack>
+  );
+}
+
+function ContactPanel() {
+  return (
+    <TwoColumn>
+      <section>
+        <SectionTitle>문의 채널</SectionTitle>
+        <ActionStack
+          items={QUICK_LINKS}
+          onClick={(k) => console.log('Contact action:', k)}
+        />
+      </section>
+      <aside>
+        <ContactCard />
+      </aside>
+    </TwoColumn>
+  );
+}
+
+function SupportCenter() {
+  const [params, setParams] = useSearchParams();
+  const tab = params.get('tab') || 'faq'; // faq | notices | guides | contact
+  const [keyword, setKeyword] = useState(params.get('q') || '');
+  const [cat, setCat] = useState(params.get('cat') || 'all');
+  const [sort, setSort] = useState(params.get('sort') || 'relevance'); // relevance | recent
+
+  const [notices, setNotices] = useState([]);
+  const [noticesLoading, setNoticesLoading] = useState(true);
+
+  const onSearch = () => setParams({ tab, q: keyword, cat, sort });
+  const switchTab = (next) => setParams({ tab: next, q: keyword, cat, sort });
+
+  useEffect(() => {
+    const fetchNotices = async () => {
+      setNoticesLoading(true);
+      try {
+        const response = await axios.get('/api/notices/summaries', {
+          params: {
+            page: 0,
+            size: 5,
+          },
+        });
+        setNotices(response.data.content || []);
+      } catch (error) {
+        console.error('Failed to fetch notices:', error);
+      } finally {
+        setNoticesLoading(false);
+      }
+    };
+
+    fetchNotices();
+  }, []); // 컴포넌트 마운트 시 한 번만 실행
+
+  return (
+    <Page>
+      <Main>
+        <Header>
+          <h1>도움이 필요하신가요?</h1>
+          <p>검색으로 바로 해결하거나, 탭에서 필요한 정보를 찾아보세요.</p>
+        </Header>
+
+        <CommandBar
+          value={keyword}
+          onChange={(v) => {
+            setKeyword(v);
+          }}
+          onSearch={onSearch}
+          category={cat}
+          onCategory={(v) => {
+            setCat(v);
+            setParams({ tab, q: keyword, cat: v, sort });
+          }}
+          sort={sort}
+          onSort={(v) => {
+            setSort(v);
+            setParams({ tab, q: keyword, cat, sort: v });
+          }}
+          suggestions={['배송조회', '세금계산서', '반품비', 'A/S 신청']}
+        />
+
+        <Tabs role="tablist" aria-label="고객센터 탭">
+          <TabButton
+            role="tab"
+            aria-selected={tab === 'faq'}
+            onClick={() => switchTab('faq')}
+          >
+            FAQ
+          </TabButton>
+          <TabButton
+            role="tab"
+            aria-selected={tab === 'notices'}
+            onClick={() => switchTab('notices')}
+          >
+            공지
+          </TabButton>
+          <TabButton
+            role="tab"
+            aria-selected={tab === 'guides'}
+            onClick={() => switchTab('guides')}
+          >
+            가이드/정책
+          </TabButton>
+          <TabButton
+            role="tab"
+            aria-selected={tab === 'contact'}
+            onClick={() => switchTab('contact')}
+          >
+            문의/연락
+          </TabButton>
+        </Tabs>
+
+        {tab === 'notices' && <NoticeList items={notices} />}
+        {tab === 'faq' && (
+          <TwoColumn>
+            <section aria-labelledby="faq-heading">
+              <SectionTitle id="faq-heading">자주 묻는 질문</SectionTitle>
+              <FAQMasonry
+                items={FAQS}
+                category={cat}
+                keyword={keyword}
+                sort={sort}
+                onQuick={(action, item) =>
+                  console.log('FAQ Action:', action, item)
+                }
+              />
+            </section>
+          </TwoColumn>
+        )}
+        {tab === 'guides' && <GuideList />}
+        {tab === 'contact' && <ContactPanel />}
+      </Main>
+
+      <FooterNote>
+        더 도움이 필요하면 1:1 문의를 남겨주세요. 평일 기준 24시간 내
+        응답합니다.
+      </FooterNote>
+    </Page>
+  );
+}
+
+export default SupportCenter;
+
 const Page = styled.div`
   --indigo: #4f46e5;
   --green: #22c55e;
@@ -354,7 +445,7 @@ const Header = styled.header`
 `;
 
 const CmdWrap = styled.section`
-  background: #ffffff;
+  background: #fff;
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 12px;
@@ -408,6 +499,29 @@ const Chip = styled.button`
   }
 `;
 
+const Tabs = styled.div`
+  display: inline-flex;
+  gap: 6px;
+  margin: 8px 0 14px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 6px;
+`;
+
+const TabButton = styled.button`
+  all: unset;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--muted);
+  &[aria-selected='true'] {
+    background: #eef2ff;
+    color: var(--indigo);
+    font-weight: 700;
+  }
+`;
+
 const TwoColumn = styled.div`
   display: grid;
   grid-template-columns: 1fr;
@@ -417,37 +531,66 @@ const TwoColumn = styled.div`
   }
 `;
 
-const NoticeWrap = styled.div`
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 10px;
-  margin: 8px 0 16px;
-  @media (min-width: 720px) {
-    grid-template-columns: repeat(3, 1fr);
-  }
-`;
-
-const NoticeCard = styled.article`
+const NoticeListSection = styled.section`
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 12px 14px;
-  .badge {
-    display: inline-block;
-    background: #eef2ff;
-    color: var(--indigo);
-    border-radius: 8px;
-    font-size: 12px;
-    padding: 2px 8px;
-    margin-bottom: 6px;
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+
+    h2 {
+      font-size: 16px;
+      margin: 0;
+    }
+
+    a {
+      font-size: 13px;
+      color: var(--muted);
+      text-decoration: none;
+      &:hover {
+        text-decoration: underline;
+      }
+    }
   }
-  .title {
-    font-weight: 600;
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
   }
-  .date {
-    color: var(--muted);
-    font-size: 12px;
-    margin-top: 4px;
+
+  li a {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 4px;
+    text-decoration: none;
+    color: var(--ink);
+    border-radius: 6px;
+
+    &:hover {
+      background-color: #f8fafc;
+    }
+
+    .title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .date {
+      color: var(--muted);
+      font-size: 13px;
+      flex-shrink: 0;
+      margin-left: 16px;
+    }
   }
 `;
 
@@ -626,4 +769,16 @@ const FooterNote = styled.footer`
   margin: 8px auto 28px;
   color: var(--muted);
   padding: 0 20px;
+`;
+
+const srOnly = css`
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 `;
